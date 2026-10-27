@@ -4,6 +4,7 @@
 
 - 사용자 승인 범위: 다음 독립 개발 계획인 **33³ atlas 생성기와 manifest/checksum 도구**. 최신 `develop`에서 `feature/lut-asset-tools`를 만들었다. 기준은 [PR #2](https://github.com/ddoniddoni/yeoun/pull/2)의 병합 커밋 `9c4af2bb608b6d026dc8f4b91ef2c5cb0edb89e8`이다.
 - 상태: **도구·테스트 소스 작성, 초안 PNG 4개와 manifest 생성 / 별도 실행 검증 NOT_RUN**. 2026-10-27 사용자가 이 작업의 Git Flow를 요청했다. 작업 브랜치 커밋·푸시, `develop` 대상 PR 생성·병합, 로컬 `develop` 동기화와 원격 반영이 승인 범위다. 실제 통합 커밋과 최종 병합 상태는 이 브랜치의 PR 및 Git 이력을 따른다.
+- 기능 커밋은 `b646a43`이며 원격 기능 브랜치에 푸시했다. `develop` 통합 이력은 [PR #3](https://github.com/ddoniddoni/yeoun/pull/3)에 남긴다. Git Flow 중에도 테스트와 별도 검사 명령은 실행하지 않는다.
 - `npm run generate:luts`를 실제 실행했다. 입력 seed/schema 처리와 manifest 생성 가드는 이 명령 안에서 동작했다. 생성 성공은 색상 수치, 별도 자산 검사, GPU 또는 실기기 검증 결과가 아니다.
 - **사용자 요청에 따라 테스트를 실행하지 않았다.** lint/typecheck, `validate:filters`, `validate:filter-assets`, JS/native build도 NOT_RUN이다. G0/G1은 **NOT_PASSED**다.
 - 현재 앱 진입점에서 LUT를 불러오지 않는다. seed 9종은 `design-draft`, `lut: null`을 유지하며 실제 생성 대상은 identity와 대표 3종이다. 입자·bloom·master intensity·trilinear sampling은 후속 작업이다.
@@ -53,6 +54,9 @@ manifest는 `filter-manifest.json`, PNG는 그 아래 `luts/<filterId>-<sha256>.
 | 공식 pngjs 문서, 설치한 `@types/pngjs/index.d.ts` 및 `pngjs/lib` 읽기 | sync write/read, RGBA8 인코딩 옵션과 gamma chunk 처리 확인 |
 | `apply_patch` | 코드·테스트 소스·문서 작성 |
 | `npm run generate:luts` | **exit 0**, identity와 대표 3종 PNG 및 manifest 생성. Node의 `MODULE_TYPELESS_PACKAGE_JSON` 재해석 경고 출력; 루트 모듈 형식은 변경하지 않음 |
+| 명시적 20개 파일 `git add -- ...`, `git commit -m 'feat(filters): add LUT atlas authoring tools and draft assets'` | exit 0, `b646a43`. 소스·문서·lockfile·계산된 LUT 초안만 포함 |
+| `git push -u origin feature/lut-asset-tools` | exit 0. 기능 브랜치 원격 생성과 upstream 설정 |
+| `gh pr create --repo ddoniddoni/yeoun --base develop --head feature/lut-asset-tools --title 'feat(filters): add LUT atlas authoring tools and draft assets' --body-file /private/tmp/yeoun-lut-assets-pr.md` | exit 0. PR #3 생성, 검사 미실행 상태를 본문에 명시 |
 | `npm run lint`, `npm run typecheck`, `npm test -- --runInBand` | **NOT_RUN** |
 | `npm run validate:filters`, `npm run validate:filter-assets`, JS/native build, GPU·실기기 | **NOT_RUN** |
 

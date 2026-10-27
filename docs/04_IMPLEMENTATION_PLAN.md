@@ -43,12 +43,13 @@
 
 **선행:** G0. 미통과 플랫폼의 GPU 통합은 미검증으로 남긴다.
 
-**2026-10-27 승인된 독립 작업:** CPU trilinear sampling 다음으로 **Skia LUT shader/adapter**를 작성했다. 설치된 2.4.18에 JS raw shader API가 없어 Alpha_8 채널 분리 경로를 사용한다. 기존 PNG는 유지하며 합성 offscreen CPU 비교 함수와 자원 수명 테스트 소스도 작성했다. SkSL 컴파일·수치·빌드 검사를 포함해 실행 검증은 NOT_RUN이다. 사용자 요청 전까지 검사하지 않는다. G0/G1은 미통과이며 앱용 LUT 로더, 색 공간 정규화와 카메라 preview/export 연결은 후속 범위다.
+**2026-10-28 승인된 독립 작업:** Skia adapter에 이어 **앱용 LUT 자산 로더**를 작성했다. manifest/version/seed pin, SHA-256, PNG 구조와 Skia decode를 연결하고 CPU 캐시 및 pipeline 생성 API를 추가했다. 승인된 Expo Asset/Crypto를 설치하고 `.lut` 패키징 복사본을 준비했다. 테스트 소스는 작성했지만 실행·번들·native/GPU 검증은 NOT_RUN이다. 사용자 요청 전까지 검사하지 않는다. G0/G1 미통과를 유지하며 카메라 통합은 후속 범위다.
 
 - [ ] seed JSON Schema 검증과 추가 의미 검사를 구현한다. (코드 작성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §3)
 - [ ] 색 변환 CPU reference를 구현하고 경계, NaN, identity 테스트를 작성한다. (코드 작성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §5)
 - [ ] 33^3 atlas 생성기와 manifest/checksum 검증기를 만든다. (코드 작성 및 초안 생성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §6)
 - [ ] 양자화된 atlas를 읽는 CPU trilinear reference를 구현한다. (코드·테스트 소스 작성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §6)
+- [ ] 앱용 LUT 로더에서 버전/checksum/raw atlas 계약을 연결한다. (코드·패키징 복사본·테스트 소스 작성, 실제 번들/디코드 검증 전)
 - [ ] identity LUT로 좌표, raw sampling, 색 공간과 gamma를 검증한다. (CPU/Skia adapter·합성 비교 코드 작성, 실행 검증 전)
 - [ ] master intensity의 0/1과 중간값을 테스트한다.
 - [ ] 대표 3종 LUT를 생성하고 실제 preview/export에 연결한다. (PNG 초안 생성, preview/export 연결 전)

@@ -21,6 +21,7 @@ Development Build는 네이티브 라이브러리를 포함하는 앱 빌드를 
 | GPU | @shopify/react-native-skia 또는 react-native-skia | 둘 중 검증된 하나만 |
 | worklet과 UI | react-native-worklets, react-native-reanimated | 실제 peer dependency와 Expo 조합 확인 |
 | 파일과 앨범 | expo-file-system, expo-media-library | 설치 SDK의 API 사용 |
+| 번들 자산·무결성 | expo-asset, expo-crypto | 2026-10-28 사용자 승인. LUT 로컬 파일과 SHA-256 용도 |
 | 가져오기와 공유 | expo-image-picker, expo-sharing | 시스템 UI 사용 |
 | 로컬 DB | expo-sqlite | 레시피, 설정, 최소 작업 저널 |
 | 안전 영역 | react-native-safe-area-context | 기기별 inset |
@@ -170,9 +171,17 @@ M0 산출물에는 다음 소유권 표를 실제 구현 기준으로 작성한�
 | root shader | binding, pipeline도 추적 | draw/flush 완료 후 binding 또는 pipeline 해제 |
 | 합성 비교 surface/paint/readback image | `measureLutSkia` | 동기 readback 후 finally에서 모두 해제 시도 |
 
-native 객체를 다른 runtime/context로 넘기는 API는 제공하지 않는다. LUT 디코드·효과 컴파일·plane 생성은 프레임 루프 밖에서 수행해야 한다. 현재 `bindSource`는 root shader를 새로 만들므로 카메라 연결 전에 소유권과 프레임 비용을 따로 검증해야 한다. 기존 Node PNG 검사기를 모바일 코드에 import하지 않는다. checksum을 확인하고 raw atlas를 제공하는 앱 로더는 후속 범위다.
+native 객체를 다른 runtime/context로 넘기는 API는 제공하지 않는다. LUT 디코드·효과 컴파일·plane 생성은 프레임 루프 밖에서 수행해야 한다. 현재 `bindSource`는 root shader를 새로 만들므로 카메라 연결 전에 소유권과 프레임 비용을 따로 검증해야 한다. Node PNG 디코더를 모바일 코드에 import하지 않는다. 2026-10-28 checksum 확인과 raw atlas 공급을 담당하는 앱 로더 코드를 작성했으며 실행은 NOT_RUN이다.
 
-Skia 2.4.18 `ImageInfo`에는 colorSpace 지정 필드가 없고 `makeRawShader`도 JS로 노출되지 않는다. Alpha_8 경로는 LUT 데이터용 우회 방식이며 원본 카메라·사진의 SDR sRGB 정규화 구현을 대신하지 않는다. 새 패키지나 native bridge 수정은 없다. 설치 타입/브리지와 공식 근거는 [S26](REFERENCES.md#s26)을 참조한다.
+Skia 2.4.18 `ImageInfo`에는 colorSpace 지정 필드가 없고 `makeRawShader`도 JS로 노출되지 않는다. Alpha_8 경로는 LUT 데이터용 우회 방식이며 원본 카메라·사진의 SDR sRGB 정규화 구현을 대신하지 않는다. shader 작업에는 패키지/native bridge 변경이 없었다. 설치 타입/브리지와 공식 근거는 [S26](REFERENCES.md#s26)을 참조한다.
+
+### 앱용 LUT 로더와 의존성
+
+사용자가 2026-10-28 `expo-asset@55.0.20`, `expo-crypto@55.0.19` 추가를 승인했고 exact 의존성으로 설치했다. Asset은 기존 Expo 간접 의존성을 직접 선언했으며 Crypto는 신규 native 모듈이다. SDK 55의 `bundledNativeModules.json`과 공식 문서 권장 범위를 확인했다. 두 패키지는 MIT이고 npm 압축 해제 크기는 각각 242,176 / 323,919바이트다. 이는 앱 바이너리 증가량의 측정값이 아니다. 기존 파일 API는 SHA-256을 제공하지 않으므로 Expo Crypto의 binary digest를 사용한다. 별도 SHA-256 구현이나 Node crypto polyfill은 추가하지 않는다.
+
+Crypto를 포함하는 개발 앱 재빌드가 필요하며 이번에는 prebuild/pod install/빌드를 실행하지 않았다. `.lut`용 Metro 설정만 추가했고 사용자 사진, 추가 권한, 서버나 유료 서비스는 없다. 개발 중에는 Metro가 번들 자산을 공급할 수 있지만 원격 LUT 선택 URL을 받는 기능은 제공하지 않는다. 실제 릴리스의 오프라인 자산 포함과 캐시 동작은 별도로 검증한다.
+
+로더의 CPU 캐시는 최대 4 atlas(각 176,400바이트)이며 caller 복사본과 임시 PNG/디코드 버퍼는 별도다. 생성된 Skia pipeline은 캐시에 넣지 않고 소비 runtime의 호출자가 소유한다. 정적 등록 파일과 `.lut` 복사본은 아직 앱 진입점에 연결하지 않았다. 자세한 API/실패 처리/소유권은 [필터 엔진 §6](02_FILTER_ENGINE.md#6-lut-파일과-gpu-sampling-계약), 설치 근거는 [S27](REFERENCES.md#s27)을 따른다.
 
 ## 6. 카메라 설정
 

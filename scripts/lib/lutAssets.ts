@@ -5,6 +5,7 @@ import { PNG } from 'pngjs';
 import type { FilterSeed, Rgb } from '../../src/domain/filters/types.ts';
 import { createAuthoringTransform } from '../../src/rendering/reference/authoring.ts';
 import { assertLutAtlasStructure, createLutAtlas, LUT_CONTRACT, type LutAtlas } from '../../src/rendering/reference/lutAtlas.ts';
+import { assertLutPngContainer } from '../../src/rendering/assets/lutPng.ts';
 import { createFilterSeedValidator } from './filterSeed.ts';
 import { assertLutManifest, LUT_ENGINE_VERSION, LUT_GENERATOR_VERSION, type LutAsset, type LutManifest } from './lutManifest.ts';
 
@@ -33,28 +34,7 @@ export function encodeLutPng(atlas: LutAtlas): Buffer {
 }
 
 export function decodeLutPng(bytes: Buffer): LutAtlas {
-  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-  // Bound dimensions before decompression; do not let a corrupt manifest choose image allocation size.
-  if (bytes.length < 33 || bytes.length > 1_000_000 || !bytes.subarray(0, 8).equals(signature) ||
-      bytes.readUInt32BE(8) !== 13 || bytes.toString('ascii', 12, 16) !== 'IHDR' ||
-      bytes.readUInt32BE(16) !== 210 || bytes.readUInt32BE(20) !== 210 ||
-      bytes[24] !== 8 || bytes[25] !== 6 || bytes[26] !== 0 || bytes[27] !== 0 || bytes[28] !== 0) {
-    throw new Error('Expected a non-interlaced 210x210 RGBA8 PNG under 1 MB');
-  }
-  let cursor = 8;
-  let ended = false;
-  let hasImageData = false;
-  while (cursor + 12 <= bytes.length) {
-    const length = bytes.readUInt32BE(cursor);
-    const kind = bytes.toString('ascii', cursor + 4, cursor + 8);
-    if (cursor + length + 12 > bytes.length) throw new Error('Truncated PNG chunk');
-    if (!['IHDR', 'IDAT', 'IEND'].includes(kind)) throw new Error(`Unexpected LUT PNG chunk: ${kind}`);
-    if (kind === 'IHDR' && cursor !== 8) throw new Error('Duplicate PNG header');
-    if (kind === 'IDAT') hasImageData = true;
-    cursor += length + 12;
-    if (kind === 'IEND') { ended = hasImageData && length === 0 && cursor === bytes.length; break; }
-  }
-  if (!ended) throw new Error('Invalid PNG ending');
+  assertLutPngContainer(bytes);
   const decoded = PNG.sync.read(bytes, { checkCRC: true });
   return { width: decoded.width, height: decoded.height, pixels: decoded.data };
 }

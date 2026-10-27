@@ -222,6 +222,18 @@
 
 패키지·native 코드 변경은 없다. shader 컴파일, alpha 보존, 색 공간과 GPU 성능 검사는 NOT_RUN이다. 실제 카메라 P3/HDR/YUV 정규화나 고해상도 저장까지 지원한다고 해석하지 않는다.
 
+<a id="s27"></a>
+
+## S27. Expo SDK 55 자산·SHA-256과 Metro 데이터 자산
+
+공식 주소: [Expo Asset 55](https://docs.expo.dev/versions/v55.0.0/sdk/asset/), [Expo Crypto 55](https://docs.expo.dev/versions/v55.0.0/sdk/crypto/), [Expo FileSystem 55](https://docs.expo.dev/versions/v55.0.0/sdk/filesystem/), [Metro 자산 확장자](https://docs.expo.dev/guides/customizing-metro/#adding-more-file-extensions-to-assetexts), [RN Skia v2 이미지](https://wcandillon.github.io/react-native-skia/v2/docs/images/).
+
+2026-10-28 사용자가 `expo-asset@55.0.20`, `expo-crypto@55.0.19` 추가를 승인했다. 설치된 Expo 55.0.32의 bundledNativeModules와 npm metadata에서 버전 범위/라이선스/의존성을 확인했다. 둘 다 MIT이며 npm unpackedSize는 242,176 / 323,919바이트다. 설치 시 lifecycle/audit를 실행하지 않았고 앱 크기·빌드 호환성은 측정 전이다.
+
+적용 API는 `Asset.fromModule`/`new Asset`/`downloadAsync`, FileSystem 55.0.26의 `File.bytes()`와 Crypto의 `digest(SHA256, ArrayBuffer)`다. Expo Asset의 MD5와 manifest의 SHA-256을 구분한다. `.lut` 확장자를 Metro assetExts에 추가하고 `.png` 원본의 복사본을 정적으로 require한다. 설치한 `@expo/cli/.../metroAssetLocalPath.js`, `@react-native/assets-registry/path-support.js`에서 비이미지를 Android `raw`에 배치하는 분기를, expo-asset의 `ResourceAsset.kt`와 `AssetModule.kt`에서 resource stream을 파일로 복사하는 경로를 읽었다. 실제 패키징의 바이트 보존·오프라인 동작은 NOT_RUN이다.
+
+Skia 2.4.18 `MakeImageFromEncoded`/`readPixels`를 사용하며 gamma/profile chunk가 없는 PNG만 허용한다. 설치된 `JsiSkImageInfo.h`는 colorSpace 없이 목적 ImageInfo를 만들고, `JsiSkImage.h`의 Graphite `readPixels`는 미구현이다. native 디코딩의 byte 정확도를 소스 검토만으로 확정하지 않으며 기기 비교를 별도로 요구한다. Node pngjs/Ajv는 모바일 경로에 포함하지 않는다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

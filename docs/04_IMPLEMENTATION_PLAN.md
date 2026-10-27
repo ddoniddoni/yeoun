@@ -43,10 +43,10 @@
 
 **선행:** G0. 미통과 플랫폼의 GPU 통합은 미검증으로 남긴다.
 
-**2026-10-27 승인된 독립 작업:** 사용자가 필터 데이터 구조와 검증 로직 개발을 요청했다. 해당 타입/Schema 연결/의미 검사/개발 CLI/단위 테스트 코드를 작성했으며 실행 검사는 NOT_RUN이다. 사용자의 별도 요청 전까지 테스트를 실행하지 않는다. G0 미통과 상태를 유지하고 CPU 색 변환, LUT 생성과 카메라·GPU 통합으로 범위를 확장하지 않았다.
+**2026-10-27 승인된 독립 작업:** 필터 데이터 구조와 검증 로직에 이어, 사용자가 PR #1 병합과 순수 TypeScript 색 변환 CPU reference 개발을 승인했다. 타입/Schema 연결/의미 검사/개발 CLI와 CPU 색 변환 및 관련 테스트 코드를 작성했으며 실행 검사는 NOT_RUN이다. 사용자의 별도 요청 전까지 테스트를 실행하지 않는다. G0 미통과 상태를 유지하고 LUT 생성과 카메라·GPU 통합은 후속 범위로 남긴다.
 
 - [ ] seed JSON Schema 검증과 추가 의미 검사를 구현한다. (코드 작성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §3)
-- [ ] 색 변환 CPU reference를 구현하고 경계, NaN, identity 테스트를 작성한다.
+- [ ] 색 변환 CPU reference를 구현하고 경계, NaN, identity 테스트를 작성한다. (코드 작성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §5)
 - [ ] 33^3 atlas 생성기와 manifest/checksum 검증기를 만든다.
 - [ ] identity LUT로 좌표, raw sampling, 색 공간과 gamma를 검증한다.
 - [ ] master intensity의 0/1과 중간값을 테스트한다.

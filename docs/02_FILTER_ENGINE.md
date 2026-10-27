@@ -61,7 +61,7 @@ npm run validate:filters
 npm run validate:filters -- /path/to/filters.seed.json
 ```
 
-명령은 Node 26 개발 환경의 TypeScript 직접 로딩을 사용한다. 파일을 변경하지 않고 오류가 있으면 종료 코드 1을 반환하도록 작성했다. Ajv와 ajv-formats는 개발 의존성이며 현재 앱 진입점/카메라에서 가져오지 않는다. 이 명령 및 새 단위 테스트는 **아직 실행하지 않았다**. CPU 색 변환, LUT 생성, GPU 연결과 색감 승인은 후속 작업이다.
+명령은 Node 26 개발 환경의 TypeScript 직접 로딩을 사용한다. 파일을 변경하지 않고 오류가 있으면 종료 코드 1을 반환하도록 작성했다. Ajv와 ajv-formats는 개발 의존성이며 현재 앱 진입점/카메라에서 가져오지 않는다. 이 명령 및 새 단위 테스트는 **아직 실행하지 않았다**. CPU 색 변환 코드 상태는 §5에 기록한다. LUT 생성, GPU 연결과 색감 승인은 후속 작업이다.
 
 구현 근거: [Ajv의 JSON Schema 버전별 지원](https://ajv.js.org/json-schema.html), [TypeScript 타입 가드](https://ajv.js.org/guide/typescript.html), [날짜 format 플러그인](https://ajv.js.org/guide/formats.html). 실제 설치한 8.17.1/3.0.1의 타입과 배포 소스를 대조했다.
 
@@ -161,6 +161,25 @@ V' = V
 ```
 
 모든 가중치는 변형 전 H와 S로 계산한다. band 순서를 바꾸면 결과가 달라지는 연속 적용 방식은 금지한다. 이 방식은 피부를 인식하지 않는다. 피부와 비슷한 색의 음식이나 가구에도 영향을 준다.
+
+### CPU 기준 구현 (2026-10-27, 실행 NOT_RUN)
+
+| 파일 | 역할 |
+|---|---|
+| `src/rendering/reference/color.ts` | 정규화 채널 범위 검사, sRGB 전달 함수, encoded 밝기 근사치, RGB↔HSV, hue wrap, smoothstep |
+| `src/rendering/reference/toneCurve.ts` | 6개 점의 유효성 확인과 복사, 구간별 선형 보간 함수 생성 |
+| `src/rendering/reference/authoring.ts` | §5의 노출 → 곡선 → 틴트 → hue band → 채도를 합성하는 `createAuthoringTransform` |
+| `tests/unit/colorReference.test.ts` | U03/U04 관련 수치·순서·오류·설정 보존 사례. 작성만 했으며 미실행 |
+
+`createAuthoringTransform(authoring: FilterAuthoring): (input: Rgb) => Rgb`를 필터별로 한 번 만든 뒤 RGB sample마다 호출한다. 입력과 출력은 0~1 encoded sRGB 세 채널이며 alpha는 포함하지 않는다. 앞선 seed/schema 검사를 거친 제작 설정을 받는 API다. 생성 시 숫자 범위, 색 공간 식별자, 곡선과 hue band 조건을 다시 확인하지만 전체 JSON 형식 검사를 대신하지 않는다.
+
+NaN/Infinity와 범위 밖의 입력을 조용히 보정하지 않고 `RangeError`로 거부한다. 노출·틴트·채도 계산의 중간 결과만 명세에 따라 clamp한다. 노출 EV=0이면 불필요한 sRGB 왕복을 생략해 전달 함수의 반올림된 경계에서 중립 입력을 보존한다. 노출 보정이 있는 경우에는 선형 채널에서 `2^EV`를 정확히 한 번 곱한다.
+
+곡선·틴트·hue band는 생성 시 복사하고 스칼라 설정은 값으로 캡처한다. 따라서 호출자가 나중에 제작 설정을 변경해도 이미 만든 함수는 이전 설정으로 계산한다. hue band 복사본은 수치 필드 순으로 정렬해 부동소수점 합산 순서도 고정한다. 입력 배열을 정렬하거나 변경하지 않으며 모든 가중치는 조정 전 H/S에서 계산한다.
+
+테스트 소스에는 전달 함수 기준값/경계/왕복, RGB 8개 꼭짓점과 고정 sample, HSV 6개 구간, 선형 EV, 평평한 곡선 구간, tint clamp, hue 원형 거리/겹침/순서 불변/무채색 보호, 효과 순서, 설정 snapshot과 9개 seed 초안의 유한 출력 검사를 작성했다. **실행 결과와 통과 수치는 없다.** 이 함수는 analytic transform이며 LUT 보간 구현이나 실제 GPU 비교 결과가 아니다.
+
+P3/HDR/YUV의 sRGB 정규화는 플랫폼 adapter의 후속 검증 항목이다. 입자, bloom, master intensity, LUT/PNG/manifest 생성과 카메라 연결은 이번 코드에 포함하지 않는다. 패키지 추가나 네이티브 설정 변경도 없다.
 
 ## 6. LUT 파일과 GPU sampling 계약
 

@@ -23,5 +23,5 @@ React Native 기반 iOS/Android 실시간 감성 카메라다. 빛, 시간, 장�
 8. 실기기, 빌드 도구 또는 GPU가 없으면 해당 검증은 BLOCKED 또는 NOT_RUN이다. mock, 정적 이미지, 타입 검사를 실제 촬영 검증으로 보고하지 않는다.
 9. 작업 후 `npm run lint`, `npm run typecheck`, `npm test -- --runInBand`와 관련 검사를 실행한다. 스크립트 미구성 또는 환경 제약은 그대로 기록한다. JS 번들 성공과 네이티브 빌드 성공을 구분한다.
 10. `docs/PROGRESS.md`에 변경 파일, 실제 명령과 결과, 미검증 항목, 다음 작업을 남긴다. 성공 수치나 테스트 결과를 만들어내지 않는다.
-11. 요청 없는 Git commit/push/branch 변경, 배포, 유료 서비스, 서명 인증서 생성, 파괴적 명령을 실행하지 않는다. `prebuild --clean`도 자동 실행하지 않는다.
+11. 요청 없는 Git commit/push/branch 변경, 배포, 유료 서비스, 서명 인증서 생성, 파괴적 명령을 실행하지 않는다. Git Flow 요청의 상시 승인 범위는 `docs/GIT_WORKFLOW.md`를 따른다. `prebuild --clean`도 자동 실행하지 않는다.
 12. 상세 결정을 이 파일에 계속 추가하지 말고 담당 문서를 수정한다. 사용자에게는 한국어로 보고한다.

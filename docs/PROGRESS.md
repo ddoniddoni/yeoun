@@ -4,12 +4,15 @@
 
 - 사용자 지정 원격: `https://github.com/ddoniddoni/yeoun.git`. 최초 조회에서 `isEmpty: true`, 브랜치 없음, `PUBLIC`, 현재 계정 `ADMIN`을 확인했다.
 - 전역 `/Users/ddoni/.codex/AGENTS.md`를 읽고 `main`/`develop`/작업 브랜치와 `develop` 대상 PR 규칙을 적용한다. 기존 프로젝트에 Git 이력이 없어 최초 등록으로 진행한다.
-- 기준 브랜치는 `.gitignore`와 `docs/GIT_WORKFLOW.md`만 담은 커밋에서 시작한다. 현재 앱·명세·lockfile·테스트 소스는 별도 `chore/initial-import` 브랜치에 초기 스냅샷으로 등록한다.
+- 기준 커밋 `4d90c3d`는 `.gitignore`와 `docs/GIT_WORKFLOW.md`만 담고 있다. 로컬 `main`/`develop`은 이 커밋을 가리킨다. 현재 앱·명세·lockfile·테스트 소스 50개 파일은 `chore/initial-import`의 `24c54b3` 커밋에 등록했다.
 - `docs/GIT_WORKFLOW.md`에 흐름과 사용자 검사 보류 지시를 기록하고, `AGENTS.md`에서 연결했다. `README.md`의 오래된 “구현 전” 상태를 실제 구현/미검증 상태로 갱신했다.
 - **이번 Git 작업 전에도 테스트·lint·typecheck·seed CLI·빌드 검사는 NOT_RUN**이다. 사용자 요청에 따라 생략했다. 파일 목록과 Git 상태/이력/원격/PR 상태 확인은 수행한다.
-- 빌드 산출물·개인 사진·환경 파일·인증서를 제외하며 `git add .`를 사용하지 않는다. commit/push/PR 결과는 작업 종료 시 실제 응답으로 보고한다.
+- stage 파일 목록과 `.gitignore` 적용을 확인했다. 빌드 산출물·개인 사진·실제 환경 파일·인증서는 제외했다. `.env.example`은 값이 없는 안내 주석만 포함한다. `git add .`를 사용하지 않았다.
 - 원격 조회 명령: `gh repo view ddoniddoni/yeoun --json nameWithOwner,url,isEmpty,visibility,defaultBranchRef,viewerPermission`, `gh api repos/ddoniddoni/yeoun/branches --paginate`. 첫 sandbox 조회는 연결 오류, 네트워크 허용 재조회는 exit 0이었다.
 - Git 단계: 초기화/기준 커밋 → `main`/`develop` 생성 → `chore/initial-import` 스냅샷 커밋 → 세 브랜치 push → `develop` 대상 PR 생성. 병합·릴리스·배포는 이번 실행 범위에 넣지 않는다.
+- 실제 로컬 명령: `git init -b chore/gitflow-bootstrap`, `git remote add origin https://github.com/ddoniddoni/yeoun.git`, 명시적 파일 목록 `git add -- ...`, `git commit -m 'chore(repo): establish Git Flow baseline'`, `git branch main`, `git branch develop`, `git switch -c chore/initial-import develop`, `git commit -m 'chore(repo): import current camera project'`. 모두 exit 0.
+- **PUSH BLOCKED / PR NOT_CREATED**: `git push --atomic -u origin main develop chore/initial-import` 실행 요청을 자동 승인 검토가 거부했다. 공개 저장소에 전체 소스·문서·lockfile을 공개 전송하는 payload에 대한 명시적 사용자 승인이 부족하다는 이유다. push 프로세스는 실행되지 않았으며 다른 방법으로 우회하지 않았다.
+- 공개 대상은 기준 2개 + 프로젝트 50개, 총 52개 추적 파일이다. PR 본문은 `/private/tmp/yeoun-initial-import-pr.md`에 준비했다. 공개 업로드 승인 후 원격 상태를 다시 확인하고 push/PR 생성을 재개한다.
 
 ## 현재 상태 — 2026-10-27 M1 독립 준비 작업
 
@@ -17,7 +20,7 @@
 - **사용자 지시: 명시적으로 요청하기 전까지 테스트를 실행하지 않는다.** 이번 작업에서는 Jest, seed 검증 CLI, lint, typecheck, 번들/네이티브 빌드와 실기기 검사 모두 실행하지 않았다. 새 테스트 코드는 작성만 했다.
 - 현재 상태: **M1 제작 데이터 검증 코드 작성 / 실행 검증 NOT_RUN**. M1 전체 완료나 필터 9종 구현 완료를 의미하지 않는다.
 - M0 실제 촬영/색 공간/GPU/갤러리/메모리 검증은 이전 미검증 상태를 유지한다. 아래 M0의 PASS 기록은 이전 실행 결과이며 이번 변경의 통과 증거가 아니다.
-- Git 저장소가 없어 초기화·브랜치·commit·push·PR을 수행하지 않았다.
+- 이 M1 코드 작성 시점에는 Git 저장소가 없어 초기화·브랜치·commit·push·PR을 수행하지 않았다. 이후 Git 등록 상태는 위 기록을 따른다.
 
 | 범위 | 코드 | 이번 실행 검증 | 게이트 |
 |---|---|---|---|

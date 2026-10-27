@@ -210,7 +210,24 @@ slice k의 tile 좌상단은 `tx=(k%6)*35`, `ty=floor(k/6)*35`다. red/green sam
 
 `npm run generate:luts`는 실제 실행해 PNG 4개와 manifest를 생성했다. 기본 경로는 `assets/lut-drafts/<engineVersion>/<sourceSeedSha256>/`이며 파일명은 `<filterId>-<sha256>.png`다. 소스 seed 해시는 JSON 재직렬화가 아닌 원본 바이트 기준이다. manifest의 인코더 환경이 다르거나 자산 바이트가 달라지면 기존 경로를 덮어쓰지 않고 새 출력 경로가 필요하다. 제작식이나 인코딩 계약 변경 시 해당 버전도 갱신한다.
 
-`npm run validate:filter-assets`, lint/typecheck, 단위·통합 테스트, GPU·실기기 검사는 **NOT_RUN**이다. 생성 명령 성공을 G0/G1 통과나 `approved` 승격으로 해석하지 않는다. trilinear CPU sampling과 GPU 로딩/셰이더는 아직 없다. 사용법은 [초안 자산 안내](../assets/lut-drafts/README.md), 실제 명령과 생성 환경은 [진행 기록](PROGRESS.md)에 있다. PNG API 근거는 [S25](REFERENCES.md#s25)와 설치한 소스·타입이다.
+`npm run validate:filter-assets`, lint/typecheck, 단위·통합 테스트, GPU·실기기 검사는 **NOT_RUN**이다. 생성 명령 성공을 G0/G1 통과나 `approved` 승격으로 해석하지 않는다. 이후 작성한 trilinear CPU sampling은 다음 절을 따른다. GPU 로딩/셰이더는 아직 없다. 사용법은 [초안 자산 안내](../assets/lut-drafts/README.md), 실제 명령과 생성 환경은 [진행 기록](PROGRESS.md)에 있다. PNG API 근거는 [S25](REFERENCES.md#s25)와 설치한 소스·타입이다.
+
+### CPU trilinear sampling (2026-10-27, 실행 NOT_RUN)
+
+`src/rendering/reference/lutSampling.ts`의 `createLutSampler(atlas: LutAtlas): (input: Rgb) => Rgb`는 디코드된 RGBA8 atlas를 받는다. 생성 시 기존 구조 검사로 크기·alpha·패딩·빈 tile을 확인하고 `Uint8Array.from`으로 176,400바이트를 복사한다. Node `Buffer`와 offset이 있는 typed-array view도 데이터 소유권을 분리한다. 호출자가 나중에 원본 버퍼를 변경해도 생성한 sampler의 데이터는 바뀌지 않도록 작성했다. sampler를 LUT별로 한 번 생성하고 재사용하며 참조가 사라지면 복사본은 GC 대상이 된다. 카메라 프레임 전송이나 실시간 CPU 처리 경로가 아니다.
+
+입력은 finite인 0~1 encoded sRGB 세 채널이다. NaN/Infinity, 범위 초과와 채널 수 오류를 보정하지 않고 거부한다. `p=C*32`에서 아래 격자점과 소수 부분을 구하고 위 격자점은 32까지로 제한한다. 따라서 입력 1의 위쪽 이웃도 32이며 blue slice 33의 빈 tile에 접근하지 않는다.
+
+각 격자점은 정수 내부 texel 인덱스로 읽는다. CPU 바이트 배열 접근에는 GPU의 반 픽셀 중심 오프셋을 더하지 않는다. 아래/위 blue slice 각각에서 red, green 순으로 bilinear 보간한 뒤 blue 방향으로 혼합한다. 저장된 바이트 값을 그대로 보간하고 마지막에 255로 나눈 float RGB를 반환한다. 감마 변환, 재양자화, 원본 제작식 재평가나 입자·번짐·master intensity는 적용하지 않는다.
+
+수치 검사는 서로 다른 비교를 구분한다.
+
+- 정확한 grid point: 생성 시 양자화한 analytic RGB와 sampler 값의 일치.
+- fractional point: 8개 저장 texel의 가중 보간값과 비교. 독립적으로 지정한 꼭짓점과 수동 계산한 가중치를 테스트 소스에 둔다.
+- analytic transform과 LUT의 차이: 양자화 및 격자 보간에 따른 근사 오차다. fractional 입력에서 analytic 함수와의 무조건적인 일치를 요구하지 않는다.
+- GPU 결과: 같은 atlas의 CPU sampler와 비교해야 하며 아직 구현·검증하지 않았다.
+
+`tests/unit/lutSampling.test.ts`에 전체 identity 격자, 회색·고정 seed 소수 좌표, tile 줄바꿈, 비분리형 8개 꼭짓점, 양자화/analytic 차이, 경계 연속성, 입력·snapshot 보존과 오류 사례를 작성했다. `tests/integration/lutSampling.test.ts`는 저장소의 PNG 4종을 manifest/checksum 검사 후 읽어 전체 격자에서 양자화된 제작식과 비교하고 Buffer 소유권을 확인하도록 작성했다. **테스트 소스만 작성했으며 실행 결과·최대 오차 측정값은 없다.** 이번 변경으로 제작 엔진/생성기 버전이나 기존 PNG·manifest를 바꾸지 않는다.
 
 ### 외부 .cube
 

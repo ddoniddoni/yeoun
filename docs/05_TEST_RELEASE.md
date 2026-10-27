@@ -35,6 +35,19 @@ Jest/Expo 테스트의 native mock은 UI와 상태 전이를 검증하는 데 �
 
 숫자 오류는 `Math.random()`에 의존하지 않는 고정 seed 테스트로 재현한다. seed JSON Schema가 배열 내 ID 유일성이나 curve 단조성까지 전부 보장하지 않으므로 별도 의미 검사를 작성한다.
 
+### U04/U05 CPU sampling의 비교 기준
+
+2026-10-27 `tests/unit/lutSampling.test.ts`, `tests/integration/lutSampling.test.ts`를 작성했으며 **NOT_RUN**이다. 아래는 테스트에 넣은 기대 기준이며 관측 결과가 아니다.
+
+- identity의 33³ grid point는 `round(C*255)/255`와 일치해야 한다. CPU 바이트 보간의 정수 격자 기준이며 GPU 허용 오차와 별개다.
+- identity의 소수 좌표는 이상적인 입력 RGB와 채널당 `0.5/255 + 1e-14` 이내여야 한다. 선형 identity 격자의 최대 양자화 오차와 CPU 반올림 여유를 나타내며 일반 look의 analytic 근사 오차 기준으로 사용하지 않는다.
+- 비분리형 8개 꼭짓점을 atlas에 직접 배치한 fixture에서 가중 보간 결과를 비교한다. blue slice 5→6 줄바꿈, 전체 slice 경계, 0/1 끝점, 감마 중복 및 출력 재양자화 오류를 다룬다.
+- 저장소 PNG 4종은 원본 seed 해시·파일 checksum·구조를 먼저 확인하고 전체 격자에서 양자화된 analytic 제작식과 비교한다. PNG 검사는 파일을 새로 생성하거나 변경하지 않는다.
+- fractional look의 analytic 값과 LUT 보간값은 서로 다른 참조값이다. 곡률·양자화로 생긴 차이를 sampling 실패나 GPU 오차와 섞지 않는다.
+- 변경된 원본 Buffer/typed-array view가 이미 만든 sampler를 바꾸지 않아야 한다. 비정상 채널·크기·alpha·패딩·빈 tile은 실패해야 한다.
+
+CPU 소스 작성이나 이후 테스트 통과만으로 G01/G02 또는 실제 카메라 게이트를 통과시키지 않는다. 실제 최대 오차는 검사 실행 후 입력·fixture·비교 경로와 함께 기록한다.
+
 ## 3. GPU와 이미지 일관성
 
 | ID | 검사 | 기준 |

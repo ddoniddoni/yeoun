@@ -1,6 +1,53 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-27 M1 LUT 초안 자산 제작
+## 현재 상태 — 2026-10-27 M1 CPU LUT 보간
+
+- 사용자 승인 범위: 앞선 LUT 제작 단계 다음 기능인 **양자화된 atlas의 CPU trilinear sampling**. [PR #3](https://github.com/ddoniddoni/yeoun/pull/3)은 `develop`에 병합됐으며 기준 커밋은 `ec28f7d298b4c67705e4c8098ce17e22cba46725`다. 원격 fetch와 로컬 fast-forward 확인 후 새 `feature/lut-cpu-sampling` 브랜치에서 작업했다.
+- 상태: **sampler와 단위·통합 테스트 소스 작성 / 실행 검증 NOT_RUN**. 2026-10-27 사용자가 이 작업의 Git Flow를 요청했다. 작업 브랜치 커밋·푸시, `develop` 대상 PR 생성·병합과 로컬/원격 `develop` 동기화가 승인 범위다. 실제 통합 커밋과 최종 병합 상태는 이 브랜치의 PR 및 Git 이력을 따른다.
+- 기능 커밋은 `51994cb`이며 원격 기능 브랜치에 푸시했다. `develop` 통합 이력은 [PR #4](https://github.com/ddoniddoni/yeoun/pull/4)에 남긴다. Git Flow 중에도 테스트와 별도 검사 명령은 실행하지 않는다.
+- **사용자 요청에 따라 테스트를 실행하지 않았다.** lint/typecheck, seed/자산 검사 CLI, JS/native build, GPU·실기기 검사도 NOT_RUN이다. 새 sampler를 별도 스크립트로 실행하지 않았다.
+- 기존 PNG·manifest·seed와 제작 엔진 버전은 유지한다. 이번에는 자산 생성 명령도 실행하지 않았으며 새 패키지나 lockfile 변경이 없다. 카메라·UI·GPU 연결과 G0/G1 통과를 주장하지 않는다.
+
+| 범위 | 코드/산출 상태 | 이번 실행 검증 |
+|---|---|---|
+| M0 실제 촬영·저장 | 기존 최소 경로 | NOT_RUN, G0 NOT_PASSED |
+| M1 seed/analytic/atlas 제작 | 기존 코드와 PNG 초안 4종 유지 | NOT_RUN |
+| M1 CPU trilinear sampling | 코드·테스트 소스 작성 | NOT_RUN |
+| M1 GPU sampling/대표 LUT 연결 | NOT_STARTED | NOT_RUN, G1 NOT_PASSED |
+| M2~M6 | NOT_STARTED | NOT_RUN |
+
+### 변경 파일과 결정
+
+- `src/rendering/reference/lutSampling.ts`: `createLutSampler(atlas)`가 크기·alpha·패딩·빈 tile을 검사하고 복사한 LUT 바이트를 소유한다. `Uint8Array.from`을 사용해 Node Buffer와 typed-array view도 복사한다. 입력마다 red/green bilinear → blue 보간을 계산하고 마지막에 255로 나눈다.
+- normalized RGB의 0/1 끝점, 마지막 blue slice와 tile 줄바꿈을 격자 인덱스로 처리한다. 위 이웃은 32를 넘지 않는다. GPU의 반 픽셀 offset, 감마 변환, 출력 재양자화와 analytic 재평가는 적용하지 않는다. 입력의 비유한 값·범위·채널 수 오류를 거부한다.
+- `tests/unit/lutSampling.test.ts`: 전체 identity 격자, 회색 및 고정 seed 소수 좌표, 수동 지정한 비분리형 8개 꼭짓점, slice 경계, 양자화/analytic 차이, snapshot과 입력 보존, 비정상 데이터 사례를 작성했다. **실행하지 않았다.**
+- `tests/integration/lutSampling.test.ts`: 저장소의 PNG 4종을 seed/manifest/checksum과 연결해 읽고 전체 격자에서 양자화된 제작식과 비교하도록 작성했다. PNG Buffer의 사후 변경으로 sampler 값이 달라지지 않는지도 다룬다. **실행하지 않았다.**
+- `docs/02_FILTER_ENGINE.md`, `docs/04_IMPLEMENTATION_PLAN.md`, `docs/05_TEST_RELEASE.md`, `README.md`, 이 파일: API·소유권, CPU/GPU 좌표 차이, 양자화와 보간 오차의 비교 기준, 미실행 상태를 반영했다.
+
+### 실제 명령과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| `git status --short --branch`, `cat`, `sed`, `rg`, `git diff` | 시작 시 develop과 작업 트리가 깨끗함을 확인. 지침·기존 함수·테스트·명세를 읽고 작성 후 변경 파일을 검토 |
+| `git fetch origin` | exit 0 |
+| `git merge --ff-only origin/develop` | exit 0, Already up to date |
+| `git switch -c feature/lut-cpu-sampling` | exit 0, 새 기능 브랜치 생성 |
+| `apply_patch` | sampler·테스트 소스·문서 작성 |
+| 명시적 8개 파일 `git add -- ...`, `git commit -m 'feat(filters): add CPU trilinear LUT sampling'` | exit 0, `51994cb`. CPU 보간 코드·테스트 소스·관련 문서만 포함 |
+| `git push -u origin feature/lut-cpu-sampling` | exit 0. 기능 브랜치 원격 생성과 upstream 설정 |
+| `gh pr create --repo ddoniddoni/yeoun --base develop --head feature/lut-cpu-sampling --title 'feat(filters): add CPU trilinear LUT sampling' --body-file /private/tmp/yeoun-lut-cpu-sampling-pr.md` | exit 0. PR #4 생성, 검사 미실행 상태를 본문에 명시 |
+| `npm run lint`, `npm run typecheck`, `npm test -- --runInBand` | **NOT_RUN** |
+| seed/자산 검사 CLI, LUT 생성 CLI, JS/native build, GPU·실기기 | **NOT_RUN** |
+
+### 미검증 사항과 다음 작업
+
+1. sampler의 수치·타입·테스트 환경 호환성은 실행 전이다. 사용자 요청 후 기존 검사와 새 U04/U05 테스트를 실행하고 실제 최대 오차 및 실패 입력을 기록한다. 문서의 허용 오차는 기대 기준이며 측정 결과가 아니다.
+2. 다음 독립 개발 후보는 **Skia의 raw LUT sampling 지원 경로 확인과 LUT shader/adapter 구현**이다. 설치한 버전의 타입과 공식 API를 먼저 확인하고, 동일한 PNG 및 CPU reference를 비교 기준으로 사용한다. 실기기 환경 없이 GPU 일치나 G0/G1 통과로 보고하지 않는다.
+3. 실제 카메라 preview/export 연결, 색 공간 정규화, master intensity·grain·bloom, 사진 색감 검수와 실기기 증거는 여전히 남아 있다.
+
+다음 작업 프롬프트: “설치한 Skia 버전의 raw LUT sampling API를 확인하고 LUT shader/adapter를 구현해줘. 이번 CPU reference를 비교 기준으로 삼고, 테스트는 실행하지 마. 실제 GPU 검증과 카메라 연결의 미완료 상태를 구분해 기록해줘.”
+
+## 이전 기록 — 2026-10-27 M1 LUT 초안 자산 제작
 
 - 사용자 승인 범위: 다음 독립 개발 계획인 **33³ atlas 생성기와 manifest/checksum 도구**. 최신 `develop`에서 `feature/lut-asset-tools`를 만들었다. 기준은 [PR #2](https://github.com/ddoniddoni/yeoun/pull/2)의 병합 커밋 `9c4af2bb608b6d026dc8f4b91ef2c5cb0edb89e8`이다.
 - 상태: **도구·테스트 소스 작성, 초안 PNG 4개와 manifest 생성 / 별도 실행 검증 NOT_RUN**. 2026-10-27 사용자가 이 작업의 Git Flow를 요청했다. 작업 브랜치 커밋·푸시, `develop` 대상 PR 생성·병합, 로컬 `develop` 동기화와 원격 반영이 승인 범위다. 실제 통합 커밋과 최종 병합 상태는 이 브랜치의 PR 및 Git 이력을 따른다.

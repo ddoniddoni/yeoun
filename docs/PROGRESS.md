@@ -4,6 +4,7 @@
 
 - 사용자 승인 범위: 앞선 LUT 제작 단계 다음 기능인 **양자화된 atlas의 CPU trilinear sampling**. [PR #3](https://github.com/ddoniddoni/yeoun/pull/3)은 `develop`에 병합됐으며 기준 커밋은 `ec28f7d298b4c67705e4c8098ce17e22cba46725`다. 원격 fetch와 로컬 fast-forward 확인 후 새 `feature/lut-cpu-sampling` 브랜치에서 작업했다.
 - 상태: **sampler와 단위·통합 테스트 소스 작성 / 실행 검증 NOT_RUN**. 2026-10-27 사용자가 이 작업의 Git Flow를 요청했다. 작업 브랜치 커밋·푸시, `develop` 대상 PR 생성·병합과 로컬/원격 `develop` 동기화가 승인 범위다. 실제 통합 커밋과 최종 병합 상태는 이 브랜치의 PR 및 Git 이력을 따른다.
+- 기능 커밋은 `51994cb`이며 원격 기능 브랜치에 푸시했다. `develop` 통합 이력은 [PR #4](https://github.com/ddoniddoni/yeoun/pull/4)에 남긴다. Git Flow 중에도 테스트와 별도 검사 명령은 실행하지 않는다.
 - **사용자 요청에 따라 테스트를 실행하지 않았다.** lint/typecheck, seed/자산 검사 CLI, JS/native build, GPU·실기기 검사도 NOT_RUN이다. 새 sampler를 별도 스크립트로 실행하지 않았다.
 - 기존 PNG·manifest·seed와 제작 엔진 버전은 유지한다. 이번에는 자산 생성 명령도 실행하지 않았으며 새 패키지나 lockfile 변경이 없다. 카메라·UI·GPU 연결과 G0/G1 통과를 주장하지 않는다.
 
@@ -32,6 +33,9 @@
 | `git merge --ff-only origin/develop` | exit 0, Already up to date |
 | `git switch -c feature/lut-cpu-sampling` | exit 0, 새 기능 브랜치 생성 |
 | `apply_patch` | sampler·테스트 소스·문서 작성 |
+| 명시적 8개 파일 `git add -- ...`, `git commit -m 'feat(filters): add CPU trilinear LUT sampling'` | exit 0, `51994cb`. CPU 보간 코드·테스트 소스·관련 문서만 포함 |
+| `git push -u origin feature/lut-cpu-sampling` | exit 0. 기능 브랜치 원격 생성과 upstream 설정 |
+| `gh pr create --repo ddoniddoni/yeoun --base develop --head feature/lut-cpu-sampling --title 'feat(filters): add CPU trilinear LUT sampling' --body-file /private/tmp/yeoun-lut-cpu-sampling-pr.md` | exit 0. PR #4 생성, 검사 미실행 상태를 본문에 명시 |
 | `npm run lint`, `npm run typecheck`, `npm test -- --runInBand` | **NOT_RUN** |
 | seed/자산 검사 CLI, LUT 생성 CLI, JS/native build, GPU·실기기 | **NOT_RUN** |
 

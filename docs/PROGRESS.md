@@ -4,8 +4,8 @@
 
 - 사용자 승인 범위: PR #1의 `develop` 병합, 새 기능 브랜치 생성, 순수 TypeScript 색 변환 CPU reference와 진행 기록 작성.
 - [PR #1](https://github.com/ddoniddoni/yeoun/pull/1)은 **MERGED**다. 병합 커밋은 `df557474aa25470c5d991f32117d5d9cdbdb0040`이며, 원격 `develop`을 로컬에 fast-forward한 뒤 `feature/filter-cpu-reference`를 만들었다. 완료한 초기 등록 브랜치를 새 기능에 재사용하지 않았다.
-- 상태: **CPU 기준 로직 코드 작성 / 실행 검증 NOT_RUN**. 후속 사용자 지시에 따라 `feature/filter-cpu-reference` 작업을 커밋·푸시·PR 생성·`develop` 병합과 원격 반영까지 진행한다. `main` 릴리스 승격은 범위 밖이다.
-- 2026-10-27 Git Flow의 상시 승인 범위를 명확히 했다. Git Flow 요청 시 개별 Git 단계의 승인을 다시 묻지 않고 `develop` 병합/푸시까지 수행하고 마지막에는 `develop`에 남는다. 전역 Git 지침과 `docs/GIT_WORKFLOW.md`, 프로젝트 `AGENTS.md`의 연결 문구에 반영한다.
+- 상태: **CPU 기준 로직 코드 작성 / 실행 검증 NOT_RUN**. 기능 커밋은 `22c74f3`이며 통합 이력은 [PR #2](https://github.com/ddoniddoni/yeoun/pull/2)에서 확인한다. Git Flow 범위는 `feature/filter-cpu-reference`의 커밋·푸시·PR 생성부터 `develop` 병합과 원격 반영까지다. 최종 병합 커밋은 PR과 Git 이력에 남으며 `main` 릴리스 승격은 범위 밖이다.
+- 2026-10-27 Git Flow의 상시 승인 범위를 명확히 했다. Git Flow 요청 시 개별 Git 단계의 승인을 다시 묻지 않고 `develop` 병합/푸시까지 수행하고 마지막에는 `develop`에 남는다. 전역 `/Users/ddoni/.codex/AGENTS.md`와 `docs/GIT_WORKFLOW.md`, 프로젝트 `AGENTS.md`의 연결 문구에 기록했다.
 - **사용자 요청에 따라 테스트를 실행하지 않았다.** lint/typecheck/seed CLI/JS·native build/GPU·실기기 검사도 이번에는 모두 NOT_RUN이다. 테스트 소스 작성과 Git 상태 확인만으로 수치·타입·실기기 검증을 통과했다고 표시하지 않는다.
 - G0/G1 미통과를 유지한다. M0 화면, 카메라 adapter, 기존 Matrix와 export 경로는 변경하지 않았다. 새 패키지와 lockfile 변경은 없다.
 
@@ -37,6 +37,9 @@
 | `gh pr view 1 --repo ddoniddoni/yeoun --json state,mergedAt,mergeCommit,url` | MERGED, `2026-10-27T10:45:34Z` (19:45:34 KST), merge `df55747` |
 | `git fetch origin`, `git switch develop`, `git merge --ff-only origin/develop`, `git switch -c feature/filter-cpu-reference` | 모두 exit 0. 최신 develop 기반 새 기능 브랜치 생성 |
 | `apply_patch` | 코드·테스트 소스·문서 작성 |
+| 명시적 9개 파일 `git add -- ...`, `git commit -m 'feat(filters): add CPU color transform reference'` | exit 0, `22c74f3`. 생성물·환경 파일 미포함 |
+| `git push -u origin feature/filter-cpu-reference` | exit 0, 기능 브랜치 원격 생성과 upstream 설정 |
+| `gh pr create --repo ddoniddoni/yeoun --base develop --head feature/filter-cpu-reference --title 'feat(filters): add CPU color transform reference' --body-file /private/tmp/yeoun-cpu-reference-pr.md` | exit 0, PR #2 생성. 미실행 검사를 본문에 명시 |
 | `npm run lint`, `npm run typecheck`, `npm test -- --runInBand`, `npm run validate:filters` | NOT_RUN |
 | JS/native build, GPU, 실기기 | NOT_RUN |
 

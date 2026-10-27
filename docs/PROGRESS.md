@@ -7,6 +7,7 @@
 - Skia 2.4.18의 JS 타입과 C++ 브리지에는 `makeRawShader`가 없다. 대안으로 RGB LUT를 3개의 Alpha_8 plane으로 복사하고 `.a`만 읽는 경로를 작성했다. API/소스 기반 설계이며 기기에서 데이터 값 보존을 확인한 결과가 아니다. 근거는 [S26](REFERENCES.md#s26)이다.
 - 카메라 preview/export와 UI는 기존 M0 Matrix 경로를 유지한다. 새 패키지, lockfile, native 설정, seed, 제작 엔진, PNG/manifest 변경은 없다.
 - 2026-10-27 사용자가 이번 작업의 Git Flow를 요청했다. 작업 브랜치 커밋·푸시, `develop` 대상 PR 생성·병합과 로컬/원격 `develop` 동기화가 승인 범위다. Git Flow 중에도 테스트와 별도 검사는 실행하지 않는다. 실제 통합 커밋과 최종 병합 상태는 이 브랜치의 PR 및 Git 이력을 따른다.
+- 기능 커밋은 `f177b19`이며 원격 기능 브랜치에 푸시했다. `develop` 통합 이력은 [PR #5](https://github.com/ddoniddoni/yeoun/pull/5)에 남긴다. 검사 미실행과 카메라 미연결 상태를 PR 본문에도 명시했다.
 
 | 범위 | 코드/산출 상태 | 이번 실행 검증 |
 |---|---|---|
@@ -38,6 +39,10 @@
 | 공식 SkSL/SkImage/SkColorType/RN v2 문서와 upstream 소스 읽기 | API 및 설계 근거 기록. upstream main과 설치 바이너리의 동일 revision을 주장하지 않음 |
 | `apply_patch` | shader·adapter·수동 비교 함수·테스트 소스·문서 작성 |
 | 초기 `sed`/`rg`의 일부 추정 경로 | 존재하지 않아 비정상 종료. `rg --files`와 실제 설치 경로로 찾아 다시 읽음. 빌드/테스트 실패가 아님 |
+| Git Flow 전 `git fetch origin`, `git rev-list --left-right --count origin/develop...HEAD` | exit 0. 커밋 전 기준은 원격 develop과 동일 (`0 0`) |
+| 명시적 14개 파일 `git add -- ...`, `git commit -m 'feat(filters): add Skia LUT shader adapter'` | exit 0, `f177b19`. 이번 LUT 코드·테스트 소스·문서만 포함 |
+| `git push -u origin feature/lut-skia-adapter` | exit 0. 기능 브랜치 원격 생성 및 upstream 설정 |
+| `gh pr create --repo ddoniddoni/yeoun --base develop --head feature/lut-skia-adapter --title 'feat(filters): add Skia LUT shader adapter' --body-file /private/tmp/yeoun-lut-skia-adapter-pr.md` | exit 0. PR #5 생성 |
 | `npm run lint`, `npm run typecheck`, `npm test -- --runInBand` | **NOT_RUN — 사용자 지시** |
 | seed/자산 검사·생성 CLI, JS/native build, SkSL 컴파일, offscreen probe, 실기기 | **NOT_RUN — 사용자 지시** |
 

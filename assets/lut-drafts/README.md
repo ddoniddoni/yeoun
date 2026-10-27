@@ -1,6 +1,6 @@
 # LUT 제작 초안
 
-여기는 수치 데이터 텍스처를 보관한다. 카메라 사진, 표시용 이미지나 승인된 필터 프리뷰가 아니다. 현재 identity와 `light-afternoon`, `time-summer`, `scene-dawn`의 초안 PNG 4개와 manifest가 있으며 상태는 모두 `draft`다. 앱에서 아직 불러오지 않는다.
+여기는 수치 데이터 텍스처를 보관한다. 카메라 사진, 표시용 이미지나 승인된 필터 프리뷰가 아니다. 현재 identity와 `light-afternoon`, `time-summer`, `scene-dawn`의 초안 PNG 4개와 manifest가 있으며 상태는 모두 `draft`다. 앱용 로더 소스는 작성했으며 앱 진입점/카메라에서는 아직 호출하지 않는다.
 
 ## 생성
 
@@ -21,6 +21,14 @@ npm run generate:luts -- --seed /path/to/filters.seed.json --out /path/to/new-dr
 - 파일은 기존 바이트와 같을 때만 재사용한다. 다른 manifest/PNG가 있으면 실패하며 덮어쓰지 않는다. PNG를 쓴 후 manifest를 마지막에 게시한다. 중단 시 일부 PNG만 남을 수 있다.
 - 제작식 변경 시 `LUT_ENGINE_VERSION`, 생성·인코딩 계약 변경 시 `LUT_GENERATOR_VERSION`을 갱신한다. 기존 출력 경로를 재사용할 수 없다면 새 `--out`을 지정하고 이전 자산을 보존한다.
 - manifest에 pngjs, Node, zlib 버전을 기록한다. 서로 다른 인코더 환경의 PNG 바이트가 같다고 보장하지 않는다. 환경 정보만 달라도 기존 manifest를 교체하지 않는다.
+
+## 모바일 패키징
+
+2026-10-28 각 PNG를 같은 디렉터리·파일명의 `.lut`로 복사했다. 내용은 PNG 인코딩이며 새 LUT 형식이나 색 변환이 아니다. `metro.config.js`에서 `lut`를 asset 확장자로 등록하고, `src/rendering/assets/bundledLuts.ts`의 정적인 require 목록으로 참조한다. 이미지 density/drawable 처리와 분리하기 위한 데이터 자산이다. manifest는 원본 `.png` 경로와 SHA-256을 유지한다.
+
+새 자산을 추가할 때는 새 PNG와 manifest를 먼저 준비하고 `.lut` 복사본·정적 등록 목록·seed hash/version pin을 함께 갱신한다. 생성기는 `.lut`와 등록 코드를 자동 갱신하지 않는다. 복사본과 원본의 바이트 일치·원본 seed 연결을 검사하는 테스트 소스가 있으며 아직 실행하지 않았다. 런타임에서는 `.lut`에서 읽은 실제 바이트의 SHA-256을 manifest와 비교하고 실패하면 적용하지 않는다.
+
+현재 앱 화면은 로더를 import하지 않으므로 이 파일들이 현재 앱 번들에 포함됐다고 주장하지 않는다. 실제 소비 경로 연결 후 iOS/Android 개발·릴리스 번들에서 파일 접근, checksum, 오프라인 재실행과 캐시 복구를 확인해야 한다.
 
 ## 검사 요청 이후 사용할 명령
 

@@ -1,6 +1,63 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-27 M1 Skia LUT shader/adapter
+## 현재 상태 — 2026-10-28 M1 앱용 LUT 자산 로더
+
+- 사용자 승인 범위: 다음 기능인 **앱용 LUT 파일 로딩과 manifest/version/checksum 연결**. [PR #5](https://github.com/ddoniddoni/yeoun/pull/5) 병합 뒤 `develop` 기준 커밋은 `f94999e731f7f604006cc0607d9d8c58b64b9f15`다. 시작 작업 트리는 깨끗했고 원격 fetch/fast-forward 후 `feature/lut-asset-loader`를 만들었다.
+- 상태: **로더·Skia decode/pipeline 연결·테스트 소스 작성, raw 패키징 복사본 준비 / 실행 검증 NOT_RUN**. 테스트·lint/typecheck·자산 검사 CLI·JS/native build·decode/probe를 실행하지 않았다. 설치와 파일 복사는 구현 산출 작업이며 검사 통과 증거가 아니다.
+- 기술 명세의 허용 목록 밖 패키지 승인 규칙에 따라 용도·대안·라이선스·native 영향·npm 용량을 설명했고, 사용자가 **expo-asset@55.0.20 / expo-crypto@55.0.19 추가를 명시 승인**했다. npm exact 설치 및 lockfile 반영. Asset은 기존 간접 의존성이고 Crypto만 새 패키지로 설치됐다. 상세 근거는 [S27](REFERENCES.md#s27).
+- 기존 PNG/manifest/seed와 제작 버전, 카메라/UI는 유지했다. 새 로더는 앱 진입점에서 import/호출하지 않으며 G0/G1은 NOT_PASSED다.
+- 2026-10-28 사용자가 이번 작업의 Git Flow를 요청했다. 기능 브랜치 커밋·푸시, `develop` 대상 PR 생성·병합과 로컬/원격 `develop` 동기화가 승인 범위다. Git Flow 중에도 테스트와 별도 검사는 실행하지 않는다. 실제 통합 커밋과 최종 병합 상태는 이 브랜치의 PR 및 Git 이력을 따른다.
+- 기능 커밋은 `b1610b2`이며 원격 기능 브랜치에 푸시했다. `develop` 통합 이력은 [PR #6](https://github.com/ddoniddoni/yeoun/pull/6)에 남긴다. 검사 미실행·native 재빌드 필요·카메라 미연결 상태를 PR 본문에 명시했다.
+
+| 범위 | 코드/산출 상태 | 이번 실행 검증 |
+|---|---|---|
+| M0 실제 촬영·저장 | 기존 최소 경로 | NOT_RUN, G0 NOT_PASSED |
+| M1 제작·CPU 보간·Skia shader | 기존 코드/자산, 공유 검사 로직 이동 | NOT_RUN |
+| M1 앱용 LUT 로더 | 버전·SHA-256·decode·캐시·pipeline 연결 코드 작성 | NOT_RUN |
+| `.lut` 패키징·Expo Crypto | 파일 복사 및 패키지 설치 | JS/native build NOT_RUN |
+| M1 GPU 비교·preview/export 통합·효과 강도 | GPU/통합 미완료, 강도 미구현 | NOT_RUN, G1 NOT_PASSED |
+| M2~M6 | NOT_STARTED | NOT_RUN |
+
+### 변경 파일과 결정
+
+- `src/rendering/assets/lutManifest.ts`, `lutPng.ts`: Node/API 의존성 없는 공유 parser와 PNG container 검사. 버전/status/ID/seed pin/경로/hash를 검사해 frozen snapshot을 만들고, 고정 PNG 크기·chunk/CRC/종료를 디코딩 전에 확인한다.
+- `scripts/lib/lutManifest.ts`, `lutAssets.ts`: 기존 CLI의 seed 연결 API와 pngjs 디코더는 유지하고 공유 검사 로직을 호출한다. 제작식/manifest/PNG 버전과 바이트를 재생성하지 않았다. 기존 제작 도구 회귀는 NOT_RUN이다.
+- `src/rendering/assets/lutLoader.ts`: 정확한 selection 확인 → 파일 읽기 → SHA-256 → PNG 형식 → decode → atlas 구조 검사. 원본 view와 반환 픽셀을 복사하고, 같은 manifest 내 동시 요청/성공 CPU atlas를 캐시한다. 실패는 제거하며 clear 후 오래된 실패가 새 요청을 삭제하지 않게 처리한다.
+- `src/rendering/assets/bundledLuts.ts`, `metro.config.js`, `.lut` 4개: 현재 seed/version pin과 4종 정적 등록 목록. PNG를 이미지 drawable과 분리하기 위해 확장자만 `.lut`인 복사본으로 묶는다. 원본 manifest는 `.png` 경로/SHA-256을 유지한다. 생성기는 이 목록과 복사본을 자동 갱신하지 않으므로 다음 자산 변경 때 함께 갱신해야 한다.
+- `src/platform/files/lutAssets.ts`: 등록된 module ID만 Expo Asset으로 해석한다. 새 wrapper로 로컬 파일을 준비하고 읽기 전후 크기를 제한한다. Crypto의 binary SHA-256을 호출하며 문자열/Base64/MD5로 대체하지 않는다. 사용자 사진은 처리하지 않는다.
+- `src/rendering/adapters/decodeLut.ts`: metadata 없는 PNG를 Skia에서 디코드한 뒤 surface 없이 RGBA8/Unpremul로 읽고 alpha·패딩·빈 tile을 검사한다. native 자원은 finally에서 모두 해제를 시도한다. 실제 decode 값 보존은 미확인이다.
+- `src/rendering/adapters/bundledLutLoader.ts`: 명시 호출용 로더 factory와 기존 Skia pipeline 생성 연결. loader의 CPU 캐시와 호출자가 소유하는 native pipeline을 분리한다. 프레임 루프나 worklet에 연결하지 않았다.
+- `tests/unit/lutManifest.test.ts`, `tests/integration/{lutLoader,lutFileAdapter,decodeLut,bundledLutLoader}.test.ts`: manifest 오류·불변성, 복사본/seed 연결, 캐시 경쟁·재시도, binary view hashing, decode 오류와 자원 해제, 검증 전 pipeline 생성 방지 사례를 작성했다. **전부 NOT_RUN**이며 native 부분은 mock이다.
+- `package.json`, `package-lock.json`, README, 자산 안내, 문서 02/03/04/05/REFERENCES/PROGRESS: 승인된 의존성과 실제 상태, 소유권, 미검증/후속 범위를 기록했다.
+
+### 실제 명령과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| `git status`, `git diff`, `cat`, `sed`, `rg` | 기존 파일·명세·설치 타입/bridge와 변경 내용을 읽음. 일부 없는 `.github`/설정/추정 소스 경로는 실제 파일 위치를 다시 찾아 읽음 |
+| `git fetch origin`, `git merge --ff-only origin/develop` | exit 0, Already up to date |
+| `git switch -c feature/lut-asset-loader` | exit 0 |
+| `npm view expo-asset@55.0.20 ... --json`, `npm view expo-crypto@55.0.19 ... --json` | exit 0. 버전·MIT·의존성·npm unpackedSize 확인. 설치 검증/테스트가 아님 |
+| `npm install --save-exact expo-asset@55.0.20 expo-crypto@55.0.19 --ignore-scripts --no-audit --no-fund --cache /private/tmp/yeoun-camera-npm-cache --fetch-retries=0 --fetch-timeout=15000` | exit 0, added 1 package. lifecycle/audit 미실행 |
+| `apply_patch` | 코드·테스트 소스·문서 작성. 첫 다중 파일 패치가 중복 대상 파일을 포함해 거부됐으며 작업 트리 무변경 확인 후 나눠 적용 |
+| 지정한 4개 PNG를 같은 이름의 `.lut`로 `cp -n` | 각각 exit 0. 재인코딩 없이 복사, 별도 byte/hash 비교는 NOT_RUN |
+| Expo SDK 55/Skia v2/Metro 공식 문서 읽기 | API와 한계를 S27에 기록 |
+| Git Flow 전 `git fetch origin`, `git rev-list --left-right --count origin/develop...HEAD` | exit 0. 커밋 전 기준은 원격 develop과 동일 (`0 0`) |
+| 명시적 29개 파일 `git add -- ...`, `git commit -m 'feat(filters): add bundled LUT asset loader'` | exit 0, `b1610b2`. 이번 로더 코드·승인된 의존성·자산·테스트 소스·문서만 포함 |
+| `git push -u origin feature/lut-asset-loader` | exit 0. 기능 브랜치 원격 생성 및 upstream 설정 |
+| `gh pr create --repo ddoniddoni/yeoun --base develop --head feature/lut-asset-loader --title 'feat(filters): add bundled LUT asset loader' --body-file /private/tmp/yeoun-lut-asset-loader-pr.md` | exit 0. PR #6 생성 |
+| 테스트·lint/typecheck·seed/자산 검사·별도 probe·JS/native build·pod install/prebuild | **NOT_RUN — 사용자 지시** |
+
+### 미검증 사항과 다음 작업
+
+1. 사용자 요청 후 기존 제작/CPU 테스트와 새 로더 테스트, lint/typecheck를 실행한다. parser/PNG guard를 공유하도록 옮긴 영향, Metro `.lut` 처리와 실제 정적 등록 경로를 확인한다. 현재 성공 수치나 측정값은 없다.
+2. 새 Crypto 모듈이 포함된 개발 앱 빌드가 필요하다. 소비 경로를 연결한 iOS/Android 개발·릴리스 번들에서 로컬 파일/캐시 삭제/오프라인 재실행과 4종 checksum을 확인한다. 현재 앱 화면은 로더를 import하지 않으므로 이번 자산이 앱 번들에 실제 포함됐다고 주장하지 않는다.
+3. 실제 Skia decode의 전체 RGBA 바이트를 Node PNG reference와 비교한 뒤 GPU sampling을 검사한다. profile 제거가 정확한 값 보존의 측정 증거는 아니다. 설치 Skia의 Graphite `readPixels`는 미구현이며 해당 backend 지원을 주장하지 않는다.
+4. G0 실기기 검증, source SDR 정규화와 자원 수명/프레임 비용을 확인한 뒤 preview/export를 같은 LUT에 연결한다. 검사 전 독립 개발 후보는 **공통 RenderSettings 검증과 master intensity 혼합식**이다. grain/bloom과 사진 색감 승인은 이후 범위다.
+
+다음 개발 프롬프트: “공통 RenderSettings의 ID/version/숫자 검증과 master intensity 혼합식을 구현해줘. intensity 0/1과 중간값의 CPU 기준 및 Skia 계약을 맞추고, 기존 LUT 로더를 재사용해. 테스트와 별도 검사는 실행하지 말고 카메라 통합 완료와 구분해 기록해줘.”
+
+## 이전 기록 — 2026-10-27 M1 Skia LUT shader/adapter
 
 - 사용자 승인 범위: CPU LUT 보간 다음 독립 작업인 **Skia의 raw sampling 지원 경로 조사와 LUT shader/adapter 구현**. [PR #4](https://github.com/ddoniddoni/yeoun/pull/4)는 `develop`에 병합됐으며 기준 커밋은 `144dbccc86efb1be51ec06647d15927542970d34`다. 최신 원격을 fetch하고 fast-forward 상태를 확인한 뒤 `feature/lut-skia-adapter`에서 작업했다.
 - 상태: **shader·adapter·합성 비교 함수와 테스트 소스 작성 / 모든 실행 검증 NOT_RUN**. 사용자 요청에 따라 테스트, lint/typecheck, 자산 검사, JS/native build, shader 컴파일이나 독립 probe를 실행하지 않았다. G0/G1은 NOT_PASSED다.

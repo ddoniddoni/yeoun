@@ -210,7 +210,7 @@ slice k의 tile 좌상단은 `tx=(k%6)*35`, `ty=floor(k/6)*35`다. red/green sam
 
 `npm run generate:luts`는 실제 실행해 PNG 4개와 manifest를 생성했다. 기본 경로는 `assets/lut-drafts/<engineVersion>/<sourceSeedSha256>/`이며 파일명은 `<filterId>-<sha256>.png`다. 소스 seed 해시는 JSON 재직렬화가 아닌 원본 바이트 기준이다. manifest의 인코더 환경이 다르거나 자산 바이트가 달라지면 기존 경로를 덮어쓰지 않고 새 출력 경로가 필요하다. 제작식이나 인코딩 계약 변경 시 해당 버전도 갱신한다.
 
-`npm run validate:filter-assets`, lint/typecheck, 단위·통합 테스트, GPU·실기기 검사는 **NOT_RUN**이다. 생성 명령 성공을 G0/G1 통과나 `approved` 승격으로 해석하지 않는다. 이후 작성한 CPU sampling과 Skia adapter는 다음 절을 따른다. 앱용 PNG 로더와 카메라 연결은 아직 없다. 사용법은 [초안 자산 안내](../assets/lut-drafts/README.md), 실제 명령과 생성 환경은 [진행 기록](PROGRESS.md)에 있다. PNG API 근거는 [S25](REFERENCES.md#s25)와 설치한 소스·타입이다.
+`npm run validate:filter-assets`, lint/typecheck, 단위·통합 테스트, GPU·실기기 검사는 **NOT_RUN**이다. 생성 명령 성공을 G0/G1 통과나 `approved` 승격으로 해석하지 않는다. 이후 작성한 CPU sampling, Skia adapter와 앱용 로더는 다음 절을 따른다. 카메라 연결은 아직 없다. 사용법은 [초안 자산 안내](../assets/lut-drafts/README.md), 실제 명령과 생성 환경은 [진행 기록](PROGRESS.md)에 있다. PNG API 근거는 [S25](REFERENCES.md#s25)와 설치한 소스·타입이다.
 
 ### CPU trilinear sampling (2026-10-27, 실행 NOT_RUN)
 
@@ -239,9 +239,25 @@ slice k의 tile 좌상단은 `tx=(k%6)*35`, `ty=floor(k/6)*35`다. red/green sam
 - 호출자가 먼저 SDR 입력, 방향/crop과 필요한 배경 합성을 정규화해야 한다. source와 출력의 색 공간·프로파일은 별도 계약이다. shader의 0~1 clamp는 HDR tone mapping이나 잘못된 메타데이터 복구가 아니며 P3/HDR 지원 완료를 뜻하지 않는다.
 - `bindSource(sourceShader)`는 source를 빌려 root shader binding을 반환한다. draw/flush가 끝나면 binding을 해제하고, pipeline 교체·종료 시 `dispose()`한다. pipeline은 미해제 binding도 함께 해제하며 source 자체는 해제하지 않는다. 생성 실패 시 확보한 자원을 역순 정리한다. 생성·소비·해제는 같은 RN JS runtime/context에서 한다. 카메라 worklet으로 이 객체를 전달하지 않는다.
 
-입력 `LutAtlas`는 호출자가 파일 checksum을 검사하고 raw RGBA8로 디코드한 데이터여야 한다. adapter의 구조 검사가 checksum 검사를 대신하지 않는다. 앱용 PNG 로더, 카메라 worklet 연결 및 preview/export 설정 통합은 이번 범위에 없다. `bindSource`의 root 재생성 비용도 아직 측정하지 않았으므로 실시간 프레임 경로로 사용하지 않는다.
+입력 `LutAtlas`는 호출자가 파일 checksum을 검사하고 raw RGBA8로 디코드한 데이터여야 한다. adapter의 구조 검사가 checksum 검사를 대신하지 않는다. 아래 앱용 로더가 파일 검사를 담당하며, 카메라 worklet 연결 및 preview/export 설정 통합은 아직 없다. `bindSource`의 root 재생성 비용도 아직 측정하지 않았으므로 실시간 프레임 경로로 사용하지 않는다.
 
 backend 소스 버전은 `skia-alpha-planes-0.1.0`이다. 기존 제작 엔진/생성기, seed, PNG와 manifest는 유지한다. 강도·입자·번짐도 아직 포함하지 않는다. `lutSkiaProbe.ts`의 수동 비교 함수와 plane/수명 관리 테스트 소스를 작성했지만, **SkSL 컴파일을 포함한 실행 검증은 모두 NOT_RUN**이다. 비교 절차는 [테스트 문서](05_TEST_RELEASE.md#skia-lut-비교-준비)를 따른다.
+
+### 앱용 LUT 자산 로더 (2026-10-28, 실행 NOT_RUN)
+
+`createBundledDraftLutLoader()`는 등록된 identity/대표 3종만 처리한다. 생성 시 manifest/등록 목록을 확인하며 파일 읽기나 shader 컴파일은 하지 않는다. `load({ filterId, lookVersion, engineVersion })`를 호출하면 정확한 ID와 버전을 확인한 뒤 아래 순서로 처리한다. `original`은 LUT 항목이 아니므로 호출자가 원본 경로로 분기해야 한다.
+
+1. 정적 Metro module ID → Expo Asset의 로컬 파일 → 최대 1,000,000바이트를 읽는다. 외부 URL이나 manifest 경로를 동적 require로 사용하지 않는다.
+2. 실제 파일 바이트의 SHA-256을 manifest와 비교한다. 문자열·Base64나 Expo Asset의 MD5를 대신 비교하지 않는다.
+3. 공유 PNG 검사기로 210×210 RGBA8/non-interlaced 형식, IHDR/IDAT/IEND 순서·CRC·종료를 검사한다. gamma/색 프로파일/애니메이션 chunk는 거부한다.
+4. Skia로 디코드한 뒤 canvas를 거치지 않고 RGBA8/Unpremul로 읽는다. alpha=255를 강제하지 않고 기존 구조 검사에서 실제 alpha·패딩·빈 tile을 확인한다. SkImage/SkData는 성공·실패 모두 해제한다. **이 decode 경로의 바이트 보존은 실제 기기에서 확인 전**이다.
+5. 같은 로더 인스턴스에서는 동시 요청과 성공 결과를 공유하고, 호출자에게는 픽셀 복사본을 반환한다. 실패는 캐시에서 제거한다. `clearCache()`는 CPU 캐시만 비우며 이미 대기 중인 요청을 취소하거나 생성된 native pipeline을 해제하지 않는다.
+
+`loadDraftLutPipeline(loader, selection)`은 위 로더 결과로 기존 `createSkiaLutPipeline`을 호출하고 자산 메타데이터와 pipeline을 반환한다. 호출자가 마지막 draw/flush 후 `pipeline.dispose()`한다. RN JS runtime에서 LUT를 바꾸는 시점에 사용하며 프레임마다 읽거나 컴파일하지 않는다. metadata의 `engineVersion`은 제작/atlas 버전이고 `skia-alpha-planes-0.1.0` backend 버전과 다르다.
+
+manifest parser와 PNG container guard를 `src/rendering/assets/`로 옮겨 Node 제작 도구와 모바일에서 공유한다. 모바일 경로는 `node:*`, pngjs와 Ajv를 import하지 않는다. parser는 버전·상태·필수 필드·4종 ID·seed pin·경로/hash 관계를 검사해 frozen snapshot을 만든다. 모바일 seed pin은 등록 코드의 기대값이며, 원본 seed 바이트와의 연결 검사는 제작 도구/테스트가 담당한다. manifest는 코드와 함께 신뢰하는 자산 목록이며 서명 검증이나 외부 LUT 다운로드 기능은 아니다.
+
+PNG 원본과 manifest는 그대로 두고 동일 바이트의 `.lut` 패키징 복사본 4개를 추가했다. Metro가 데이터 자산으로 처리하도록 확장자를 등록한다. 실제 iOS/Android 번들 결과와 오프라인 동작은 미검증이다. 카메라/UI에서 로더를 아직 호출하지 않으며 앱 진입점도 import하지 않는다. [S27](REFERENCES.md#s27), [모바일 패키징 안내](../assets/lut-drafts/README.md)를 참조한다.
 
 ### 외부 .cube
 

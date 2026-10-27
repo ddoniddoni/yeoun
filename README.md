@@ -3,7 +3,7 @@
 **문서 버전:** 1.0.0  
 **작성 및 공식 자료 확인 기준:** 2026-10-27  
 **대상:** React Native, iOS/Android, npm, Expo Development Build  
-**상태:** M0 카메라·필터·저장 최소 경로와 M1 LUT 제작·CPU 보간·Skia shader/adapter 코드가 있다. identity와 대표 3종의 LUT 초안을 생성했고 offscreen 비교 함수도 작성했다. 사용자 요청에 따라 검사는 실행하지 않았다. LUT의 GPU 수치 검증·카메라 연결과 M0 실기기 게이트는 아직 남아 있다. 최신 상태는 [개발 진행 기록](docs/PROGRESS.md)을 기준으로 한다.
+**상태:** M0 카메라·필터·저장 최소 경로와 M1 LUT 제작·CPU 보간·Skia shader/adapter·앱용 자산 로더 코드가 있다. 로더는 identity와 대표 3종의 버전·SHA-256을 검사하도록 작성했다. 사용자 요청에 따라 검사와 빌드는 실행하지 않았다. 신규 Expo Crypto를 포함한 개발 앱 재빌드, LUT 번들/디코드·GPU 수치 검증과 카메라 연결은 아직 남아 있다. 최신 상태는 [개발 진행 기록](docs/PROGRESS.md)을 기준으로 한다.
 
 **Git:** `develop`으로 개발을 통합하고 `main`으로 릴리스한다. 작업 브랜치와 검사 실행 지시는 [Git Flow](docs/GIT_WORKFLOW.md)를 따른다.
 

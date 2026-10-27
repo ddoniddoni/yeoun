@@ -50,6 +50,18 @@ CPU 소스 작성이나 이후 테스트 통과만으로 G01/G02 또는 실제 �
 
 2026-10-27 추가한 `tests/unit/lutPlanes.test.ts`는 RGB→alpha plane의 바이트·축·패딩·버퍼 소유권을 다룬다. `tests/integration/lutSkia.test.ts`는 native mock으로 캐시 재사용, child 순서, 부분 생성 실패, borrowed source와 해제 순서를 다룬다. `tests/integration/lutSkiaProbe.test.ts`는 비교 결과와 alpha readback, 측정 실패 시 자원 해제를 다룬다. 세 파일 모두 **NOT_RUN**이며 향후 통과해도 SkSL 컴파일이나 색상 검증의 증거가 아니다.
 
+### 앱용 LUT 로더 검사 준비
+
+2026-10-28 다음 테스트 소스를 추가했으며 모두 **NOT_RUN**이다.
+
+- `tests/unit/lutManifest.test.ts`: 공유 parser의 버전·status·필수 필드·ID·seed pin·경로/hash 계약과 immutable snapshot.
+- `tests/integration/lutLoader.test.ts`: 저장소 PNG/`.lut`의 동일 바이트, 원본 seed hash, 4종 loading, 동시 요청 중복 제거, 버퍼/반환값 소유권, 실패 재시도와 cache clear 중 오래된 요청의 실패 처리. Node PNG decoder를 비교 대상으로 사용하며 native decode 검증은 아니다.
+- `tests/integration/lutFileAdapter.test.ts`: Expo Asset/File/Crypto mock으로 로컬 파일 크기 제한, 캐시 wrapper, 실패 전달 및 정확한 binary view hashing 호출.
+- `tests/integration/decodeLut.test.ts`: Skia mock으로 PNG 사전 검사, RGBA8/Unpremul 요청, 크기·alpha·readback 실패와 자원 해제.
+- `tests/integration/bundledLutLoader.test.ts`: manifest/loader/Skia pipeline 연결, 명시 호출 전 무작업, checksum 실패 시 shader 생성 방지와 소유권. Metro asset module은 mock이다.
+
+공유 parser/PNG guard 변경 때문에 기존 `lutAssets.test.ts`와 CPU sampling 자산 검사도 회귀 범위에 포함한다. 사용자 요청 후에만 실행한다. native 검증은 Crypto가 포함된 개발 빌드를 먼저 준비한 뒤 수행한다. 실제 로더 소비 경로를 연결한 iOS/Android 개발·릴리스 번들에서 `.lut` 포함, 설치 직후 오프라인 로딩, 캐시 제거 후 재실행, 4종 checksum과 decoder의 전체 176,400 RGBA 바이트를 Node PNG reference와 비교한다. Skia 2.4.18의 Graphite 경로는 설치 bridge의 `readPixels`가 미구현이므로 지원으로 간주하지 않는다. 실패를 원본이나 다른 LUT 성공으로 표시하지 않는다.
+
 ## 3. GPU와 이미지 일관성
 
 | ID | 검사 | 기준 |
@@ -66,7 +78,7 @@ G01의 숫자는 구현을 검증할 시작 기준이다. 초과하면 오차 �
 
 ### Skia LUT 비교 준비
 
-`src/rendering/adapters/lutSkiaProbe.ts`의 `measureLutSkia(atlas)`는 사용자가 검사 실행을 요청한 뒤 실제 development build에서 명시적으로 호출할 함수다. import나 앱 시작 시 자동 실행하지 않으며 UI에 연결하지 않았다. 저장소 PNG를 가져오는 앱 로더도 아직 없다. 호출자는 checksum을 확인하고 디코드한 identity 및 대표 3종의 atlas를 각각 전달해야 한다.
+`src/rendering/adapters/lutSkiaProbe.ts`의 `measureLutSkia(atlas)`는 사용자가 검사 실행을 요청한 뒤 실제 development build에서 명시적으로 호출할 함수다. import나 앱 시작 시 자동 실행하지 않으며 UI에 연결하지 않았다. `createBundledDraftLutLoader().load(selection)`으로 checksum을 확인하고 디코드한 identity 및 대표 3종의 atlas를 각각 전달하도록 준비했다. 로더 자체의 실제 번들/디코드 검증도 먼저 필요하다.
 
 함수는 불투명 RGB 8개 corner와 14개 byte 값 `[0,1,7,8,39,40,47,48,127,128,247,248,254,255]`의 회색·채널별 변화, 총 64색을 그린다. 채널별 변화에서 나머지 두 채널은 93/207이다. fractional 좌표, blue tile 줄바꿈 근처와 끝점의 초기 점검용이며 전체 격자·모든 slice·색 공간·반투명 입력을 포괄하지 않는다.
 

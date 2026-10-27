@@ -43,14 +43,14 @@
 
 **선행:** G0. 미통과 플랫폼의 GPU 통합은 미검증으로 남긴다.
 
-**2026-10-27 승인된 독립 작업:** 필터 데이터 구조와 검증 로직에 이어, 사용자가 PR #1 병합과 순수 TypeScript 색 변환 CPU reference 개발을 승인했다. 타입/Schema 연결/의미 검사/개발 CLI와 CPU 색 변환 및 관련 테스트 코드를 작성했으며 실행 검사는 NOT_RUN이다. 사용자의 별도 요청 전까지 테스트를 실행하지 않는다. G0 미통과 상태를 유지하고 LUT 생성과 카메라·GPU 통합은 후속 범위로 남긴다.
+**2026-10-27 승인된 독립 작업:** 필터 데이터 구조·검증과 CPU 색 변환에 이어, 다음 계획인 33³ atlas 생성기와 manifest/checksum 도구를 작성했다. `npm run generate:luts`를 실행해 identity와 대표 3종의 초안 PNG·manifest를 생성했다. 별도 검사 CLI와 단위·통합 테스트 코드는 작성했으나 실행 검사는 NOT_RUN이다. 사용자의 별도 요청 전까지 테스트를 실행하지 않는다. G0/G1 미통과 상태를 유지하고 trilinear sampling 및 카메라·GPU 통합은 후속 범위로 남긴다.
 
 - [ ] seed JSON Schema 검증과 추가 의미 검사를 구현한다. (코드 작성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §3)
 - [ ] 색 변환 CPU reference를 구현하고 경계, NaN, identity 테스트를 작성한다. (코드 작성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §5)
-- [ ] 33^3 atlas 생성기와 manifest/checksum 검증기를 만든다.
+- [ ] 33^3 atlas 생성기와 manifest/checksum 검증기를 만든다. (코드 작성 및 초안 생성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §6)
 - [ ] identity LUT로 좌표, raw sampling, 색 공간과 gamma를 검증한다.
 - [ ] master intensity의 0/1과 중간값을 테스트한다.
-- [ ] 대표 3종 LUT를 생성하고 실제 preview/export에 연결한다.
+- [ ] 대표 3종 LUT를 생성하고 실제 preview/export에 연결한다. (PNG 초안 생성, preview/export 연결 전)
 - [ ] 정적인 grain과 약한 bloom을 순서대로 추가한다.
 - [ ] 같은 입력, 같은 설정, 같은 seed에서 결과를 비교한다.
 - [ ] 필터 자산 손상과 shader 실패의 fallback UI를 만든다.

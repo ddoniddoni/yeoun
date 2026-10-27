@@ -1,0 +1,72 @@
+# 여운 | 감성 카메라 Codex 개발 문서
+
+**문서 버전:** 1.0.0  
+**작성 및 공식 자료 확인 기준:** 2026-10-27  
+**대상:** React Native, iOS/Android, npm, Expo Development Build  
+**상태:** M0 카메라·필터·저장 최소 경로와 M1 제작 데이터 검증 코드가 있다. M0 실기기 게이트는 미통과이고, M1 실행 검증과 완성 LUT는 아직 없다. 최신 상태는 [개발 진행 기록](docs/PROGRESS.md)을 기준으로 한다.
+
+**Git:** `develop`으로 개발을 통합하고 `main`으로 릴리스한다. 작업 브랜치와 검사 실행 지시는 [Git Flow](docs/GIT_WORKFLOW.md)를 따른다.
+
+> 오늘의 빛을, 오래 남을 색으로.
+>
+> 맑고 포근한 **빛**, 빈티지 필름 **시간**, 시네마틱 **장면**.
+> 같은 일상을 세 가지 분위기로 남기는 오프라인 감성 카메라.
+
+## 바로 시작하기
+
+새 프로젝트라면 이 폴더를 VS Code에서 열고 `CODEX_START.md`의 첫 번째 프롬프트를 Codex에 전달한다. 문서가 이미 있는 디렉터리이므로 생성기로 현재 폴더를 덮어쓰지 않는다. Codex가 먼저 파일을 확인한 뒤 안전한 scaffold 방법을 선택하게 한다.
+
+기존 앱에 적용한다면 `AGENTS.md`를 무조건 덮어쓰지 말고 기존 규칙과 병합한다. `docs/`와 `spec/`도 동명의 파일을 확인한 뒤 복사한다.
+
+첫 요청은 **M0만** 구현하도록 되어 있다. M0의 목표는 예쁜 전체 화면이 아니라, 실제 카메라에 테스트 필터 하나를 적용하고 고해상도 사진에도 같은 효과를 적용해 저장하는 것이다.
+
+```text
+AGENTS.md와 CODEX_START.md, docs/PROGRESS.md를 먼저 읽어줘.
+이번 작업은 docs/04_IMPLEMENTATION_PLAN.md의 M0만 수행해줘.
+기존 파일을 보존하고 npm을 사용해.
+실제 설치 버전과 호환성 근거를 기록한 뒤 카메라, 필터 미리보기,
+고해상도 필터 사진 저장의 최소 수직 기능을 구현해.
+실기기나 빌드 환경이 없으면 검증을 완료로 표시하지 말고,
+가능한 코드와 자동 테스트, 실행 절차까지 준비해줘.
+작업 결과와 남은 검증은 docs/PROGRESS.md에 기록해줘.
+```
+
+## 파일 안내
+
+| 파일 | 역할 |
+|---|---|
+| [AGENTS.md](AGENTS.md) | Codex의 짧은 상시 작업 규칙 |
+| [CODEX_START.md](CODEX_START.md) | 최초 실행, 다음 단계, 재개, 색감 검수 프롬프트 |
+| [01_PRODUCT_DESIGN.md](docs/01_PRODUCT_DESIGN.md) | 브랜드, 범위, 기능별 동작, 화면과 디자인 토큰 |
+| [02_FILTER_ENGINE.md](docs/02_FILTER_ENGINE.md) | 9종 필터, LUT 제작, 색 공간, 효과 순서, 일관성 계약 |
+| [03_TECHNICAL_SPEC.md](docs/03_TECHNICAL_SPEC.md) | 라이브러리, 호환성 확인, 구조, 데이터, 저장, 권한 |
+| [04_IMPLEMENTATION_PLAN.md](docs/04_IMPLEMENTATION_PLAN.md) | M0~M6 작업 순서와 완료 게이트 |
+| [05_TEST_RELEASE.md](docs/05_TEST_RELEASE.md) | 자동 테스트, 실기기 검수, 성능과 출시 기준 |
+| [PROGRESS.md](docs/PROGRESS.md) | 설치 버전, 작업 현황, 검증 증거, 결정 기록 |
+| [REFERENCES.md](docs/REFERENCES.md) | 확인한 공식 자료와 적용 범위 |
+| [filters.seed.json](spec/filters.seed.json) | 9개 필터의 구조화된 제작 초안 |
+| [filters.schema.json](spec/filters.schema.json) | 필터 초안의 JSON Schema |
+| [.env.example](.env.example) | 필수 환경변수가 없음을 명시한 환경 안내 |
+| [.gitignore.example](.gitignore.example) | 기존 설정에 병합할 제외 항목 예시 |
+
+## 첫 출시 범위
+
+실시간 필터 9종, 전후면 전환, 탭 초점, 촬영 노출 보정, 격자, 필터 강도와 입자와 빛 번짐 조절, 사진 촬영, 원본 비교, 한 장 세 분위기, 개인 레시피, 즐겨찾기, 사진 한 장 가져오기, JPEG 저장과 시스템 공유를 제공한다.
+
+로그인, Supabase, 자체 서버, 사진 업로드, 결제, 동영상, AR, 얼굴 보정, AI 이미지 변환, RAW 현상, 커뮤니티는 포함하지 않는다. 제품 검증 없이 추가하지 않는다.
+
+## 중요하게 읽을 부분
+
+**라이브러리 버전은 검증 없이 확정하지 않았다.** 공식 문서에도 Skia 패키지 전환과 카메라 네이티브 버퍼 API 변경이 보인다. 기술 명세에 기록된 후보 조합을 실제 peer dependency, 타입, 네이티브 빌드로 검증하고 그 결과를 고정한다. 참고: [S03, S06, S07](docs/REFERENCES.md).
+
+**seed JSON은 필터 제작용 데이터다.** LUT 이미지나 완성된 색감 자산이 아니다. `lut`는 의도적으로 `null`이고, `status`는 `design-draft`다. Codex는 문서의 수식과 테스트를 이용해 초안을 만들 수 있지만, 감성 색감의 최종 승인에는 실제 사진 검수가 필요하다.
+
+**사진 저장 경로를 따로 구현해야 한다.** 미리보기 렌더링을 구현했다고 고해상도 촬영 파일에 효과가 자동 반영되는 것으로 처리하지 않는다. 참고: [S02, S04, S05](docs/REFERENCES.md).
+
+**실기기 검증을 대체할 수 없다.** Node 테스트와 JS 번들 검사는 GPU, 카메라, 네이티브 권한과 저장의 검증이 아니다. 환경이 없는 부분은 미검증으로 남긴다.
+
+## 문서 우선순위
+
+사용자의 최신 명시 요청을 우선하고, 저장소에 존재하는 상위 작업 규칙을 존중한다. 제품 동작은 `01`, 필터 수식과 seed 필드 의미는 `02`, 구현 계약은 `03`, 작업 순서는 `04`, 합격 기준은 `05`가 담당한다. 기술 사실은 설치한 버전의 타입과 공식 문서로 확인한다. 충돌은 `PROGRESS.md`의 결정 기록에 남기고 관련 문서를 함께 수정한다.
+
+`AGENTS.md`는 Codex가 인식하는 저장소 지침이다. 나머지 문서 이름과 단계 구분은 이 프로젝트에서 선택한 규칙이며 Codex 제품의 필수 형식은 아니다. 참고: [S17](docs/REFERENCES.md).

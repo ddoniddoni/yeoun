@@ -210,6 +210,18 @@
 
 확인 근거: npm metadata와 설치한 `pngjs/lib/{png-sync,packer-sync,parser-sync}.js`, `@types/pngjs/index.d.ts`. 실제 LUT 생성은 수행했으나 별도 decode/round-trip 테스트와 전체 의존성 회귀 검사는 NOT_RUN이다. 이 자료는 카메라 GPU에서 raw texture sampling을 보장하지 않는다.
 
+<a id="s26"></a>
+
+## S26. Skia Alpha_8 데이터와 RN RuntimeEffect 바인딩
+
+공식 주소: [Skia SkSL 색 관리](https://skia.org/docs/user/sksl/), [SkColorType](https://api.skia.org/SkColorType_8h.html), [RN Skia v2 shader](https://wcandillon.github.io/react-native-skia/v2/docs/shaders/overview/), [SkImage C++ API](https://api.skia.org/classSkImage.html).
+
+2026-10-27 적용 범위: 설치된 `@shopify/react-native-skia@2.4.18`의 `src/skia/types/Image/{Image,ImageFactory,ColorType}.ts`, `RuntimeEffect/RuntimeEffect.ts`와 `cpp/api/{JsiSkImage,JsiSkImageFactory,JsiSkDataFactory,JsiSkRuntimeEffect}.h`를 읽었다. `makeRawShader`는 JS 타입/브리지에 없고 `makeShaderOptions`는 일반 image shader를 만든다. `MakeImage`의 Alpha_8/Premul, linear sampling과 runtime child shader를 사용한다. `Data.fromBytes`는 typed-array의 backing buffer 전체를 복사하므로 정확한 크기의 독립 버퍼를 전달한다.
+
+공식 API의 alpha-only 형식과 SkSL working-space 변환을 근거로 RGB LUT를 세 Alpha_8 plane에 저장하는 방식을 선택했다. `.a`만 데이터로 읽고 일반 source의 RGB에는 `toLinearSrgb`/`fromLinearSrgb`를 적용한다. 이는 프로젝트의 설계 판단이며 공식 RN LUT 예제나 기기 검증 결과는 아니다. [Skia upstream image shader 소스](https://github.com/google/skia/blob/main/src/shaders/SkImageShader.cpp)도 참고했으나 `main`은 설치된 milestone 144 바이너리와 동일한 revision의 증거가 아니다. 설치 헤더의 API 존재와 실제 backend의 값 보존을 구분한다.
+
+패키지·native 코드 변경은 없다. shader 컴파일, alpha 보존, 색 공간과 GPU 성능 검사는 NOT_RUN이다. 실제 카메라 P3/HDR/YUV 정규화나 고해상도 저장까지 지원한다고 해석하지 않는다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

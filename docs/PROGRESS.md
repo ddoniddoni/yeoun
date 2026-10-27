@@ -1,6 +1,56 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-27 M1 CPU LUT 보간
+## 현재 상태 — 2026-10-27 M1 Skia LUT shader/adapter
+
+- 사용자 승인 범위: CPU LUT 보간 다음 독립 작업인 **Skia의 raw sampling 지원 경로 조사와 LUT shader/adapter 구현**. [PR #4](https://github.com/ddoniddoni/yeoun/pull/4)는 `develop`에 병합됐으며 기준 커밋은 `144dbccc86efb1be51ec06647d15927542970d34`다. 최신 원격을 fetch하고 fast-forward 상태를 확인한 뒤 `feature/lut-skia-adapter`에서 작업했다.
+- 상태: **shader·adapter·합성 비교 함수와 테스트 소스 작성 / 모든 실행 검증 NOT_RUN**. 사용자 요청에 따라 테스트, lint/typecheck, 자산 검사, JS/native build, shader 컴파일이나 독립 probe를 실행하지 않았다. G0/G1은 NOT_PASSED다.
+- Skia 2.4.18의 JS 타입과 C++ 브리지에는 `makeRawShader`가 없다. 대안으로 RGB LUT를 3개의 Alpha_8 plane으로 복사하고 `.a`만 읽는 경로를 작성했다. API/소스 기반 설계이며 기기에서 데이터 값 보존을 확인한 결과가 아니다. 근거는 [S26](REFERENCES.md#s26)이다.
+- 카메라 preview/export와 UI는 기존 M0 Matrix 경로를 유지한다. 새 패키지, lockfile, native 설정, seed, 제작 엔진, PNG/manifest 변경은 없다.
+- 2026-10-27 사용자가 이번 작업의 Git Flow를 요청했다. 작업 브랜치 커밋·푸시, `develop` 대상 PR 생성·병합과 로컬/원격 `develop` 동기화가 승인 범위다. Git Flow 중에도 테스트와 별도 검사는 실행하지 않는다. 실제 통합 커밋과 최종 병합 상태는 이 브랜치의 PR 및 Git 이력을 따른다.
+
+| 범위 | 코드/산출 상태 | 이번 실행 검증 |
+|---|---|---|
+| M0 실제 촬영·저장 | 기존 최소 경로 | NOT_RUN, G0 NOT_PASSED |
+| M1 제작 도구·초안 4종·CPU sampling | 기존 코드/자산 유지 | NOT_RUN |
+| M1 Skia LUT shader/adapter | 소스 작성, 카메라 미연결 | NOT_RUN |
+| M1 Skia offscreen CPU 비교 | 명시 호출용 합성 함수 작성 | NOT_RUN, GPU backend 미확인 |
+| M1 앱 LUT 로더·preview/export 통합·효과 강도 | NOT_STARTED | NOT_RUN, G1 NOT_PASSED |
+| M2~M6 | NOT_STARTED | NOT_RUN |
+
+### 변경 파일과 결정
+
+- `src/rendering/reference/lutPlanes.ts`: 구조 검사 후 R/G/B를 각각 44,100바이트의 독립 Alpha_8 버퍼로 복사한다. 설치된 native `Data.fromBytes`가 view 범위 대신 backing buffer 전체를 읽는 점을 고려해 offset=0, 정확한 전체 버퍼 길이를 사용한다. LUT 데이터만 처리하며 사진/프레임을 JS로 옮기지 않는다.
+- `src/rendering/shaders/lut.ts`: 33³ atlas의 half-pixel 좌표, R/G bilinear 및 blue slice 혼합을 구현했다. source의 premultiply 해제 → working space/encoded sRGB 변환 → LUT lookup → working space 복귀와 alpha 재적용을 작성했다. LUT plane의 데이터에는 색 전달 함수를 적용하지 않는다. backend 소스 버전은 `skia-alpha-planes-0.1.0`이며 기존 자산의 제작 엔진 버전과 구분한다.
+- `src/rendering/adapters/lutSkia.ts`: effect·plane image/data/child shader를 한 번 생성해 소유한다. `bindSource`는 borrowed source에서 root shader를 만들고, binding 및 pipeline의 중복 해제를 막는다. 생성 실패·개별 해제 실패에서도 나머지 소유 자원 정리를 시도한다. 같은 RN JS runtime/context에서만 사용하며 카메라 worklet로 전달하지 않는다.
+- `src/rendering/adapters/lutSkiaProbe.ts`: 합성 64색 offscreen 결과를 같은 atlas의 CPU sampler와 비교하는 명시 호출 함수다. RGBA8 unpremultiplied readback으로 RGB·alpha 최대 LSB 오차와 RGB 최대 오차의 sample 인덱스를 반환하며 PASS나 GPU backend를 단정하지 않는다. import/앱 시작 시 자동 실행하지 않고 UI에도 연결하지 않았다. **호출하지 않았다.**
+- `tests/unit/lutPlanes.test.ts`: 채널·축·경계·패딩·빈 tile, 전체 byte 복사와 독립 버퍼, 입력 view/구조 오류 사례를 작성했다. **NOT_RUN**.
+- `tests/integration/lutSkia.test.ts`: mock으로 child/옵션 계약, 자원 재사용, 부분 생성 및 binding 실패, borrowed source와 해제 순서를 다룬다. `tests/integration/lutSkiaProbe.test.ts`: mock readback의 오차·alpha 보고, surface/readback 실패와 cleanup을 다룬다. **NOT_RUN**, 실제 shader/GPU 검증이 아니다.
+- `README.md`, `docs/02_FILTER_ENGINE.md`, `docs/03_TECHNICAL_SPEC.md`, `docs/04_IMPLEMENTATION_PLAN.md`, `docs/05_TEST_RELEASE.md`, `docs/REFERENCES.md`, 이 파일: 지원 경로와 한계, 소유권, 실제 비교 절차 및 현재 상태를 반영했다.
+
+### 실제 명령과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| `git status --short --branch`, `git log`, `git diff`, `cat`, `sed`, `rg` | 시작 시 깨끗한 develop 확인. 지침·명세·설치된 타입/브리지 및 작성한 코드/diff를 읽음. 실행 검증이 아님 |
+| `git fetch origin` | exit 0 |
+| `git merge --ff-only origin/develop` | exit 0, Already up to date |
+| `git switch -c feature/lut-skia-adapter` | exit 0, 새 작업 브랜치 생성 |
+| 공식 SkSL/SkImage/SkColorType/RN v2 문서와 upstream 소스 읽기 | API 및 설계 근거 기록. upstream main과 설치 바이너리의 동일 revision을 주장하지 않음 |
+| `apply_patch` | shader·adapter·수동 비교 함수·테스트 소스·문서 작성 |
+| 초기 `sed`/`rg`의 일부 추정 경로 | 존재하지 않아 비정상 종료. `rg --files`와 실제 설치 경로로 찾아 다시 읽음. 빌드/테스트 실패가 아님 |
+| `npm run lint`, `npm run typecheck`, `npm test -- --runInBand` | **NOT_RUN — 사용자 지시** |
+| seed/자산 검사·생성 CLI, JS/native build, SkSL 컴파일, offscreen probe, 실기기 | **NOT_RUN — 사용자 지시** |
+
+### 미검증 사항과 다음 작업
+
+1. 사용자 검사 요청 후 타입/lint/단위·통합 테스트와 **실제 개발 빌드의 SkSL 컴파일 및 offscreen 비교**를 실행한다. identity와 대표 3종의 동일 atlas를 쓰고 기기/OS/backend/색 공간/checksum/fixture와 실제 오차를 기록한다. mock이나 이 함수 하나만으로 G01/G02·G0/G1을 통과시키지 않는다.
+2. Alpha_8 방식의 값 보존, Paint/working-space 영향, 전체 격자·경계·반투명 입력과 source 정규화는 미검증이다. 3개 plane과 6회 child 평가, root binding 생성 비용도 측정 전이다. 성능 문제가 있으면 근거를 확보한 뒤 지원 경로를 재검토한다.
+3. 다음 독립 개발 후보는 **앱용 LUT 자산 로딩과 버전/checksum 연결**이다. 이번 adapter는 구조가 올바른 raw atlas를 요구할 뿐 파일 무결성·디코드를 담당하지 않는다. Node pngjs를 모바일 runtime에 가져오지 않는다.
+4. iOS/Android M0 실기기 검증과 색 공간·자원 수명 확인 후 카메라 preview/export를 같은 LUT 경로에 연결한다. master intensity·grain·bloom과 실제 사진 색감 승인은 이후 범위다.
+
+다음 개발 프롬프트: “앱에서 identity와 대표 3종 LUT를 읽는 로더를 구현해줘. manifest/version/checksum과 raw atlas 계약을 연결하고 Node 전용 코드는 모바일에 import하지 마. 이번 Skia adapter는 재사용하되 카메라 통합·GPU 검증 상태를 별도로 남겨줘. 테스트와 별도 검사 명령은 아직 실행하지 마.”
+
+## 이전 기록 — 2026-10-27 M1 CPU LUT 보간
 
 - 사용자 승인 범위: 앞선 LUT 제작 단계 다음 기능인 **양자화된 atlas의 CPU trilinear sampling**. [PR #3](https://github.com/ddoniddoni/yeoun/pull/3)은 `develop`에 병합됐으며 기준 커밋은 `ec28f7d298b4c67705e4c8098ce17e22cba46725`다. 원격 fetch와 로컬 fast-forward 확인 후 새 `feature/lut-cpu-sampling` 브랜치에서 작업했다.
 - 상태: **sampler와 단위·통합 테스트 소스 작성 / 실행 검증 NOT_RUN**. 2026-10-27 사용자가 이 작업의 Git Flow를 요청했다. 작업 브랜치 커밋·푸시, `develop` 대상 PR 생성·병합과 로컬/원격 `develop` 동기화가 승인 범위다. 실제 통합 커밋과 최종 병합 상태는 이 브랜치의 PR 및 Git 이력을 따른다.

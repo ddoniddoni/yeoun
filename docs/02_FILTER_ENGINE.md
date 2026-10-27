@@ -90,7 +90,7 @@ manifest에는 필터 ID, lookVersion, engineVersion, source seed hash, atlas �
 
 MVP는 SDR 입력을 sRGB working space로 정규화하고 sRGB JPEG를 출력하는 것을 목표로 한다. 들어온 데이터가 항상 sRGB라고 가정하지 않는다. YUV 변환의 range/matrix, Display P3 입력과 HDR 입력의 처리는 플랫폼 adapter에서 확인한다.
 
-Skia 내부에는 색 관리가 있으며 데이터용 이미지에는 일반 색 변환을 적용하면 안 되는 경우가 있다. raw 이미지 셰이더의 개념은 공식 문서에 있지만, 해당 API가 선택한 React Native 바인딩에 노출되는지는 별도 확인한다. 없는 JS 함수를 만들어 호출하지 않는다. 참고: [S09](REFERENCES.md).
+Skia 내부에는 색 관리가 있으며 데이터용 이미지에는 일반 색 변환을 적용하면 안 되는 경우가 있다. 설치한 Skia 2.4.18의 JS 타입/브리지에는 `makeRawShader`가 없다. §6의 Alpha_8 채널 분리 경로를 작성했으며 실제 값 보존은 검증 전이다. 참고: [S09, S26](REFERENCES.md).
 
 ### 단일 기준 파이프라인
 
@@ -210,7 +210,7 @@ slice k의 tile 좌상단은 `tx=(k%6)*35`, `ty=floor(k/6)*35`다. red/green sam
 
 `npm run generate:luts`는 실제 실행해 PNG 4개와 manifest를 생성했다. 기본 경로는 `assets/lut-drafts/<engineVersion>/<sourceSeedSha256>/`이며 파일명은 `<filterId>-<sha256>.png`다. 소스 seed 해시는 JSON 재직렬화가 아닌 원본 바이트 기준이다. manifest의 인코더 환경이 다르거나 자산 바이트가 달라지면 기존 경로를 덮어쓰지 않고 새 출력 경로가 필요하다. 제작식이나 인코딩 계약 변경 시 해당 버전도 갱신한다.
 
-`npm run validate:filter-assets`, lint/typecheck, 단위·통합 테스트, GPU·실기기 검사는 **NOT_RUN**이다. 생성 명령 성공을 G0/G1 통과나 `approved` 승격으로 해석하지 않는다. 이후 작성한 trilinear CPU sampling은 다음 절을 따른다. GPU 로딩/셰이더는 아직 없다. 사용법은 [초안 자산 안내](../assets/lut-drafts/README.md), 실제 명령과 생성 환경은 [진행 기록](PROGRESS.md)에 있다. PNG API 근거는 [S25](REFERENCES.md#s25)와 설치한 소스·타입이다.
+`npm run validate:filter-assets`, lint/typecheck, 단위·통합 테스트, GPU·실기기 검사는 **NOT_RUN**이다. 생성 명령 성공을 G0/G1 통과나 `approved` 승격으로 해석하지 않는다. 이후 작성한 CPU sampling과 Skia adapter는 다음 절을 따른다. 앱용 PNG 로더와 카메라 연결은 아직 없다. 사용법은 [초안 자산 안내](../assets/lut-drafts/README.md), 실제 명령과 생성 환경은 [진행 기록](PROGRESS.md)에 있다. PNG API 근거는 [S25](REFERENCES.md#s25)와 설치한 소스·타입이다.
 
 ### CPU trilinear sampling (2026-10-27, 실행 NOT_RUN)
 
@@ -225,9 +225,23 @@ slice k의 tile 좌상단은 `tx=(k%6)*35`, `ty=floor(k/6)*35`다. red/green sam
 - 정확한 grid point: 생성 시 양자화한 analytic RGB와 sampler 값의 일치.
 - fractional point: 8개 저장 texel의 가중 보간값과 비교. 독립적으로 지정한 꼭짓점과 수동 계산한 가중치를 테스트 소스에 둔다.
 - analytic transform과 LUT의 차이: 양자화 및 격자 보간에 따른 근사 오차다. fractional 입력에서 analytic 함수와의 무조건적인 일치를 요구하지 않는다.
-- GPU 결과: 같은 atlas의 CPU sampler와 비교해야 하며 아직 구현·검증하지 않았다.
+- GPU 결과: 같은 atlas의 CPU sampler와 비교한다. 아래 Skia 비교 함수는 작성했으며 실행하지 않았다.
 
 `tests/unit/lutSampling.test.ts`에 전체 identity 격자, 회색·고정 seed 소수 좌표, tile 줄바꿈, 비분리형 8개 꼭짓점, 양자화/analytic 차이, 경계 연속성, 입력·snapshot 보존과 오류 사례를 작성했다. `tests/integration/lutSampling.test.ts`는 저장소의 PNG 4종을 manifest/checksum 검사 후 읽어 전체 격자에서 양자화된 제작식과 비교하고 Buffer 소유권을 확인하도록 작성했다. **테스트 소스만 작성했으며 실행 결과·최대 오차 측정값은 없다.** 이번 변경으로 제작 엔진/생성기 버전이나 기존 PNG·manifest를 바꾸지 않는다.
+
+### Skia LUT adapter (2026-10-27, 실행 NOT_RUN)
+
+`src/rendering/shaders/lut.ts`와 `src/rendering/adapters/lutSkia.ts`는 `@shopify/react-native-skia@2.4.18`의 `RuntimeEffect.Make`, `Image.MakeImage`, `makeShaderOptions`를 사용한다. C++의 `makeRawShader`는 JS에 노출되지 않았고 일반 image shader는 색 관리 대상이다. 따라서 LUT의 R/G/B 바이트를 **각각 Alpha_8 이미지의 alpha 채널에 저장하고 `.a`만 읽는 경로**를 선택했다. alpha가 색 변환 대상 RGB와 분리된다는 API 계약을 이용한 구현이며, 정확한 값 보존과 backend 호환성을 실측한 결과는 아니다. 근거와 한계는 [S26](REFERENCES.md#s26)에 기록한다.
+
+- `createLutAlphaPlanes(atlas)`는 구조 검사 후 44,100바이트의 독립 버퍼 3개를 만든다. atlas 좌표·패딩·빈 tile을 유지하며 alpha는 각 색 채널의 데이터다. 원본 RGBA PNG의 alpha=255 계약과 구분한다. 설치된 native `Data.fromBytes`가 view 범위 대신 backing buffer 전체를 읽으므로, 업로드 버퍼는 offset=0이고 backing buffer 크기도 정확히 일치한다.
+- `createSkiaLutPipeline(atlas)`는 effect 1개와 `AlphaType.Premul` 이미지/child shader 3개를 소유한다. LUT마다 생성해 재사용하고 `Clamp`, `Linear`, `MipmapMode.None`을 지정한다. 각 blue slice에서 3채널 bilinear lookup 후 두 slice를 혼합한다. blue=32에서는 위 slice도 32다. 한 출력 픽셀당 LUT child 평가가 6회이며 비용은 미측정이다.
+- source shader는 color-managed premultiplied 입력이다. alpha를 나눈 색을 `toLinearSrgb` → sRGB encode로 LUT 입력 범위에 맞추고, lookup 결과를 sRGB decode → `fromLinearSrgb`로 돌린 뒤 alpha를 곱한다. LUT 데이터 plane에는 이 전달 함수를 적용하지 않는다. alpha=0은 투명 검정으로 반환한다.
+- 호출자가 먼저 SDR 입력, 방향/crop과 필요한 배경 합성을 정규화해야 한다. source와 출력의 색 공간·프로파일은 별도 계약이다. shader의 0~1 clamp는 HDR tone mapping이나 잘못된 메타데이터 복구가 아니며 P3/HDR 지원 완료를 뜻하지 않는다.
+- `bindSource(sourceShader)`는 source를 빌려 root shader binding을 반환한다. draw/flush가 끝나면 binding을 해제하고, pipeline 교체·종료 시 `dispose()`한다. pipeline은 미해제 binding도 함께 해제하며 source 자체는 해제하지 않는다. 생성 실패 시 확보한 자원을 역순 정리한다. 생성·소비·해제는 같은 RN JS runtime/context에서 한다. 카메라 worklet으로 이 객체를 전달하지 않는다.
+
+입력 `LutAtlas`는 호출자가 파일 checksum을 검사하고 raw RGBA8로 디코드한 데이터여야 한다. adapter의 구조 검사가 checksum 검사를 대신하지 않는다. 앱용 PNG 로더, 카메라 worklet 연결 및 preview/export 설정 통합은 이번 범위에 없다. `bindSource`의 root 재생성 비용도 아직 측정하지 않았으므로 실시간 프레임 경로로 사용하지 않는다.
+
+backend 소스 버전은 `skia-alpha-planes-0.1.0`이다. 기존 제작 엔진/생성기, seed, PNG와 manifest는 유지한다. 강도·입자·번짐도 아직 포함하지 않는다. `lutSkiaProbe.ts`의 수동 비교 함수와 plane/수명 관리 테스트 소스를 작성했지만, **SkSL 컴파일을 포함한 실행 검증은 모두 NOT_RUN**이다. 비교 절차는 [테스트 문서](05_TEST_RELEASE.md#skia-lut-비교-준비)를 따른다.
 
 ### 외부 .cube
 

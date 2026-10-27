@@ -11,8 +11,11 @@
 - 원격 조회 명령: `gh repo view ddoniddoni/yeoun --json nameWithOwner,url,isEmpty,visibility,defaultBranchRef,viewerPermission`, `gh api repos/ddoniddoni/yeoun/branches --paginate`. 첫 sandbox 조회는 연결 오류, 네트워크 허용 재조회는 exit 0이었다.
 - Git 단계: 초기화/기준 커밋 → `main`/`develop` 생성 → `chore/initial-import` 스냅샷 커밋 → 세 브랜치 push → `develop` 대상 PR 생성. 병합·릴리스·배포는 이번 실행 범위에 넣지 않는다.
 - 실제 로컬 명령: `git init -b chore/gitflow-bootstrap`, `git remote add origin https://github.com/ddoniddoni/yeoun.git`, 명시적 파일 목록 `git add -- ...`, `git commit -m 'chore(repo): establish Git Flow baseline'`, `git branch main`, `git branch develop`, `git switch -c chore/initial-import develop`, `git commit -m 'chore(repo): import current camera project'`. 모두 exit 0.
-- **PUSH BLOCKED / PR NOT_CREATED**: `git push --atomic -u origin main develop chore/initial-import` 실행 요청을 자동 승인 검토가 거부했다. 공개 저장소에 전체 소스·문서·lockfile을 공개 전송하는 payload에 대한 명시적 사용자 승인이 부족하다는 이유다. push 프로세스는 실행되지 않았으며 다른 방법으로 우회하지 않았다.
-- 공개 대상은 기준 2개 + 프로젝트 50개, 총 52개 추적 파일이다. PR 본문은 `/private/tmp/yeoun-initial-import-pr.md`에 준비했다. 공개 업로드 승인 후 원격 상태를 다시 확인하고 push/PR 생성을 재개한다.
+- 최초 push는 공개 payload의 명시적 승인 부족을 이유로 자동 승인 검토에서 거부되었다. 총 52개 파일의 공개 푸시와 `develop` 대상 PR 생성을 사용자에게 구체적으로 제시했고, 사용자의 “좋아 다음 계획 진행하자” 승인 후 같은 작업을 재개했다.
+- **PUSH 완료 / PR OPEN**: 원격이 여전히 빈 공개 저장소임을 재조회한 뒤 `git push --atomic -u origin main develop chore/initial-import`가 exit 0으로 완료됐다. 세 원격 브랜치와 로컬 upstream을 생성했다. force-push는 사용하지 않았다.
+- `gh pr create --repo ddoniddoni/yeoun --base develop --head chore/initial-import --title 'chore(repo): import camera project and establish Git Flow' --body-file /private/tmp/yeoun-initial-import-pr.md`는 exit 0이며 [PR #1](https://github.com/ddoniddoni/yeoun/pull/1)을 생성했다.
+- 공개 대상은 기준 2개 + 프로젝트 50개, 총 52개 추적 파일이다. PR 본문에도 이번 테스트/lint/typecheck/빌드 미실행과 G0/G1 미통과를 기록했다. 병합·릴리스·배포는 수행하지 않았다.
+- 현재 작업 브랜치는 `chore/initial-import`다. `develop`/`main`에는 기준 커밋만 있고 앱 소스는 PR에 있다. 다음 기능은 초기 등록 PR이 `develop`에 통합된 뒤 최신 `develop`에서 새 기능 브랜치를 만들어 진행한다.
 
 ## 현재 상태 — 2026-10-27 M1 독립 준비 작업
 

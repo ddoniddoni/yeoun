@@ -7,6 +7,7 @@
 - 기술 명세의 허용 목록 밖 패키지 승인 규칙에 따라 용도·대안·라이선스·native 영향·npm 용량을 설명했고, 사용자가 **expo-asset@55.0.20 / expo-crypto@55.0.19 추가를 명시 승인**했다. npm exact 설치 및 lockfile 반영. Asset은 기존 간접 의존성이고 Crypto만 새 패키지로 설치됐다. 상세 근거는 [S27](REFERENCES.md#s27).
 - 기존 PNG/manifest/seed와 제작 버전, 카메라/UI는 유지했다. 새 로더는 앱 진입점에서 import/호출하지 않으며 G0/G1은 NOT_PASSED다.
 - 2026-10-28 사용자가 이번 작업의 Git Flow를 요청했다. 기능 브랜치 커밋·푸시, `develop` 대상 PR 생성·병합과 로컬/원격 `develop` 동기화가 승인 범위다. Git Flow 중에도 테스트와 별도 검사는 실행하지 않는다. 실제 통합 커밋과 최종 병합 상태는 이 브랜치의 PR 및 Git 이력을 따른다.
+- 기능 커밋은 `b1610b2`이며 원격 기능 브랜치에 푸시했다. `develop` 통합 이력은 [PR #6](https://github.com/ddoniddoni/yeoun/pull/6)에 남긴다. 검사 미실행·native 재빌드 필요·카메라 미연결 상태를 PR 본문에 명시했다.
 
 | 범위 | 코드/산출 상태 | 이번 실행 검증 |
 |---|---|---|
@@ -41,6 +42,10 @@
 | `apply_patch` | 코드·테스트 소스·문서 작성. 첫 다중 파일 패치가 중복 대상 파일을 포함해 거부됐으며 작업 트리 무변경 확인 후 나눠 적용 |
 | 지정한 4개 PNG를 같은 이름의 `.lut`로 `cp -n` | 각각 exit 0. 재인코딩 없이 복사, 별도 byte/hash 비교는 NOT_RUN |
 | Expo SDK 55/Skia v2/Metro 공식 문서 읽기 | API와 한계를 S27에 기록 |
+| Git Flow 전 `git fetch origin`, `git rev-list --left-right --count origin/develop...HEAD` | exit 0. 커밋 전 기준은 원격 develop과 동일 (`0 0`) |
+| 명시적 29개 파일 `git add -- ...`, `git commit -m 'feat(filters): add bundled LUT asset loader'` | exit 0, `b1610b2`. 이번 로더 코드·승인된 의존성·자산·테스트 소스·문서만 포함 |
+| `git push -u origin feature/lut-asset-loader` | exit 0. 기능 브랜치 원격 생성 및 upstream 설정 |
+| `gh pr create --repo ddoniddoni/yeoun --base develop --head feature/lut-asset-loader --title 'feat(filters): add bundled LUT asset loader' --body-file /private/tmp/yeoun-lut-asset-loader-pr.md` | exit 0. PR #6 생성 |
 | 테스트·lint/typecheck·seed/자산 검사·별도 probe·JS/native build·pod install/prebuild | **NOT_RUN — 사용자 지시** |
 
 ### 미검증 사항과 다음 작업

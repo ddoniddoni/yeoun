@@ -158,6 +158,22 @@ M0 산출물에는 다음 소유권 표를 실제 구현 기준으로 작성한�
 
 `try/finally`는 필요하지만 비동기 소비보다 먼저 dispose하는 오류를 막아야 한다. 라이브러리별 borrowed 객체에 중복 dispose하지 않는다. 큰 Photo/Frame 자원의 명시적 수명 관리는 공식 문서에서도 다룬다. 참고: [S05, S19](REFERENCES.md).
 
+### M1 LUT adapter의 현재 범위
+
+2026-10-27 `createSkiaLutPipeline`을 RN JS runtime에서 사용하는 독립 adapter로 작성했다. API와 수명 계약은 [필터 엔진 §6](02_FILTER_ENGINE.md#6-lut-파일과-gpu-sampling-계약)을 따른다. 실제 GPU/기기 실행은 NOT_RUN이며 기존 M0 Matrix preview/export는 유지한다.
+
+| 자원 | 소유자 | 해제 시점 |
+|---|---|---|
+| LUT Alpha_8 upload 버퍼 | 생성 함수의 JS 지역 값 | `Data.fromBytes` 복사 후 GC 가능 |
+| compiled effect, SkData, LUT image/child shader | pipeline | 미해제 binding 정리 후 의존성 역순 |
+| source shader | 호출자, adapter는 borrowed | 관련 draw와 binding 사용 종료 후 호출자가 해제 |
+| root shader | binding, pipeline도 추적 | draw/flush 완료 후 binding 또는 pipeline 해제 |
+| 합성 비교 surface/paint/readback image | `measureLutSkia` | 동기 readback 후 finally에서 모두 해제 시도 |
+
+native 객체를 다른 runtime/context로 넘기는 API는 제공하지 않는다. LUT 디코드·효과 컴파일·plane 생성은 프레임 루프 밖에서 수행해야 한다. 현재 `bindSource`는 root shader를 새로 만들므로 카메라 연결 전에 소유권과 프레임 비용을 따로 검증해야 한다. 기존 Node PNG 검사기를 모바일 코드에 import하지 않는다. checksum을 확인하고 raw atlas를 제공하는 앱 로더는 후속 범위다.
+
+Skia 2.4.18 `ImageInfo`에는 colorSpace 지정 필드가 없고 `makeRawShader`도 JS로 노출되지 않는다. Alpha_8 경로는 LUT 데이터용 우회 방식이며 원본 카메라·사진의 SDR sRGB 정규화 구현을 대신하지 않는다. 새 패키지나 native bridge 수정은 없다. 설치 타입/브리지와 공식 근거는 [S26](REFERENCES.md#s26)을 참조한다.
+
 ## 6. 카메라 설정
 
 후면의 일반 광각 카메라를 기본 후보로 선택한다. 단순 전후면 전환을 먼저 완성하고 멀티 카메라, 자동 렌즈 전환, 고배율 줌을 추가하지 않는다.

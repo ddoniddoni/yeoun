@@ -3,7 +3,7 @@
 **문서 버전:** 1.0.0  
 **작성 및 공식 자료 확인 기준:** 2026-10-27  
 **대상:** React Native, iOS/Android, npm, Expo Development Build  
-**상태:** M0 카메라·필터·저장 최소 경로와 M1 제작 데이터 검증·CPU 색 변환·LUT 제작 및 CPU trilinear 보간 코드가 있다. identity와 대표 3종의 LUT 초안을 생성했으며 수치·GPU 검증과 실제 앱 연결은 아직 없다. M0 실기기 게이트도 미통과다. 최신 상태는 [개발 진행 기록](docs/PROGRESS.md)을 기준으로 한다.
+**상태:** M0 카메라·필터·저장 최소 경로와 M1 LUT 제작·CPU 보간·Skia shader/adapter 코드가 있다. identity와 대표 3종의 LUT 초안을 생성했고 offscreen 비교 함수도 작성했다. 사용자 요청에 따라 검사는 실행하지 않았다. LUT의 GPU 수치 검증·카메라 연결과 M0 실기기 게이트는 아직 남아 있다. 최신 상태는 [개발 진행 기록](docs/PROGRESS.md)을 기준으로 한다.
 
 **Git:** `develop`으로 개발을 통합하고 `main`으로 릴리스한다. 작업 브랜치와 검사 실행 지시는 [Git Flow](docs/GIT_WORKFLOW.md)를 따른다.
 

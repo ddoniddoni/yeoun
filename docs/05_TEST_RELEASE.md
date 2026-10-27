@@ -48,6 +48,8 @@ Jest/Expo 테스트의 native mock은 UI와 상태 전이를 검증하는 데 �
 
 CPU 소스 작성이나 이후 테스트 통과만으로 G01/G02 또는 실제 카메라 게이트를 통과시키지 않는다. 실제 최대 오차는 검사 실행 후 입력·fixture·비교 경로와 함께 기록한다.
 
+2026-10-27 추가한 `tests/unit/lutPlanes.test.ts`는 RGB→alpha plane의 바이트·축·패딩·버퍼 소유권을 다룬다. `tests/integration/lutSkia.test.ts`는 native mock으로 캐시 재사용, child 순서, 부분 생성 실패, borrowed source와 해제 순서를 다룬다. `tests/integration/lutSkiaProbe.test.ts`는 비교 결과와 alpha readback, 측정 실패 시 자원 해제를 다룬다. 세 파일 모두 **NOT_RUN**이며 향후 통과해도 SkSL 컴파일이나 색상 검증의 증거가 아니다.
+
 ## 3. GPU와 이미지 일관성
 
 | ID | 검사 | 기준 |
@@ -61,6 +63,22 @@ CPU 소스 작성이나 이후 테스트 통과만으로 G01/G02 또는 실제 �
 | G07 | JPEG | 실제 저장 파일 decode, 올바른 크기/방향, 깨짐과 과도한 artifact 없음 |
 
 G01의 숫자는 구현을 검증할 시작 기준이다. 초과하면 오차 위치, working space와 양자화 원인을 먼저 설명한다. 이유 없이 기준을 늘려 통과시키지 않는다. 장치 GPU backend에 따른 작은 차이는 근거와 fixture를 남겨 승인받는다.
+
+### Skia LUT 비교 준비
+
+`src/rendering/adapters/lutSkiaProbe.ts`의 `measureLutSkia(atlas)`는 사용자가 검사 실행을 요청한 뒤 실제 development build에서 명시적으로 호출할 함수다. import나 앱 시작 시 자동 실행하지 않으며 UI에 연결하지 않았다. 저장소 PNG를 가져오는 앱 로더도 아직 없다. 호출자는 checksum을 확인하고 디코드한 identity 및 대표 3종의 atlas를 각각 전달해야 한다.
+
+함수는 불투명 RGB 8개 corner와 14개 byte 값 `[0,1,7,8,39,40,47,48,127,128,247,248,254,255]`의 회색·채널별 변화, 총 64색을 그린다. 채널별 변화에서 나머지 두 채널은 93/207이다. fractional 좌표, blue tile 줄바꿈 근처와 끝점의 초기 점검용이며 전체 격자·모든 slice·색 공간·반투명 입력을 포괄하지 않는다.
+
+RGBA8 unpremultiplied readback을 CPU atlas 보간값의 8-bit 반올림 결과와 비교해 `maxRgbErrorLsb`, `maxAlphaErrorLsb`, RGB 최대 오차의 `worstSample` 인덱스를 반환한다. alpha를 255로 강제하는 Opaque readback을 사용하지 않는다. 결과의 `execution: 'skia-offscreen'`은 경로 표시이며 실제 GPU backend나 PASS 선언이 아니다. G01은 추가로 identity 출력과 원본 RGB를 직접 비교해야 하고, G02는 같은 atlas의 CPU 보간 기준과 비교한다. G01의 2 LSB를 모든 look의 자동 합격선으로 복사하지 않는다.
+
+후속 실제 검증에서는 다음 증거가 필요하다.
+
+- iOS/Android 각각의 장치·OS·Skia 버전, CPU/GPU backend, source/destination color space, atlas checksum, fixture와 실제 오차.
+- Alpha_8 데이터가 다른 Paint RGB나 working space에서도 변하지 않는지, 전체 격자·slice 경계·비분리형 LUT에서 방향/축/패딩/감마 오류가 없는지.
+- 반투명 source의 premultiply 처리와 SDR 정규화, 색 프로파일, 실제 preview/export 일치, 반복 생성·해제 및 프레임 비용.
+
+현재는 함수·테스트 소스만 작성했다. **SkSL 컴파일, offscreen readback, GPU 수치 및 실기기 검증은 NOT_RUN**이고 G0/G1은 NOT_PASSED다.
 
 비교를 세 가지로 구분한다.
 

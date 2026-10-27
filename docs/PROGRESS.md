@@ -1,6 +1,63 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-28 M1 앱용 LUT 자산 로더
+## 현재 상태 — 2026-10-28 아이폰 시작·미리보기 메모리 종료·전면 방향 수정
+
+- 2026-10-28 사용자가 여기까지의 Git Flow를 요청했다. `fix/ios-scene-lifecycle` 커밋·푸시, `develop` 대상 PR 생성·병합과 로컬/원격 동기화를 진행한다. `git fetch origin` 후 기준과 `origin/develop`의 차이는 0/0이었다. 이번 Git Flow에서는 테스트·lint/typecheck·빌드·별도 검사를 실행하지 않으며, 아래 빌드와 사용자 확인은 앞선 기기 실행 작업의 기록이다. 최종 통합 상태는 이 브랜치의 PR과 Git 이력을 따른다.
+- 사용자 요청: 연결한 아이폰에서 지금까지 만든 앱을 보기. 필요한 개발 앱 빌드·설치·실행과 실행 장애 수정만 진행한다. **테스트, lint/typecheck, 별도 자산/GPU 검사는 계속 NOT_RUN**이다.
+- 시작은 PR #6이 병합된 `develop` (`57cbcb4`)의 깨끗한 작업 트리였다. iPhone 15 / iOS 27.0.1이 케이블로 연결됐고 pairing·개발 모드가 활성 상태였다. 최초 빌드·설치는 성공했으나 사용자가 즉시 종료를 보고했고, 콘솔과 기기 crash report에서 SIGTRAP / `___UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption_block_invoke`를 확인했다.
+- 수정은 최신 `develop` fetch/fast-forward 후 `fix/ios-scene-lifecycle`에서 진행한다. `app.json`, `plugins/withSceneLifecycle.js`, `plugins/native/YeounSceneDelegate.swift`로 scene manifest와 단일 camera window를 구성한다. Expo factory 초기화·subscriber·개발 서버 URL 전달을 유지하고 React host가 scene 재연결 때 중복 생성되지 않도록 한다. `docs/M0_RUNBOOK.md`, `docs/REFERENCES.md` S28에도 원인과 운영 방법을 기록했다.
+- **수정 후 arm64 iPhone Debug 빌드·재설치·앱 코드 실행 성공.** 최초 재실행 때 사용자는 개발 서버 로딩 오류 화면을 확인했다. Mac의 `/status`와 iOS Expo manifest HTTP 200, 방화벽 비활성을 확인했고, 사용자가 같은 Wi-Fi와 로컬 네트워크 허용 상태를 확인한 뒤 같은 개발 서버 URL을 다시 열었다. 이후 Metro가 `index.ts` 1,469 modules를 번들했고 기기 로그에 `evaluateJavaScript() with JS bundle`이 기록됐다. 카메라의 `Frame Dropped! Reason: frame-was-late` 콜백도 관측했다. 이는 JS 실행/카메라 프레임 처리 진입의 증거이며 화면 색감·촬영·저장·프레임 성능 통과 판정은 아니다. 최초 네트워크 오류의 세부 원인은 단정하지 않는다.
+- 후속 사용 중 **미리보기만 켜둬도 종료 / 전면 얼굴 상하 뒤집힘**을 사용자가 보고했다. 기기 로그의 memory warning / signal 9와 Jetsam의 `per-process-limit`(M0 3 GiB)을 확인했다. Skia 2.4.18의 native `dispose()` no-op이 공식 이슈 #3696과 일치했다. 화면용 버퍼 축소와 대기 제한만으로는 종료가 재발해 **Skia 2.4.19**로 exact 갱신하고 개발 앱을 다시 빌드·설치했다.
+- `src/platform/camera/CameraPreview.tsx`: 화면용 버퍼 요청, RN에 전달 대기 중인 preview 최대 1개, iOS native 회전·미러 적용, 첫 frame의 비픽셀 metadata 로그를 추가했다. 실제 전후면에서 `1178×1572 / yuv-420-8-bit-full / up / mirror false`를 관측했다. 사용자가 **“얼굴 방향도 정상이고 꺼지지 않아”**라고 확인했다. 이는 해당 사용 구간의 확인이며 장시간 안정성·촬영·저장 검사를 통과했다는 뜻은 아니다.
+- `package.json`, `package-lock.json`과 Skia allowScripts를 2.4.19로 갱신했다. npm peer 범위는 현재 React 19.2 / RN 0.83.10 / Reanimated 4.2.1을 포함하고 새 dependency는 추가되지 않았다. `plugins/withSceneLifecycle.js`는 Expo plist parser의 null-prototype dictionary를 값으로 비교하도록 수정해 재생성 때 동일한 manifest를 오인하지 않게 했다. 운영/기술 명세와 S29 근거도 기록했다.
+- 기존 개발 서명 인증서를 사용했고 앱 bundle ID용 프로비저닝 프로파일을 준비했다. 새 인증서·패키지·계정은 만들지 않았다. `ios/` 생성물, 빌드·크래시 로그는 Git 제외 경로에만 있다. 상세 기기 식별자와 인증서 개인정보는 이 기록에 넣지 않는다.
+
+### 이번 실행 명령과 결과
+
+기기·팀·인증서 식별자는 아래에서 생략한다. native 명령은 `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`를 프로세스별로 지정했다. 전역 `xcode-select`는 변경하지 않았다.
+
+| 명령/작업 | 실제 결과 |
+|---|---|
+| `git status`, `cat`, `rg`, `sed`, `ls` | 기존 코드·설정·설치된 Expo/RN 구현 읽음. 초기 CLT 경로의 `xcrun devicectl`은 도구를 찾지 못함 |
+| Xcode 경로를 지정한 `xcrun devicectl list devices`, `device info details` | 제한된 환경에서는 CoreDevice 초기화 timeout. 기기 접근 권한으로 다시 실행해 연결·개발 모드 확인 |
+| `security find-identity -v -p codesigning`, 기존 profile/certificate metadata 읽기 | 기존 유효 개발 인증서 확인. 다른 앱의 프로파일은 재사용하지 않음 |
+| `cd ios` → `pod install --no-repo-update` | exit 0. Expo Crypto를 포함한 107 dependencies / 106 pods |
+| `xcodebuild -workspace M0.xcworkspace -scheme M0 -configuration Debug -destination id=… -derivedDataPath ../work/ios-device-build ...` | 첫 시도는 인증서 hash 고정과 automatic signing 충돌로 exit 65. `CODE_SIGN_IDENTITY=Apple Development`로 기존 인증서를 사용한 재시도 exit 0, BUILD SUCCEEDED |
+| `xcrun devicectl device install app ...`, `device process launch ...` | 최초 설치/launch 명령 exit 0이나 앱은 곧 종료. `--console` 실행 exit 1, signal 5. 실제 화면 성공과 구분 |
+| `device info files --domain-type systemCrashLogs --search M0`, `device copy from ...` | 해당 앱의 crash report만 로컬 `work/logs/`에 수집. UIKit scene 요구사항에서 중단된 stack 확인 |
+| Apple UIKit 공식 문서, 설치 Expo/RN/SDK 소스 읽기 | S28 근거. 별도 검사/테스트 아님 |
+| `git fetch origin`, `git merge --ff-only origin/develop`, `git switch -c fix/ios-scene-lifecycle` | 각각 exit 0. 최신 develop 기준 수정 브랜치 생성 |
+| `npx --no-install expo prebuild --platform ios --no-install` | exit 0. 기존 ios 재사용, clean 미사용, package.json 변경 없음 |
+| scene 반영 후 같은 Debug `xcodebuild` (기존 profile 사용) | exit 0, BUILD SUCCEEDED. `work/logs/iphone-build-20261028-scene.log` |
+| 수정 앱 `devicectl device install app`, `device process launch --console --payload-url ...` | 재설치 exit 0, 앱 실행 유지. 최초 Metro 로딩 오류 뒤 사용자 네트워크 상태 확인 후 같은 URL 재전달 exit 0. 이후 기기 JS 실행과 카메라 frame callback 관측 |
+| `EXPO_NO_TELEMETRY=1 EXPO_NO_DEPENDENCY_VALIDATION=1 npm start -- --lan --port 8081` | 개발 서버 실행 중. DevTools 최신 다운로드 경고 후 fallback 사용 |
+| `curl ...:8081/status`, `curl -H 'expo-platform: ios' ...:8081`, `lsof -iTCP:8081`, 방화벽 상태 조회 | Mac에서 HTTP 200, Metro listen, 방화벽 비활성. 아이폰 네트워크 도달성의 증거는 아님 |
+| Metro 및 기기 실행 로그 읽기 | 재연결 후 `iOS Bundled 3022ms index.ts (1469 modules)`, 기기의 JS 평가 로그 확인. frame-was-late 2건과 Reanimated LayoutMetrics 경고 관측. 별도 성능 측정 미실행 |
+| 테스트·lint/typecheck·GPU/자산 검사·Android 실행 | **NOT_RUN — 사용자 지시/이번 범위 밖** |
+
+### 미리보기 종료 후속 수정의 실제 명령과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| 앱 console / Jetsam report 읽기 | signal 9, per-process-limit. 버퍼 축소 적용만으로도 다시 종료됨 |
+| `xcrun lldb ... device process attach ...` | 메모리 값 읽기를 시도했으나 프로세스가 이미 종료되어 expression 실패, exit 1. 메모리 측정 성공으로 기록하지 않음 |
+| `npm view @shopify/react-native-skia@2.4.19 ...`, `npm pack ... --ignore-scripts` | metadata / 배포 소스 읽음. npm 12 pack JSON 모양을 array로 가정한 최초 파싱은 KeyError였고 실제 object key로 다시 읽음 |
+| `npm install --save-exact @shopify/react-native-skia@2.4.19 --ignore-scripts --no-audit --no-fund ...` | exit 0, changed 1 package. 버전·lockfile만 갱신 |
+| `npm rebuild @shopify/react-native-skia --no-audit --no-fund ...` | exit 0. 기존과 동일한 installer를 읽고 native 라이브러리 준비. 관련 없는 두 install script는 차단 유지 |
+| `expo prebuild --platform ios --no-install` | 최초 기존 manifest 비교에서 중단. null-prototype 원인을 수정한 재실행 exit 0, clean 미사용 |
+| `pod install --no-repo-update` | exit 0, Skia 2.4.19 / 107 dependencies / 106 pods |
+| 기존 Debug `xcodebuild` | exit 0, BUILD SUCCEEDED. 로그 `work/logs/iphone-build-skia-2.4.19.log` |
+| `devicectl device install app`, `device process launch --console --payload-url ...` | 설치 exit 0, 새 앱 실행. Metro 재시작 후 iOS bundle 1,468 modules 및 전후면 metadata 관측 |
+| 사용자 현재 앱 확인 | 전면 얼굴 방향 정상, 미리보기 종료 없음 보고 |
+| Jest·lint/typecheck·react-doctor·합성 GPU 검사 | **NOT_RUN — 기존 사용자 지시 유지**. 관련 스킬은 읽었지만 검사 명령을 실행하지 않음 |
+
+### 남은 작업
+
+1. Metro를 켠 상태에서 연결한 아이폰으로 현재 M0를 사용한다. 네트워크가 바뀌면 개발 서버 주소도 다시 전달한다. 장시간 메모리/FPS와 남아 있는 Reanimated LayoutMetrics 경고 영향은 별도 사용자 요청 후 확인한다.
+2. 촬영·갤러리 저장·백그라운드 복귀·색감/GPU 정확성은 이번에 자동 실행하지 않는다. **G0/G1은 NOT_PASSED**이며 사용자 요청 후 별도 확인한다.
+3. 현재 UI는 M0 Identity/Warm Matrix 경로다. M1 LUT 로더는 여전히 카메라 화면에 연결하지 않았다. 별도 요청 없이 SDK 업그레이드나 LUT 통합으로 범위를 넓히지 않는다.
+
+## 이전 기록 — 2026-10-28 M1 앱용 LUT 자산 로더
 
 - 사용자 승인 범위: 다음 기능인 **앱용 LUT 파일 로딩과 manifest/version/checksum 연결**. [PR #5](https://github.com/ddoniddoni/yeoun/pull/5) 병합 뒤 `develop` 기준 커밋은 `f94999e731f7f604006cc0607d9d8c58b64b9f15`다. 시작 작업 트리는 깨끗했고 원격 fetch/fast-forward 후 `feature/lut-asset-loader`를 만들었다.
 - 상태: **로더·Skia decode/pipeline 연결·테스트 소스 작성, raw 패키징 복사본 준비 / 실행 검증 NOT_RUN**. 테스트·lint/typecheck·자산 검사 CLI·JS/native build·decode/probe를 실행하지 않았다. 설치와 파일 복사는 구현 산출 작업이며 검사 통과 증거가 아니다.
@@ -379,7 +436,7 @@ manifest는 `filter-manifest.json`, PNG는 그 아래 `luts/<filterId>-<sha256>.
 | Expo / DevClient | 55.0.32 / 55.0.41 | 설치 SDK bundledNativeModules 기준 |
 | React / RN | 19.2.0 / 0.83.10 | Expo 권장 조합, npm tree invalid 없음 |
 | VisionCamera core / skia / worklets | 모두 5.2.3 | v5 타입 및 package peer 확인. v4 API 미사용 |
-| Skia | **@shopify/react-native-skia 2.4.18** | Expo 권장. peer React≥19, RN≥0.78, Reanimated≥3.19.1 |
+| Skia | **@shopify/react-native-skia 2.4.19** | 2026-10-28 memory dispose 버그 패치. Expo 초기 권장은 2.4.18. peer React≥19, RN≥0.78, Reanimated≥3.19.1 |
 | Reanimated / Worklets | 4.2.1 / 0.7.4 | 설치 compatibility.json에 RN0.83 / Worklets0.7 교집합 |
 | Nitro Modules / Nitro Image | 0.37.1 / 0.15.2 | VC5 peer 및 설치 native compile |
 | FileSystem / MediaLibrary | 55.0.26 / 55.0.21 | SDK55 타입. File/Directory, 플랫폼별 gallery adapter |

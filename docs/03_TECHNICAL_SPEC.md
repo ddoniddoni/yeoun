@@ -46,6 +46,8 @@ VisionCamera의 Skia 통합 문서와 저장소 `package.json`에는 `@shopify/r
 
 ### 실행 순서
 
+2026-10-28 예외 고정: Expo SDK 55 권장 Skia 2.4.18에는 native 이미지 `dispose()`가 no-op인 버그가 있고 iPhone 미리보기에서 메모리 한도 종료를 확인했다. 같은 패키지의 최소 수정 버전 **2.4.19**를 exact 설치한다. peer 범위는 현재 React/RN/Reanimated와 호환되며 iOS 개발 빌드·사용자 미리보기 확인을 진행했다. Android 및 전체 회귀 검사는 미실행이다. 자동 버전 정렬로 2.4.18로 되돌리지 않는다. [S29](REFERENCES.md#s29).
+
 1. 기존 `package.json`, lockfile, Node/npm, OS, Xcode/Android 환경을 기록한다.
 2. Expo SDK가 요구하는 React/RN 버전을 정한다. 최신 SDK와 기존 카메라 통합이 충돌하면 검증 가능한 조합을 비교한다.
 3. 설치할 정확한 후보 버전에 대해 `version`, `peerDependencies`, `engines`, 릴리스 노트를 확인한다.

@@ -17,7 +17,7 @@ npm test -- --runInBand
 npm run build:js
 ```
 
-Node 26.4.0 / npm 12.2.0에서 구성했다. npm 12의 설치 스크립트 허용 목록은 `package.json`에 Skia 2.4.18만 포함한다. Skia 바이너리가 없으면 공식 설치 스크립트를 확인한 뒤 `npm rebuild @shopify/react-native-skia`를 실행한다. `--force` / `--legacy-peer-deps`는 사용하지 않는다. `fsevents`, `unrs-resolver`의 선택적 설치 스크립트는 허용하지 않았고 현재 검사/번들은 작동했다.
+Node 26.4.0 / npm 12.2.0에서 구성했다. npm 12의 설치 스크립트 허용 목록은 `package.json`에 Skia 2.4.19만 포함한다. Skia 바이너리가 없으면 공식 설치 스크립트를 확인한 뒤 `npm rebuild @shopify/react-native-skia`를 실행한다. `--force` / `--legacy-peer-deps`는 사용하지 않는다. `fsevents`, `unrs-resolver`의 선택적 스크립트는 허용하지 않았다. 2026-10-28 native 이미지 해제 no-op 버그 때문에 2.4.18에서 2.4.19로 올렸으며 이번 패치의 자동 검사는 사용자 지시로 NOT_RUN이다. 근거: [S29](REFERENCES.md#s29).
 
 ## 네이티브 구성과 빌드
 
@@ -37,7 +37,9 @@ ANDROID_HOME=/Users/ddoni/Library/Android/sdk ./gradlew :app:assembleDebug \
   -PreactNativeArchitectures=arm64-v8a --console=plain
 ```
 
-Android debug APK: `android/app/build/outputs/apk/debug/app-debug.apk`. 개발 클라이언트이므로 Metro가 필요하다. iOS simulator 빌드는 물리 기기 빌드/서명/촬영의 증거가 아니다. 서명 인증서·계정·EAS 설정은 생성하지 않았다.
+추가 iOS 설정: `plugins/withSceneLifecycle.js`는 단일 scene manifest를 등록하고 `plugins/native/YeounSceneDelegate.swift`를 생성된 AppDelegate에 포함한다. iOS 27 / 최신 SDK에서 필요한 화면 생명주기를 구성하며 카메라 window는 scene에 연결한 뒤 RN을 시작한다. 개발 서버 URL과 Expo 생명주기 subscriber 전달도 포함한다. 기존 scene 설정이나 예상과 다른 Expo template을 발견하면 덮어쓰지 않고 중단한다. 근거: [S28](REFERENCES.md#s28).
+
+Android debug APK: `android/app/build/outputs/apk/debug/app-debug.apk`. 개발 클라이언트이므로 Metro가 필요하다. iOS simulator 빌드는 물리 기기 빌드/서명/촬영의 증거가 아니다. 2026-10-28 아이폰 설치에는 Mac의 기존 개발 인증서를 사용했고, 앱 bundle ID용 개발 프로비저닝 프로파일을 준비했다. 새 인증서·계정·EAS 설정은 생성하지 않았다.
 
 기기를 연결하고 기존 개발 서명을 준비한 뒤:
 
@@ -81,7 +83,7 @@ Expo Go, 웹, 시뮬레이터 카메라를 실제 센서 촬영 증거로 사용
 
 설치된 Skia 2.4.18 `MakeOffscreen`은 색 공간을 명시할 JS 인자가 없고 iOS Metal surface 생성 시 null 색 공간을 사용한다. 따라서 **sRGB 정규화/ICC 태그 검증 완료를 주장하지 않는다**. 카메라에는 SDR/sRGB를 요청하고 같은 Matrix를 사용하지만 실기기 색 관리 확인은 G0의 열린 항목이다.
 
-SkiaCamera 5.2.3은 runtime을 넘길 때 `makeNonTextureImage()`로 CPU 복사한다. 앱은 프레임 픽셀을 React state/JSON/Base64에 넣지 않으며, 이 라이브러리 경로를 zero-copy라고 부르지 않는다. preview 내부 render가 오류를 콘솔에만 기록하는 경우도 있어 빈 화면/드라이버 오류 확인이 필요하다.
+SkiaCamera 5.2.3은 runtime을 넘길 때 `makeNonTextureImage()`로 CPU 복사한다. 앱은 프레임 픽셀을 React state/JSON/Base64에 넣지 않으며, 이 라이브러리 경로를 zero-copy라고 부르지 않는다. 화면용 버퍼 축소를 켜고 RN에 전달 대기 중인 preview를 하나로 제한한다. iOS는 native connection에서 회전·미러를 먼저 적용하므로 frame metadata의 `up / mirror false`는 이미 방향 처리가 끝났다는 뜻이며, 셀카가 비미러라는 뜻은 아니다. preview 내부 render가 오류를 콘솔에만 기록하는 경우도 있어 빈 화면/드라이버 오류 확인이 필요하다.
 
 고해상도 export의 GPU 명령/인코딩은 RN JS runtime에서 동기로 실행한다. `async` 파일 I/O가 CPU/GPU 작업을 background로 옮기지 않는다. 촬영 한 건만 허용하며 12MP 메모리/지연 측정 후 필요하면 전용 runtime/native adapter로 옮겨야 한다.
 

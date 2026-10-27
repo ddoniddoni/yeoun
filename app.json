@@ -48,7 +48,8 @@
           }
         }
       ],
-      "./plugins/withGlogModuleMap"
+      "./plugins/withGlogModuleMap",
+      "./plugins/withSceneLifecycle"
     ]
   }
 }

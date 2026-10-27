@@ -234,6 +234,30 @@
 
 Skia 2.4.18 `MakeImageFromEncoded`/`readPixels`를 사용하며 gamma/profile chunk가 없는 PNG만 허용한다. 설치된 `JsiSkImageInfo.h`는 colorSpace 없이 목적 ImageInfo를 만들고, `JsiSkImage.h`의 Graphite `readPixels`는 미구현이다. native 디코딩의 byte 정확도를 소스 검토만으로 확정하지 않으며 기기 비교를 별도로 요구한다. Node pngjs/Ajv는 모바일 경로에 포함하지 않는다.
 
+<a id="s28"></a>
+
+## S28. iOS 27의 UIScene 시작 경로
+
+공식 주소: [Apple UIKit scene 생명주기 이행](https://developer.apple.com/documentation/uikit/transitioning-to-the-uikit-scene-based-life-cycle), [Apple TN3187](https://developer.apple.com/documentation/technotes/tn3187-migrating-to-the-uikit-scene-based-life-cycle).
+
+2026-10-28 iPhone 15 / iOS 27.0.1에서 첫 실행 직후 `SIGTRAP`이 발생했다. 기기 crash report의 첫 프레임은 `___UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption_block_invoke`였다. Apple 문서에서 최신 SDK로 빌드한 iOS 27 앱의 scene 생명주기 요구사항을 확인했다. 설치된 Expo 55.0.32의 AppDelegate에는 scene 구현이 없고 생성된 앱은 `UIWindow(frame:)`로 시작하고 있었다.
+
+새 패키지 없이 `withSceneLifecycle` 설정 플러그인과 `YeounSceneDelegate.swift`를 추가한다. 하나의 `UIWindowScene`에서 RN window를 만들고, Expo factory/process 초기화는 AppDelegate에 유지한다. Expo의 `ExpoDevLauncherAppDelegateSubscriber.swift`, `ExpoDevLauncherReactDelegateHandler.swift`, `EXDevLauncherController.m`을 읽고 개발 서버 URL을 기존 AppDelegate subscriber 체인으로 전달한다. scene 활성/비활성 콜백은 Expo subscriber에 전달하며 RN `RCTAppState.mm`이 이미 구독하는 UIApplication 알림을 중복 게시하지 않는다.
+
+이는 설치된 SDK 55를 위한 프로젝트 어댑터다. 새 SDK의 공식 scene 구현을 도입할 때 플러그인을 재검토한다. iOS 실제 실행 결과와 미실행 검사 범위는 PROGRESS에 기록하며 Android, 다른 iOS 버전, 전체 G0 통과로 확대하지 않는다.
+
+<a id="s29"></a>
+
+## S29. Skia 2.4.19 이미지 해제와 미리보기 메모리
+
+공식 근거: [Skia issue #3696](https://github.com/Shopify/react-native-skia/issues/3696), [수정 PR #3697 및 2.4.19 릴리스](https://github.com/Shopify/react-native-skia/pull/3697), [VisionCamera FrameOutputOptions](https://visioncamera.margelo.com/api/react-native-vision-camera/interfaces/FrameOutputOptions), [Apple output buffer 크기 설정](https://developer.apple.com/documentation/avfoundation/avcapturevideodataoutput/automaticallyconfiguresoutputbufferdimensions).
+
+2026-10-28 사용자가 미리보기만 실행해도 앱이 종료된다고 보고했다. 기기 Jetsam 기록에서 M0의 `per-process-limit`와 196,608 × 16,384 bytes(3 GiB)를 확인했다. 설치된 Skia 2.4.18의 `JsiSkHostObjects.h`에서 native `dispose()`가 no-op임을 확인했으며, 공식 이슈도 같은 버전의 카메라 프레임 runtime 전달 후 메모리 누적을 설명한다. 버퍼 축소와 RN 전달 대기 제한만 적용한 상태에서도 종료가 반복돼, 원인 수정이 포함된 최소 패치 2.4.19로 올렸다.
+
+npm metadata: MIT, unpackedSize 9,868,277 bytes, peer React >=19 / RN >=0.78 / Reanimated >=3.19.1로 현재 조합을 포함한다. 배포 tarball에서 `safeDispose`, `releaseResources`, 생성 스레드 dispatcher를 통한 image/surface 해제를 확인했다. 설치 스크립트는 기존 버전과 같았고 exact dependency, lockfile, 해당 버전의 allowScripts를 갱신했다. 새 패키지나 SDK 업그레이드는 없다.
+
+설치된 VisionCamera 5.2.3의 iOS FrameOutput은 `enablePreviewSizedOutputBuffers`로 화면용 버퍼를 요청하고, `enablePhysicalBufferRotation`으로 connection의 회전·미러를 적용한다. 후자는 처리 비용이 있어 iOS에만 사용한다. 앱은 SkiaCamera가 RN에 전달하는 미리보기 대기 프레임을 하나로 제한한다. 촬영 해상도·저장 Matrix는 그대로다. 실제 출력 metadata와 사용자 확인 범위는 PROGRESS를 따른다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

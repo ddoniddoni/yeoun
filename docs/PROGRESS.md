@@ -3,6 +3,7 @@
 ## 현재 상태 — 2026-10-28 아이폰 시작·미리보기 메모리 종료·전면 방향 수정
 
 - 2026-10-28 사용자가 여기까지의 Git Flow를 요청했다. `fix/ios-scene-lifecycle` 커밋·푸시, `develop` 대상 PR 생성·병합과 로컬/원격 동기화를 진행한다. `git fetch origin` 후 기준과 `origin/develop`의 차이는 0/0이었다. 이번 Git Flow에서는 테스트·lint/typecheck·빌드·별도 검사를 실행하지 않으며, 아래 빌드와 사용자 확인은 앞선 기기 실행 작업의 기록이다. 최종 통합 상태는 이 브랜치의 PR과 Git 이력을 따른다.
+- 수정 커밋 `c310bce`를 원격 작업 브랜치에 푸시했고 [PR #7](https://github.com/ddoniddoni/yeoun/pull/7)을 `develop` 대상으로 생성했다. `git commit`, `git push -u origin fix/ios-scene-lifecycle`, `gh pr create`는 각각 exit 0이다. PR에 앞선 기기 확인 범위와 이번 검사 미실행을 명시했다.
 - 사용자 요청: 연결한 아이폰에서 지금까지 만든 앱을 보기. 필요한 개발 앱 빌드·설치·실행과 실행 장애 수정만 진행한다. **테스트, lint/typecheck, 별도 자산/GPU 검사는 계속 NOT_RUN**이다.
 - 시작은 PR #6이 병합된 `develop` (`57cbcb4`)의 깨끗한 작업 트리였다. iPhone 15 / iOS 27.0.1이 케이블로 연결됐고 pairing·개발 모드가 활성 상태였다. 최초 빌드·설치는 성공했으나 사용자가 즉시 종료를 보고했고, 콘솔과 기기 crash report에서 SIGTRAP / `___UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption_block_invoke`를 확인했다.
 - 수정은 최신 `develop` fetch/fast-forward 후 `fix/ios-scene-lifecycle`에서 진행한다. `app.json`, `plugins/withSceneLifecycle.js`, `plugins/native/YeounSceneDelegate.swift`로 scene manifest와 단일 camera window를 구성한다. Expo factory 초기화·subscriber·개발 서버 URL 전달을 유지하고 React host가 scene 재연결 때 중복 생성되지 않도록 한다. `docs/M0_RUNBOOK.md`, `docs/REFERENCES.md` S28에도 원인과 운영 방법을 기록했다.

@@ -1,6 +1,70 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-27 M1 색 변환 CPU 기준 로직
+## 현재 상태 — 2026-10-27 M1 LUT 초안 자산 제작
+
+- 사용자 승인 범위: 다음 독립 개발 계획인 **33³ atlas 생성기와 manifest/checksum 도구**. 최신 `develop`에서 `feature/lut-asset-tools`를 만들었다. 기준은 [PR #2](https://github.com/ddoniddoni/yeoun/pull/2)의 병합 커밋 `9c4af2bb608b6d026dc8f4b91ef2c5cb0edb89e8`이다.
+- 상태: **도구·테스트 소스 작성, 초안 PNG 4개와 manifest 생성 / 별도 실행 검증 NOT_RUN**. 2026-10-27 사용자가 이 작업의 Git Flow를 요청했다. 작업 브랜치 커밋·푸시, `develop` 대상 PR 생성·병합, 로컬 `develop` 동기화와 원격 반영이 승인 범위다. 실제 통합 커밋과 최종 병합 상태는 이 브랜치의 PR 및 Git 이력을 따른다.
+- `npm run generate:luts`를 실제 실행했다. 입력 seed/schema 처리와 manifest 생성 가드는 이 명령 안에서 동작했다. 생성 성공은 색상 수치, 별도 자산 검사, GPU 또는 실기기 검증 결과가 아니다.
+- **사용자 요청에 따라 테스트를 실행하지 않았다.** lint/typecheck, `validate:filters`, `validate:filter-assets`, JS/native build도 NOT_RUN이다. G0/G1은 **NOT_PASSED**다.
+- 현재 앱 진입점에서 LUT를 불러오지 않는다. seed 9종은 `design-draft`, `lut: null`을 유지하며 실제 생성 대상은 identity와 대표 3종이다. 입자·bloom·master intensity·trilinear sampling은 후속 작업이다.
+
+| 범위 | 구현/산출 상태 | 실행 검증 |
+|---|---|---|
+| M0 실제 촬영·저장 | 기존 최소 경로 | 이번 NOT_RUN, G0 NOT_PASSED |
+| M1 seed/analytic 색 변환 | 기존 함수로 초안 생성 | 단독 CLI·수치 테스트 NOT_RUN |
+| M1 atlas/manifest/PNG 제작 | 코드 작성, 초안 4종 생성 | 별도 검사 NOT_RUN |
+| M1 trilinear/GPU/preview·export | NOT_STARTED | NOT_RUN, G1 NOT_PASSED |
+| M2~M6 | NOT_STARTED | NOT_RUN |
+
+### 변경 파일과 결정
+
+- `src/rendering/reference/lutAtlas.ts`: 33³ 격자에서 RGB8을 한 번 양자화하고 210×210 atlas와 1px 복제 패딩을 만든다. 미사용 3개 tile도 alpha=255이며 RGB만 0이다. 별도 구조 검사 함수는 alpha·패딩·빈 tile만 판단한다.
+- `scripts/lib/lutManifest.ts`: 제작 엔진/생성기 버전, seed 원본 바이트 해시, pngjs/Node/zlib 버전과 고정 atlas 계약을 저장한다. 필수 4종·ID·역할·버전·경로를 검사하고 `draft`만 허용한다.
+- `scripts/lib/lutAssets.ts`: seed 읽기, RGBA8 PNG 인코딩, SHA-256, 변경 불가 파일 게시, manifest/PNG 검사. 기존 파일은 같은 바이트일 때만 재사용하며 임시 파일의 hard link로 게시한다. PNG 뒤에 manifest를 쓴다. 파일 크기·PNG 헤더/chunk·CRC, checksum과 패딩 오류의 실패 처리를 작성했다.
+- `scripts/generate-luts.mjs`, `scripts/validate-filter-assets.mjs`: 생성과 별도 검사를 분리한 Node CLI. 입력/출력 경로 옵션과 실패 시 종료 코드 1을 제공한다.
+- `package.json`, `package-lock.json`: `generate:luts`, `validate:filter-assets` 스크립트 추가. 허용 목록의 `pngjs@7.0.0`, `@types/pngjs@6.0.5`만 exact 개발 의존성으로 추가했다. 기존 `parse-png`의 pngjs 3.4.0은 해당 패키지 아래에 유지된다. 네이티브 의존성 변경은 없다.
+- `tests/unit/lutAtlas.test.ts`: 축 순서·slice 줄바꿈·끝점·양자화·패딩·불투명 빈 tile·비정상 출력 사례 작성. **실행하지 않았다.**
+- `tests/integration/lutAssets.test.ts`: PNG 바이트 왕복, manifest 참조, 파일 손상/누락, CRC/gamma/중복 헤더, 덮어쓰기 거부, 부분 생성 시 manifest 미게시 사례 작성. **실행하지 않았다.**
+- `assets/lut-drafts/...`: 아래 PNG 4개와 manifest, 사용법 README. 이는 명세 seed에서 계산한 제작 자산이며 사용자 사진이나 실행된 테스트의 산출물이 아니다.
+- `README.md`, `docs/02_FILTER_ENGINE.md`, `docs/04_IMPLEMENTATION_PLAN.md`, `docs/REFERENCES.md`, 이 파일: 생성 상태와 검증 전 상태, 사용법과 다음 작업을 반영했다.
+
+### 실제 생성 자산
+
+기본 경로: `assets/lut-drafts/lut-authoring-0.1.0/105988cbda3910f7ec200311ee3d96da5ae19a0eb7623574b16614451a578be0/`.
+
+| 필터 | PNG SHA-256 (생성기가 기록한 값) | 품질 상태 |
+|---|---|---|
+| identity | `5f6daa0568b6ae9153b1d8af6b88c716904e0eed03b7d10b71ec78c09ae32a7a` | draft |
+| light-afternoon | `14836d7e195ea12374272fe2bf4946137f3fb1a59fcb5e577c67c42742bface0` | draft |
+| time-summer | `d7f56bb99f487543d8d93066426cecd46041461b685bc0bdae26013e0c421477` | draft |
+| scene-dawn | `a5a38e22587bfcd5e2b45f4bf0ab04a492ad47cdf4c85e95a2db99fed7936490` | draft |
+
+manifest는 `filter-manifest.json`, PNG는 그 아래 `luts/<filterId>-<sha256>.png`다. `sourceSeedSha256`은 경로의 64자리 값과 같다. 생성 환경은 **Node 26.4.0 / zlib 1.2.12 / pngjs 7.0.0**, 생성기 버전은 `1.0.0`이다. 다른 환경의 PNG 바이트 동일성은 보장하지 않으며 기존 manifest가 달라지면 새 출력 경로를 사용한다. 아직 별도 검사기로 파일을 재검증하지 않았다.
+
+### 실제 명령과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| `git status --short --branch`, `git log`, `git diff`, `cat`, `sed`, `rg` | 기존 변경·지침·명세와 설치 타입 읽기, 작성 후 파일/diff/manifest 읽기 |
+| `git fetch origin`, `git merge --ff-only origin/develop`, `git switch -c feature/lut-asset-tools` | exit 0. 기준 develop은 이미 최신, 새 기능 브랜치 생성 |
+| `npm view pngjs@7.0.0 version engines license dependencies peerDependencies --json --cache /private/tmp/yeoun-camera-npm-cache --fetch-retries=0 --fetch-timeout=15000` | exit 0. 7.0.0, MIT, Node >=14.19.0 확인 |
+| `npm view @types/pngjs@6.0.5 version license dependencies --json --cache /private/tmp/yeoun-camera-npm-cache --fetch-retries=0 --fetch-timeout=15000` | exit 0. 6.0.5, MIT, @types/node 의존 확인 |
+| `npm install --save-dev --save-exact pngjs@7.0.0 @types/pngjs@6.0.5 --ignore-scripts --no-audit --no-fund --cache /private/tmp/yeoun-camera-npm-cache --fetch-retries=0 --fetch-timeout=15000` | exit 0. added 2 packages, changed 1 package. lifecycle/audit 미실행 |
+| 공식 pngjs 문서, 설치한 `@types/pngjs/index.d.ts` 및 `pngjs/lib` 읽기 | sync write/read, RGBA8 인코딩 옵션과 gamma chunk 처리 확인 |
+| `apply_patch` | 코드·테스트 소스·문서 작성 |
+| `npm run generate:luts` | **exit 0**, identity와 대표 3종 PNG 및 manifest 생성. Node의 `MODULE_TYPELESS_PACKAGE_JSON` 재해석 경고 출력; 루트 모듈 형식은 변경하지 않음 |
+| `npm run lint`, `npm run typecheck`, `npm test -- --runInBand` | **NOT_RUN** |
+| `npm run validate:filters`, `npm run validate:filter-assets`, JS/native build, GPU·실기기 | **NOT_RUN** |
+
+### 미검증 사항과 다음 작업
+
+1. 별도 테스트 실행 요청 이후 seed/manifest/PNG 검사, atlas/PNG 테스트, lint/typecheck와 기존 테스트를 실행하고 실제 결과를 남긴다. 생성 명령의 정상 종료만으로 전체 코드·의존성 호환성을 보증하지 않는다.
+2. 다음 독립 개발 범위는 **양자화된 atlas를 읽는 CPU trilinear sampling**이다. 정확한 grid point, fractional point, 축 방향과 경계의 수치 비교 코드를 작성하고 analytic transform과 LUT 보간 오차를 구분한다.
+3. 이후 지원 가능한 raw texture 경로를 확인하고 GPU sampling을 연결한다. 카메라 preview/export, 색 공간, grain/bloom/intensity, 사진 색감 검수와 G0 실기기 증거는 여전히 남아 있다.
+
+다음 작업 프롬프트: “현재 LUT 초안과 명세를 기준으로 CPU trilinear sampling을 구현해줘. 테스트는 실행하지 말고 테스트 소스와 미검증 항목을 기록해줘. GPU와 UI 연결로 범위를 넓히지 마.”
+
+## 이전 기록 — 2026-10-27 M1 색 변환 CPU 기준 로직
 
 - 사용자 승인 범위: PR #1의 `develop` 병합, 새 기능 브랜치 생성, 순수 TypeScript 색 변환 CPU reference와 진행 기록 작성.
 - [PR #1](https://github.com/ddoniddoni/yeoun/pull/1)은 **MERGED**다. 병합 커밋은 `df557474aa25470c5d991f32117d5d9cdbdb0040`이며, 원격 `develop`을 로컬에 fast-forward한 뒤 `feature/filter-cpu-reference`를 만들었다. 완료한 초기 등록 브랜치를 새 기능에 재사용하지 않았다.

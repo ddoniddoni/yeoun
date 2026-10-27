@@ -61,7 +61,7 @@ npm run validate:filters
 npm run validate:filters -- /path/to/filters.seed.json
 ```
 
-명령은 Node 26 개발 환경의 TypeScript 직접 로딩을 사용한다. 파일을 변경하지 않고 오류가 있으면 종료 코드 1을 반환하도록 작성했다. Ajv와 ajv-formats는 개발 의존성이며 현재 앱 진입점/카메라에서 가져오지 않는다. 이 명령 및 새 단위 테스트는 **아직 실행하지 않았다**. CPU 색 변환 코드 상태는 §5에 기록한다. LUT 생성, GPU 연결과 색감 승인은 후속 작업이다.
+명령은 Node 26 개발 환경의 TypeScript 직접 로딩을 사용한다. 파일을 변경하지 않고 오류가 있으면 종료 코드 1을 반환하도록 작성했다. Ajv와 ajv-formats는 개발 의존성이며 현재 앱 진입점/카메라에서 가져오지 않는다. 이 단독 검사 명령 및 단위 테스트는 **아직 실행하지 않았다**. 이후 §6의 LUT 생성 명령은 같은 seed 검사 함수를 입력 처리에 사용한다. CPU 색 변환 상태는 §5, 초안 LUT 생성 상태는 §6에 기록한다. GPU 연결과 색감 승인은 후속 작업이다.
 
 구현 근거: [Ajv의 JSON Schema 버전별 지원](https://ajv.js.org/json-schema.html), [TypeScript 타입 가드](https://ajv.js.org/guide/typescript.html), [날짜 format 플러그인](https://ajv.js.org/guide/formats.html). 실제 설치한 8.17.1/3.0.1의 타입과 배포 소스를 대조했다.
 
@@ -75,6 +75,7 @@ src/rendering/adapters/                     # 선택한 Skia 버전 연결
 assets/luts/                               # 생성된 atlas PNG
 assets/filter-previews/                     # 실제 엔진으로 만든 미리보기
 assets/filter-manifest.json                 # 실제 경로와 checksum
+assets/lut-drafts/<engine>/<seed-hash>/      # 현재 미승인 초안 PNG와 별도 manifest
 scripts/generate-luts.mjs                   # seed -> LUT와 manifest
 scripts/validate-filter-assets.mjs          # 누락, checksum, 버전 검사
 ```
@@ -162,7 +163,7 @@ V' = V
 
 모든 가중치는 변형 전 H와 S로 계산한다. band 순서를 바꾸면 결과가 달라지는 연속 적용 방식은 금지한다. 이 방식은 피부를 인식하지 않는다. 피부와 비슷한 색의 음식이나 가구에도 영향을 준다.
 
-### CPU 기준 구현 (2026-10-27, 실행 NOT_RUN)
+### CPU 기준 구현 (2026-10-27, 수치 검증 NOT_RUN)
 
 | 파일 | 역할 |
 |---|---|
@@ -177,9 +178,9 @@ NaN/Infinity와 범위 밖의 입력을 조용히 보정하지 않고 `RangeErro
 
 곡선·틴트·hue band는 생성 시 복사하고 스칼라 설정은 값으로 캡처한다. 따라서 호출자가 나중에 제작 설정을 변경해도 이미 만든 함수는 이전 설정으로 계산한다. hue band 복사본은 수치 필드 순으로 정렬해 부동소수점 합산 순서도 고정한다. 입력 배열을 정렬하거나 변경하지 않으며 모든 가중치는 조정 전 H/S에서 계산한다.
 
-테스트 소스에는 전달 함수 기준값/경계/왕복, RGB 8개 꼭짓점과 고정 sample, HSV 6개 구간, 선형 EV, 평평한 곡선 구간, tint clamp, hue 원형 거리/겹침/순서 불변/무채색 보호, 효과 순서, 설정 snapshot과 9개 seed 초안의 유한 출력 검사를 작성했다. **실행 결과와 통과 수치는 없다.** 이 함수는 analytic transform이며 LUT 보간 구현이나 실제 GPU 비교 결과가 아니다.
+테스트 소스에는 전달 함수 기준값/경계/왕복, RGB 8개 꼭짓점과 고정 sample, HSV 6개 구간, 선형 EV, 평평한 곡선 구간, tint clamp, hue 원형 거리/겹침/순서 불변/무채색 보호, 효과 순서, 설정 snapshot과 9개 seed 초안의 유한 출력 검사를 작성했다. **테스트 실행 결과와 통과 수치는 없다.** 이 함수는 analytic transform이며 LUT 보간 구현이나 실제 GPU 비교 결과가 아니다. §6의 초안 생성은 이 함수를 사용하지만 수치 검증을 대신하지 않는다.
 
-P3/HDR/YUV의 sRGB 정규화는 플랫폼 adapter의 후속 검증 항목이다. 입자, bloom, master intensity, LUT/PNG/manifest 생성과 카메라 연결은 이번 코드에 포함하지 않는다. 패키지 추가나 네이티브 설정 변경도 없다.
+P3/HDR/YUV의 sRGB 정규화는 플랫폼 adapter의 후속 검증 항목이다. 이 CPU 함수는 입자, bloom, master intensity나 카메라 연결을 포함하지 않는다. LUT/PNG/manifest 생성은 아래의 별도 제작 도구가 담당한다.
 
 ## 6. LUT 파일과 GPU sampling 계약
 
@@ -189,7 +190,7 @@ P3/HDR/YUV의 sRGB 정규화는 플랫폼 adapter의 후속 검증 항목이다.
 - 각 blue slice는 red가 가로, green이 세로로 증가한다.
 - tile 한 변은 `N+2=35`px. 네 변에 1px 복제 padding.
 - 한 줄 6개 tile, 총 6줄. atlas는 210x210 RGBA PNG.
-- 사용 slice는 0~32. 남는 3개 tile은 0으로 채우며 sampling하지 않는다.
+- 사용 slice는 0~32. 남는 3개 tile은 RGB=0, alpha=255인 불투명 검정으로 채우며 sampling하지 않는다.
 - alpha는 항상 255. 데이터 텍스처로 취급하고 mipmap, 손실 압축을 사용하지 않는다.
 - 내부 sample index는 `r + N*(g + N*b)`로 정의한다.
 
@@ -198,6 +199,18 @@ P3/HDR/YUV의 sRGB 정규화는 플랫폼 adapter의 후속 검증 항목이다.
 slice k의 tile 좌상단은 `tx=(k%6)*35`, `ty=floor(k/6)*35`다. red/green sample의 픽셀 중심 좌표는 `(tx+1+R*32+0.5, ty+1+G*32+0.5)`다. UV를 사용하는 backend라면 atlas 크기로 나눈다. 좌표 원점, 반 픽셀과 y 방향을 identity test로 검증한다.
 
 정확한 raw sampling을 바인딩에서 지원하지 않으면 그 사실을 기록하고 공식 지원 경로 또는 최소 네이티브 adapter를 검토한다. 일반 이미지로 불러온 뒤 틴트만 눈으로 맞춰 문제를 숨기지 않는다.
+
+### 초안 자산 생성 구현 (2026-10-27)
+
+- `src/rendering/reference/lutAtlas.ts`: `createLutAtlas(transform)`이 blue → green → red 순서로 35,937개 격자점을 계산한다. `Math.round(channel * 255)`로 양자화한 내부 texel을 패딩과 모서리에 복제한다. 변환 결과의 비유한 값이나 범위 초과는 실패시킨다.
+- `scripts/lib/lutAssets.ts`: 고정된 `pngjs@7.0.0`의 sync API로 RGBA8 PNG를 인코딩한다. gamma=0, filterType=4, deflateLevel=9, deflateStrategy=3을 지정한다. PNG 데이터만 해시하며, 파일 쓰기는 임시 파일의 hard link 게시로 기존 경로를 교체하지 않는다. manifest는 PNG 뒤에 게시한다.
+- `scripts/lib/lutManifest.ts`: `lut-authoring-0.1.0` 제작 엔진과 `1.0.0` 생성기 버전, 원본 seed SHA-256, 인코더 버전, 고정 atlas 계약과 파일별 정보를 기록한다. 이 engineVersion은 analytic 제작과 atlas 경로의 버전이며 완성된 카메라 렌더러 버전이 아니다. 현재 형식은 identity와 컬렉션별 대표 3종의 `draft`만 허용한다.
+- `scripts/generate-luts.mjs`: seed/schema를 읽고 identity와 `light-afternoon`, `time-summer`, `scene-dawn`을 생성한다. seed의 `lut: null`과 `design-draft`는 유지한다. `--seed`, `--out`으로 입력과 새 출력 경로를 지정할 수 있다.
+- `scripts/validate-filter-assets.mjs`: seed 연결·중복/누락·버전·경로·파일 SHA-256을 검사하고 제한된 크기의 non-interlaced PNG만 디코드한다. IHDR/IDAT/IEND 외 chunk와 중복 헤더, CRC 오류를 거부하며 alpha·패딩·빈 tile을 검사한다. 동일한 checksum을 가진 잘못된 색 변환이나 GPU sampling 오차를 판단하는 검사는 아니다.
+
+`npm run generate:luts`는 실제 실행해 PNG 4개와 manifest를 생성했다. 기본 경로는 `assets/lut-drafts/<engineVersion>/<sourceSeedSha256>/`이며 파일명은 `<filterId>-<sha256>.png`다. 소스 seed 해시는 JSON 재직렬화가 아닌 원본 바이트 기준이다. manifest의 인코더 환경이 다르거나 자산 바이트가 달라지면 기존 경로를 덮어쓰지 않고 새 출력 경로가 필요하다. 제작식이나 인코딩 계약 변경 시 해당 버전도 갱신한다.
+
+`npm run validate:filter-assets`, lint/typecheck, 단위·통합 테스트, GPU·실기기 검사는 **NOT_RUN**이다. 생성 명령 성공을 G0/G1 통과나 `approved` 승격으로 해석하지 않는다. trilinear CPU sampling과 GPU 로딩/셰이더는 아직 없다. 사용법은 [초안 자산 안내](../assets/lut-drafts/README.md), 실제 명령과 생성 환경은 [진행 기록](PROGRESS.md)에 있다. PNG API 근거는 [S25](REFERENCES.md#s25)와 설치한 소스·타입이다.
 
 ### 외부 .cube
 

@@ -200,6 +200,16 @@
 
 적용 범위: jest-expo와 Jest 구성. native mock 테스트와 실제 기기 검증을 구분한다.
 
+<a id="s25"></a>
+
+## S25. pngjs
+
+공식 주소: [pngjs 저장소와 API 문서](https://github.com/pngjs/pngjs)
+
+2026-10-27 적용 범위: Node 제작 도구에서 RGBA8 PNG를 생성하고 검사기에 사용할 sync read/write API. npm 배포 버전 `pngjs@7.0.0`과 `@types/pngjs@6.0.5`를 exact 개발 의존성으로 설치했다. 두 패키지는 MIT이며 pngjs의 Node 요구사항은 `>=14.19.0`이다. 이 프로젝트의 CLI는 TypeScript 직접 로딩 때문에 Node 26 개발 환경을 사용한다.
+
+확인 근거: npm metadata와 설치한 `pngjs/lib/{png-sync,packer-sync,parser-sync}.js`, `@types/pngjs/index.d.ts`. 실제 LUT 생성은 수행했으나 별도 decode/round-trip 테스트와 전체 의존성 회귀 검사는 NOT_RUN이다. 이 자료는 카메라 GPU에서 raw texture sampling을 보장하지 않는다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

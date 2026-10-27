@@ -1,0 +1,315 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Yeoun filter authoring seed v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "status",
+    "createdAt",
+    "description",
+    "renderContractVersion",
+    "lutContract",
+    "collections",
+    "filters"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "status": {
+      "const": "design-draft"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "renderContractVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "lutContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "size",
+        "tilesPerRow",
+        "paddingPixels",
+        "atlasWidth",
+        "atlasHeight",
+        "inputSpace",
+        "outputSpace",
+        "axisOrder",
+        "alpha"
+      ],
+      "properties": {
+        "size": {
+          "const": 33
+        },
+        "tilesPerRow": {
+          "const": 6
+        },
+        "paddingPixels": {
+          "const": 1
+        },
+        "atlasWidth": {
+          "const": 210
+        },
+        "atlasHeight": {
+          "const": 210
+        },
+        "inputSpace": {
+          "const": "srgb-encoded"
+        },
+        "outputSpace": {
+          "const": "srgb-encoded"
+        },
+        "axisOrder": {
+          "const": "r-fastest-g-next-b-slice"
+        },
+        "alpha": {
+          "const": 1
+        }
+      }
+    },
+    "collections": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "subtitle",
+          "representativeId"
+        ],
+        "properties": {
+          "id": {
+            "enum": [
+              "light",
+              "time",
+              "scene"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "representativeId": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "filters": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "items": {
+        "$ref": "#/$defs/filter"
+      }
+    }
+  },
+  "$defs": {
+    "filter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "collection",
+        "name",
+        "caption",
+        "lookVersion",
+        "status",
+        "lut",
+        "authoring",
+        "defaults",
+        "notes"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^(light|time|scene)-[a-z]+$"
+        },
+        "collection": {
+          "enum": [
+            "light",
+            "time",
+            "scene"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "caption": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lookVersion": {
+          "const": "0.1.0-draft"
+        },
+        "status": {
+          "const": "design-draft"
+        },
+        "lut": {
+          "type": "null"
+        },
+        "authoring": {
+          "$ref": "#/$defs/authoring"
+        },
+        "defaults": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "intensity",
+            "grain",
+            "bloom"
+          ],
+          "properties": {
+            "intensity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "grain": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "bloom": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "notes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "authoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "colorSpace",
+        "exposureEv",
+        "saturation",
+        "toneCurve",
+        "shadowTintRgb",
+        "highlightTintRgb",
+        "hueBands"
+      ],
+      "properties": {
+        "colorSpace": {
+          "const": "srgb-encoded"
+        },
+        "exposureEv": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        },
+        "saturation": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "toneCurve": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "prefixItems": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            ],
+            "items": false
+          }
+        },
+        "shadowTintRgb": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number",
+            "minimum": -0.1,
+            "maximum": 0.1
+          }
+        },
+        "highlightTintRgb": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number",
+            "minimum": -0.1,
+            "maximum": 0.1
+          }
+        },
+        "hueBands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "centerDeg",
+              "halfWidthDeg",
+              "shiftDeg",
+              "saturationMultiplier"
+            ],
+            "properties": {
+              "centerDeg": {
+                "type": "number",
+                "minimum": 0,
+                "exclusiveMaximum": 360
+              },
+              "halfWidthDeg": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 90
+              },
+              "shiftDeg": {
+                "type": "number",
+                "minimum": -30,
+                "maximum": 30
+              },
+              "saturationMultiplier": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 2
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

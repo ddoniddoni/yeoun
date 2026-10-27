@@ -1,0 +1,24 @@
+# 기존 .gitignore에 필요한 항목만 병합합니다. 통째로 덮어쓰지 않습니다.
+node_modules/
+.expo/
+dist/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+*.p12
+*.p8
+*.mobileprovision
+*.keystore
+*.jks
+credentials.json
+
+# 실제 사용자 사진, 생성된 일회성 비교 이미지와 장치 로그
+private-fixtures/
+artifacts/local/
+
+# package-lock.json은 제외하지 않습니다.
+# android/와 ios/의 버전 관리는 선택한 Expo CNG 정책을 확인한 뒤 정합니다.
+# 이 예시만 보고 android/, ios/ 또는 공개 가능한 테스트 fixture를 삭제하지 않습니다.

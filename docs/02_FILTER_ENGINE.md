@@ -1,0 +1,254 @@
+# 02. 필터와 렌더링 계약
+
+이 문서는 프로젝트 고유 설계다. 필터 수치는 제작 초안이며 카메라 제품이나 실제 필름을 정밀 복제한 수치가 아니다. 라이브러리의 실제 함수 시그니처는 설치 버전의 타입에서 확인한다.
+
+## 1. 구현 원칙
+
+색상 변환은 LUT로, 입자와 빛 번짐은 공간 효과로 분리한다. 같은 `FilterDefinition`, `RenderSettings`, `engineVersion`을 미리보기와 사진 출력에서 사용한다. 프리뷰 프레임을 저장하는 방식은 고해상도 촬영 구현으로 인정하지 않는다.
+
+M0에서는 CPU reference와 비교 가능한 단순 Color Matrix로 실제 파이프라인을 검증한다. M1부터 아래 LUT 계약을 구현한다. Color Matrix 임시 효과에 브랜드 이름만 붙여 9종 완성을 주장하지 않는다.
+
+Skia는 Runtime Shader를 제공하지만 카메라 버퍼 변환, GPU 컨텍스트, offscreen 표면, 파일 인코딩은 별도 통합이 필요하다. 참고: [S02, S05, S08, S09](REFERENCES.md).
+
+## 2. 9종 필터의 색감 목표
+
+| ID | 밝은 부분 | 어두운 부분 | 선택적 색상 조정 | 검수 주의점 |
+|---|---|---|---|---|
+| light-afternoon | 크림빛 햇살 | 중립에 가까운 맑은 그림자 | 노랑을 금빛 쪽으로, 초록 채도 약화 | 흰 접시와 피부를 누렇게 만들지 않기 |
+| light-milk | 거의 중립적인 흰색 | 부드럽게 들어 올린 명암 | 전체 채도 약화, 붉은 음식색은 적당히 유지 | 뿌연 안개처럼 보이지 않기 |
+| light-spring | 맑고 약한 분홍빛 | 가벼운 회색 | 분홍, 연두, 하늘 청록의 미세 변화 | 피부의 분홍 과장과 민트 하늘 억제 |
+| time-summer | 따뜻한 노란 햇빛 | 약한 올리브 | 빨강과 노랑은 살아 있게, 초록은 바래게 | 여름색과 피부색 균형 |
+| time-diary | 베이지 | 갈색이 섞인 회색 | 전체 저채도, 파랑과 초록을 더 절제 | 탁하고 회색인 사진으로만 만들지 않기 |
+| time-night | 호박색 조명 | 남색 | 빨강 과포화 억제, 주변 저채도 | 어두운 원본에 과도한 입자를 더하지 않기 |
+| scene-dawn | 차가운 중립 | 청회색 | 따뜻한 색 절제, 파랑 중심 | 검정 디테일이 사라지지 않기 |
+| scene-rain | 중립 반사광 | 청록 | 초록과 파랑을 차분하게 연결 | 얼굴이 회녹색으로 바뀌지 않기 |
+| scene-ending | 부드러운 금빛 | 서늘한 그림자 | 따뜻한 피사체와 차가운 배경 대비 | 과한 청록/주황 룩으로 고정하지 않기 |
+
+### 강도 100%에서의 제작 기준
+
+| 필터 | LUT에 포함할 밝기 EV | 전체 채도 배율 | toneCurve 첫 출력값 | 기본 입자 | 기본 번짐 |
+|---|---:|---:|---:|---:|---:|
+| 오후 네 시 | +0.15 | 0.96 | 0.010 | 6 | 10 |
+| 우윳빛 아침 | +0.20 | 0.88 | 0.025 | 0 | 12 |
+| 봄의 공기 | +0.10 | 0.94 | 0.015 | 3 | 8 |
+| 여름방학 | +0.05 | 1.06 | 0.020 | 22 | 6 |
+| 오래된 일기 | +0.05 | 0.82 | 0.055 | 32 | 0 |
+| 밤의 필름 | -0.10 | 0.90 | 0.015 | 30 | 8 |
+| 푸른 새벽 | -0.10 | 0.85 | 0.000 | 8 | 0 |
+| 비 온 뒤 | -0.05 | 0.88 | 0.005 | 12 | 3 |
+| 엔딩 크레딧 | 0.00 | 0.95 | 0.000 | 8 | 10 |
+
+입자와 번짐은 0~100 UI 척도이며 JSON에는 0~1로 저장한다. 첫 출력값은 tint 전 tone curve의 검정점이다. tint 뒤 최종 검정의 RGB와 정확히 같다는 뜻은 아니다. 전체 필터 강도의 기본값은 80%다.
+
+수치의 단일 원본은 `spec/filters.seed.json`이다. 위 표를 수정할 때 JSON과 검수 기록도 함께 수정한다. 빛 번짐은 약한 Bloom이며 영화 필름의 물리적 Halation 재현을 뜻하지 않는다.
+
+## 3. seed와 실제 자산을 구분한다
+
+`filters.seed.json`은 제작용 데이터이며 모든 필터는 `status: design-draft`, `lut: null`이다. `filters.schema.json`은 이 제작용 형식만 검증한다. production manifest는 별도 생성해야 하며 이 schema를 그대로 출시에 사용하지 않는다.
+
+### M1 제작 데이터 검증 코드 (2026-10-27, 실행 NOT_RUN)
+
+- `src/domain/filters/types.ts`는 제작용 `FilterSeed`, `DraftFilter`, `FilterAuthoring`, `FilterControls`와 공통 `RenderSettings` 타입을 정의한다. `DraftFilter.lut`는 `null`이고 상태는 `design-draft`다. GPU 객체나 파일 저장 API를 포함하지 않는다.
+- `scripts/lib/filterSeed.ts`의 `createFilterSeedValidator`에는 저장소의 `filters.schema.json`만 전달한다. Ajv 2020-12가 구조·개수·필수 필드·숫자 범위·날짜를 먼저 검사하고, 성공한 데이터만 `validateSeedSemantics`로 전달한다. 입력의 `$schema` 주소로 외부 문서를 가져오지 않는다.
+- 의미 검사는 컬렉션/필터 ID 유일성, 세 컬렉션 존재와 각 3개 필터, ID 접두사와 소속, 대표 필터 존재와 소속, 지원 렌더링 계약 `0.1.0`, tone curve x 엄격 증가/y 단조 비감소를 검사한다. 보간 정의역 전체를 다루기 위해 첫 x=0, 마지막 x=1을 요구한다.
+- 숫자 문자열 변환, 기본값 주입, 추가 필드 삭제, 범위 clamp를 하지 않는다. NaN/Infinity는 거부한다. 실패는 `{ ok: false, issues }`, 성공은 `{ ok: true, data }`이며 오류는 종류·코드·JSON Pointer 경로·메시지를 포함한다. 성공 데이터는 입력 참조이며 `Readonly`는 TypeScript 계약이다. 런타임 동결이나 촬영 snapshot 복사를 대신하지 않는다.
+- `RenderSettings`는 이번에 타입만 정의했다. 저장된 레시피의 ID/lookVersion/engineVersion 존재 확인과 복원은 이후 manifest/레시피 구현 범위다. 제작 seed 검사 성공만으로 런타임 설정이나 필터 사용 가능 상태를 보증하지 않는다.
+
+실행 요청을 받은 뒤 사용할 명령:
+
+```sh
+npm run validate:filters
+npm run validate:filters -- /path/to/filters.seed.json
+```
+
+명령은 Node 26 개발 환경의 TypeScript 직접 로딩을 사용한다. 파일을 변경하지 않고 오류가 있으면 종료 코드 1을 반환하도록 작성했다. Ajv와 ajv-formats는 개발 의존성이며 현재 앱 진입점/카메라에서 가져오지 않는다. 이 명령 및 새 단위 테스트는 **아직 실행하지 않았다**. CPU 색 변환, LUT 생성, GPU 연결과 색감 승인은 후속 작업이다.
+
+구현 근거: [Ajv의 JSON Schema 버전별 지원](https://ajv.js.org/json-schema.html), [TypeScript 타입 가드](https://ajv.js.org/guide/typescript.html), [날짜 format 플러그인](https://ajv.js.org/guide/formats.html). 실제 설치한 8.17.1/3.0.1의 타입과 배포 소스를 대조했다.
+
+Codex가 구현할 산출물:
+
+```text
+src/domain/filters/                         # 정의, 검증, 버전 참조
+src/rendering/reference/                    # CPU reference 순수 함수
+src/rendering/shaders/                      # 공통 셰이더
+src/rendering/adapters/                     # 선택한 Skia 버전 연결
+assets/luts/                               # 생성된 atlas PNG
+assets/filter-previews/                     # 실제 엔진으로 만든 미리보기
+assets/filter-manifest.json                 # 실제 경로와 checksum
+scripts/generate-luts.mjs                   # seed -> LUT와 manifest
+scripts/validate-filter-assets.mjs          # 누락, checksum, 버전 검사
+```
+
+별도 npm 패키지가 필요하면 허용 목록과 추가 승인 규칙을 따른다. Node에서 PNG 인코딩에 사용할 `pngjs`는 빌드 도구 후보로 허용한다. 단순 JSON 생성에 이미지 처리 서버를 추가하지 않는다.
+
+manifest에는 필터 ID, lookVersion, engineVersion, source seed hash, atlas 크기, 축 순서, 색 공간, 파일 경로, 파일 SHA-256, 품질 상태 `draft/approved`를 포함한다. 파일이 존재하지 않으면 해당 필터를 완료로 표시하지 않는다. 필터 버전은 한번 출시하면 같은 이름으로 자산을 덮어쓰지 않는다.
+
+## 4. 색 공간과 전체 효과 순서
+
+### 기준 계약
+
+MVP는 SDR 입력을 sRGB working space로 정규화하고 sRGB JPEG를 출력하는 것을 목표로 한다. 들어온 데이터가 항상 sRGB라고 가정하지 않는다. YUV 변환의 range/matrix, Display P3 입력과 HDR 입력의 처리는 플랫폼 adapter에서 확인한다.
+
+Skia 내부에는 색 관리가 있으며 데이터용 이미지에는 일반 색 변환을 적용하면 안 되는 경우가 있다. raw 이미지 셰이더의 개념은 공식 문서에 있지만, 해당 API가 선택한 React Native 바인딩에 노출되는지는 별도 확인한다. 없는 JS 함수를 만들어 호출하지 않는다. 참고: [S09](REFERENCES.md).
+
+### 단일 기준 파이프라인
+
+```text
+입력 버퍼 또는 파일
+ -> 방향과 미러와 crop 정규화
+ -> SDR sRGB working image C
+ -> Look LUT: L(C)
+ -> linear RGB에서 하이라이트 Bloom 합성
+ -> encoded sRGB로 돌아오기
+ -> 고정 seed의 monochrome Grain
+ -> 원본 C와 최종 필터 결과를 master intensity로 혼합
+ -> 필요 시 표시 surface의 색 공간으로 변환
+ -> 저장 경로에서는 sRGB JPEG 인코딩
+```
+
+원본 모드는 방향과 crop 및 필요한 색 정규화는 수행하되 모든 스타일 효과를 우회한다. `intensity=0`도 같은 정규화 원본을 의미한다. 원본 파일과 JPEG 바이트가 같다는 뜻은 아니다.
+
+`final = mix(C, styled(C, grain, bloom), intensity)`로 정의한다. 혼합은 v0 계약에서 encoded sRGB로 한다. 각 효과를 이미 intensity로 줄인 뒤 최종 mix를 다시 적용하는 이중 강도 계산을 금지한다.
+
+카메라의 노출 보정과 LUT의 밝기 수치는 별개다. 카메라 exposure bias는 촬영 단계에서만 한 번 적용하고, 사진 처리에서 같은 EV를 다시 곱하지 않는다. LUT에 포함한 preset EV, tone curve와 채도를 런타임에서 또 적용하지 않는다.
+
+## 5. 초안 LUT의 재현 가능한 제작식
+
+다음은 이 프로젝트의 v0 초안 알고리즘이다. 최종 색감은 사진 검수 후 버전을 올려 변경할 수 있다. CPU reference를 먼저 만들고 동일한 데이터로 atlas를 생성한다.
+
+### 공통 함수
+
+`clamp01(x)=min(1,max(0,x))`, `mix(a,b,t)=a*(1-t)+b*t`.
+
+`smoothstep(a,b,x)`는 `t=clamp01((x-a)/(b-a))`, `t*t*(3-2*t)`로 계산한다. 이 문서에서 사용한 경계는 항상 `a<b`다.
+
+sRGB encoded 채널 `c`의 선형화:
+
+```text
+c <= 0.04045: c / 12.92
+otherwise: ((c + 0.055) / 1.055)^2.4
+```
+
+선형 채널 `l`의 sRGB 변환:
+
+```text
+l <= 0.0031308: 12.92*l
+otherwise: 1.055*l^(1/2.4) - 0.055
+```
+
+이는 표준 sRGB 전달 함수이며 구현 근거는 [S18](REFERENCES.md)에서 확인한다. 색 관리가 이미 변환한 값을 다시 변환하지 않는다.
+
+### 제작 순서
+
+1. 입력 encoded sRGB를 선형화하고 `2^exposureEv`를 곱한다. 초안에서는 0~1로 제한한 뒤 sRGB로 되돌린다. 이미 소실된 하이라이트를 복원하지 못하므로 밝은 사진에서 clipping을 검수한다.
+2. 각 RGB 채널에 `toneCurve`를 적용한다. x 좌표는 오름차순이며 구간별 선형 보간한다. overshoot가 생길 수 있는 임의 cubic curve로 바꾸지 않는다.
+3. 이 시점의 encoded RGB로 `Y=0.2126R+0.7152G+0.0722B`를 구한다. 여기서 Y는 스타일 마스크용 밝기 근사치이지 물리적인 선형 휘도가 아니다.
+4. `shadowWeight=1-smoothstep(0.15,0.55,Y)`, `highlightWeight=smoothstep(0.45,0.90,Y)`를 계산하고 각 RGB tint에 가중치를 곱해 더한 뒤 제한한다.
+5. RGB를 HSV로 바꾸고 아래 hue band 규칙을 적용한다. H는 degree, S/V는 0~1이다. S=0의 hue는 0으로 정의하되 band의 효과는 saturation mask로 사라지게 한다.
+6. 다시 RGB로 돌아온 뒤 encoded 밝기 근사치 Y를 다시 계산한다. `RGB=Y+(RGB-Y)*saturation`으로 전체 채도를 조절하고 0~1로 제한한다.
+7. 이 결과만 LUT에 저장한다. 입자, 번짐과 master intensity는 굽지 않는다.
+
+### Hue band 규칙
+
+원래 hue H와 band 중심의 최소 원형 거리 `d=min(abs(H-center),360-abs(H-center))`를 구한다.
+
+`w = 1-smoothstep(0,halfWidthDeg,d)`이며 모든 band의 w를 구한 후 `den=max(1,sum(w))`로 정규화한다. `mask=smoothstep(0.05,0.25,S)`로 무채색 근처를 보호한다.
+
+```text
+H' = wrap360(H + mask * sum(w * shiftDeg) / den)
+S' = clamp01(S * (1 + mask * sum(w * (saturationMultiplier-1)) / den))
+V' = V
+```
+
+모든 가중치는 변형 전 H와 S로 계산한다. band 순서를 바꾸면 결과가 달라지는 연속 적용 방식은 금지한다. 이 방식은 피부를 인식하지 않는다. 피부와 비슷한 색의 음식이나 가구에도 영향을 준다.
+
+## 6. LUT 파일과 GPU sampling 계약
+
+### v0 atlas
+
+- 3D 격자 크기 N=33. 총 35,937개의 RGB sample.
+- 각 blue slice는 red가 가로, green이 세로로 증가한다.
+- tile 한 변은 `N+2=35`px. 네 변에 1px 복제 padding.
+- 한 줄 6개 tile, 총 6줄. atlas는 210x210 RGBA PNG.
+- 사용 slice는 0~32. 남는 3개 tile은 0으로 채우며 sampling하지 않는다.
+- alpha는 항상 255. 데이터 텍스처로 취급하고 mipmap, 손실 압축을 사용하지 않는다.
+- 내부 sample index는 `r + N*(g + N*b)`로 정의한다.
+
+입력 normalized RGB의 좌표는 `p=C*(N-1)`이다. blue의 아래/위 정수 slice를 찾고 각 slice에서 red/green을 bilinear interpolation한 후 blue 소수 부분으로 혼합한다. trilinear CPU reference와 같은 결과여야 한다.
+
+slice k의 tile 좌상단은 `tx=(k%6)*35`, `ty=floor(k/6)*35`다. red/green sample의 픽셀 중심 좌표는 `(tx+1+R*32+0.5, ty+1+G*32+0.5)`다. UV를 사용하는 backend라면 atlas 크기로 나눈다. 좌표 원점, 반 픽셀과 y 방향을 identity test로 검증한다.
+
+정확한 raw sampling을 바인딩에서 지원하지 않으면 그 사실을 기록하고 공식 지원 경로 또는 최소 네이티브 adapter를 검토한다. 일반 이미지로 불러온 뒤 틴트만 눈으로 맞춰 문제를 숨기지 않는다.
+
+### 외부 .cube
+
+초기 구현은 위 seed와 자체 atlas 생성기만 지원해도 된다. 외부 `.cube`를 지원할 때는 file domain, 채널 순서, input/output color space, Log 기반 여부, 크기를 명시한다. LUT가 sRGB용이라는 설명 없이 다운로드 파일을 임의 적용하지 않는다. 상용 필터 자산을 무단 복제하지 않는다.
+
+### 양자화와 banding
+
+8-bit PNG atlas는 시작안이다. 무채색 gradient와 하늘에서 banding을 검수한다. 정확한 grid point에서는 CPU 결과를 8-bit 양자화한 값과 1 LSB 이내, fractional point에서는 atlas 기준 CPU trilinear 결과와 허용 오차를 비교한다. analytic transform과 LUT interpolation의 차이는 별도 항목이다.
+
+8-bit 자산으로 품질 기준을 충족하지 못하면 16-bit 또는 다른 texture 형식의 지원 여부를 조사하고 엔진 버전을 바꿔 적용한다. 입자를 추가해 오류를 숨기는 것으로 통과시키지 않는다.
+
+## 7. Grain
+
+v0는 정적인 monochrome noise다. 촬영 결과의 random seed는 capture마다 한 번만 만들고 원본 초안과 함께 보관한다. 같은 초안과 설정으로 다시 그릴 때는 동일 seed를 사용한다. 한 장 세 분위기 비교에서도 동일 seed를 공유한다.
+
+원본의 방향과 crop을 정규화한 좌표에 대해 긴 변 1600 단위의 가상 격자를 사용한다. 화면 픽셀 크기에만 의존하지 않으며 미리보기와 export의 정규화된 질감 크기를 맞춘다. 축소 시 aliasing을 방지할 필터링을 고려한다.
+
+시작식은 `RGB += noise * 0.04 * grain * envelope`이며 `noise`는 [-1,1]의 평균 0 값, `envelope=0.35+0.65*(1-abs(2Y-1))`다. Y는 제한된 encoded RGB 밝기 근사치다. 이 식과 격자 해상도는 엔진 버전에 포함하고 임의로 변경하지 않는다.
+
+상업용 필름의 정확한 입자 분포를 주장하지 않는다. 기기 화면에서 정적인 얼룩처럼 보이거나 큰 출력에서 점이 보이면 sigma, 공간 분포, 축소 방식을 검수한다. 자동 temporal grain은 MVP 범위 밖이다.
+
+## 8. Bloom
+
+LUT 결과를 선형화한 후 밝은 영역을 추출한다. `Ylinear=0.2126R+0.7152G+0.0722B`, `mask=smoothstep(0.65,0.95,Ylinear)`로 정의한다.
+
+`bright=linearRGB*mask`를 미리보기에서는 우선 1/4 크기로 줄여 blur하고 원래 크기로 복원한다. 시작 sigma는 처리 이미지 긴 변의 0.003이며, downsample 비율을 반영해 blur pixel 값을 변환한다.
+
+`bloomed=clamp01(linearRGB + 0.6*bloom*blur(bright))`를 시작식으로 사용한다. blooming 후 encoded sRGB로 돌아가 grain을 적용한다. 전체 프레임에 단순 blur를 덮지 않는다.
+
+저장 경로에서도 같은 정규화 sigma와 효과 강도를 사용한다. 미리보기 저해상도 blur 근사와 export의 차이는 실제 기준 사진으로 검사한다. blur가 GPU texture 최대 크기를 넘지 않도록 고해상도 이미지의 중간 버퍼 해상도를 제한한다.
+
+## 9. 공유 데이터 계약
+
+아래는 앱 내부 도메인 타입의 제안이며 외부 라이브러리 API가 아니다.
+
+```ts
+type CollectionId = 'light' | 'time' | 'scene';
+
+type RenderSettings = Readonly<{
+  filterId: string | 'original';
+  lookVersion: string;
+  engineVersion: string;
+  intensity: number; // finite, 0..1
+  grain: number;     // finite, 0..1
+  bloom: number;     // finite, 0..1
+}>;
+
+type RenderContext = Readonly<{
+  seed: number;
+  sourceWidth: number;
+  sourceHeight: number;
+  outputWidth: number;
+  outputHeight: number;
+  workingColorSpace: 'srgb';
+  mode: 'preview' | 'comparison' | 'export';
+}>;
+```
+
+`filterId=original`이면 나머지 효과를 무시한다. 새 레시피는 현재 filter version을 참조하고 기존 레시피는 이전 version을 유지한다. JSON 복원 시 범위, 숫자 유효성, ID와 version 존재를 검증한다. NaN, Infinity, null을 0으로 몰래 바꿔 성공 처리하지 않는다.
+
+GPU 객체를 위 타입이나 DB에 넣지 않는다. React 컴포넌트가 shader 문자열, LUT decoding과 파일 저장 구현을 직접 소유하지 않게 한다.
+
+## 10. 품질 테스트
+
+1. identity LUT에서 RGB 원색, 회색, 모든 경계와 임의 점의 CPU/GPU 결과를 비교한다.
+2. 강도 0은 normalized original과 같고, 같은 입력과 seed는 동일 결과여야 한다.
+3. RGB축을 바꿔 불러온 오류, tile 경계 bleed, gamma 중복, alpha premultiply 오류를 검출한다.
+4. 실제 사진의 흰색, 붉은 음식, 다양한 피부 계열, 식물, 하늘, 야간 간판을 검수한다.
+5. 같은 정지 입력의 preview/export 경로를 먼저 비교하고 실제 카메라 preview/photo 차이는 별도 검사한다.
+6. JPEG 파일의 decode 결과로 손실 압축까지 확인하되 무손실 GPU 테스트와 같은 오차를 강요하지 않는다.
+7. 필터별 승인과 LUT checksum을 기록한다. 숫자 검증은 색감 승인과 다르다.
+
+정확한 테스트 ID와 출력 품질 게이트는 [검증 명세](05_TEST_RELEASE.md)에 있다.

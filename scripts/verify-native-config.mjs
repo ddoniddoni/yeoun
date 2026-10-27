@@ -1,0 +1,17 @@
+import { readFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const config = JSON.parse(await readFile('app.json', 'utf8')).expo;
+const plist = await readFile('ios/M0/Info.plist', 'utf8');
+for (const key of ['NSCameraUsageDescription', 'NSPhotoLibraryAddUsageDescription']) assert.ok(plist.includes(key), key);
+for (const key of ['NSMicrophoneUsageDescription', 'NSLocationWhenInUseUsageDescription', 'NSPhotoLibraryUsageDescription']) assert.ok(!plist.includes(key), `Unexpected ${key}`);
+const manifest = await readFile('android/app/build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml', 'utf8');
+for (const permission of config.android.blockedPermissions) assert.ok(!manifest.includes(`android:name="${permission}"`), `Unexpected ${permission}`);
+assert.ok(manifest.includes('android.permission.CAMERA'));
+const map = await readFile('ios/Pods/Target Support Files/glog/glog.modulemap', 'utf8');
+assert.ok(map.includes('umbrella header "glog-umbrella.h"'));
+assert.ok(!map.includes('module *'));
+assert.ok(map.includes('textual header \"glog/log_severity.h\"'));
+assert.ok(map.includes('textual header \"glog/vlog_is_on.h\"'));
+const podfile = await readFile('ios/Podfile', 'utf8');
+assert.equal(podfile.split('# yeoun-m0: glog textual includes').length - 1, 1);
+console.log('Native generated permissions and glog module map: PASS (not runtime permission verification)');

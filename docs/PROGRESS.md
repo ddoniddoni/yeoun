@@ -1,6 +1,52 @@
 # 개발 진행 기록
 
-## Git Flow 등록 작업 — 2026-10-27
+## 현재 상태 — 2026-10-27 M1 색 변환 CPU 기준 로직
+
+- 사용자 승인 범위: PR #1의 `develop` 병합, 새 기능 브랜치 생성, 순수 TypeScript 색 변환 CPU reference와 진행 기록 작성.
+- [PR #1](https://github.com/ddoniddoni/yeoun/pull/1)은 **MERGED**다. 병합 커밋은 `df557474aa25470c5d991f32117d5d9cdbdb0040`이며, 원격 `develop`을 로컬에 fast-forward한 뒤 `feature/filter-cpu-reference`를 만들었다. 완료한 초기 등록 브랜치를 새 기능에 재사용하지 않았다.
+- 상태: **CPU 기준 로직 코드 작성 / 실행 검증 NOT_RUN**. 후속 사용자 지시에 따라 `feature/filter-cpu-reference` 작업을 커밋·푸시·PR 생성·`develop` 병합과 원격 반영까지 진행한다. `main` 릴리스 승격은 범위 밖이다.
+- 2026-10-27 Git Flow의 상시 승인 범위를 명확히 했다. Git Flow 요청 시 개별 Git 단계의 승인을 다시 묻지 않고 `develop` 병합/푸시까지 수행하고 마지막에는 `develop`에 남는다. 전역 Git 지침과 `docs/GIT_WORKFLOW.md`, 프로젝트 `AGENTS.md`의 연결 문구에 반영한다.
+- **사용자 요청에 따라 테스트를 실행하지 않았다.** lint/typecheck/seed CLI/JS·native build/GPU·실기기 검사도 이번에는 모두 NOT_RUN이다. 테스트 소스 작성과 Git 상태 확인만으로 수치·타입·실기기 검증을 통과했다고 표시하지 않는다.
+- G0/G1 미통과를 유지한다. M0 화면, 카메라 adapter, 기존 Matrix와 export 경로는 변경하지 않았다. 새 패키지와 lockfile 변경은 없다.
+
+| 범위 | 구현 상태 | 실행 검증 |
+|---|---|---|
+| M0 실제 촬영·저장 | 기존 최소 경로 | 이전 실기기 미검증 유지, G0 NOT_PASSED |
+| M1 seed 타입/검증 | 이전 코드 유지 | NOT_RUN |
+| M1 analytic 색 변환 | 코드 작성 | NOT_RUN |
+| M1 LUT 생성/보간/GPU/대표 3종 | NOT_STARTED | NOT_RUN, G1 NOT_PASSED |
+| M2~M6 | NOT_STARTED | NOT_RUN |
+
+### 변경 파일과 결정
+
+- `src/rendering/reference/color.ts`: finite/범위 검사, sRGB↔linear 채널, encoded 밝기 근사치, RGB↔HSV, hue wrap와 smoothstep. 입력 RGB는 정규화된 encoded sRGB로 제한한다.
+- `src/rendering/reference/toneCurve.ts`: 6개 점의 x=0~1 정의역, x 엄격 증가/y 단조 비감소를 확인하고 복사한 점으로 선형 보간 함수를 만든다. 설정 변경이 이미 만든 함수에 전파되지 않는다.
+- `src/rendering/reference/authoring.ts`: `createAuthoringTransform`으로 명세의 노출 → 곡선 → 그림자/하이라이트 틴트 → hue band → 전체 채도를 합성한다. EV=0은 불필요한 gamma 왕복을 생략하고, 실제 EV 보정은 선형 RGB에서 한 번 적용한다.
+- Hue band는 복사본을 정렬해 합산 순서를 고정한다. 각 가중치는 변환 전 H/S에서 계산하며 원형 거리, 겹침 정규화와 무채색 마스크를 적용한다. 원본 설정이나 입력 픽셀을 변경하지 않는다.
+- `tests/unit/colorReference.test.ts`: 전달 함수의 기준값/경계/왕복, 중립/8개 RGB 꼭짓점, HSV, 노출/보간/틴트/순서/겹침/무채색/설정 보존/비정상 입력과 seed 초안에 대한 사례를 작성했다. **실행하지 않았다.**
+- `docs/02_FILTER_ENGINE.md`, `docs/04_IMPLEMENTATION_PLAN.md`, 이 파일: 실제 API, 범위, Git 병합 결과와 미실행 상태를 기록했다.
+
+### 실제 명령과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| `git status --short --branch`, `git log`, `cat`, `sed`, `rg` | 기존 변경 없음과 지침/명세/타입 확인. 작성 후 파일과 diff 읽기 |
+| `gh pr view 1 --repo ddoniddoni/yeoun --json url,state,baseRefName,headRefName,headRefOid,mergeable,mergeStateStatus` | OPEN, 대상 develop, head `926f4e5b45ab63a5b6ac03c0d53d9ce6e41c4e80` 확인 |
+| `gh api repos/ddoniddoni/yeoun --jq '{allow_merge_commit,allow_squash_merge,allow_rebase_merge}'` | merge commit 지원 확인 |
+| `gh pr merge 1 --repo ddoniddoni/yeoun --merge --match-head-commit 926f4e5b45ab63a5b6ac03c0d53d9ce6e41c4e80` | exit 0. 강제/관리자 우회 없이 승인된 커밋을 병합 |
+| `gh pr view 1 --repo ddoniddoni/yeoun --json state,mergedAt,mergeCommit,url` | MERGED, `2026-10-27T10:45:34Z` (19:45:34 KST), merge `df55747` |
+| `git fetch origin`, `git switch develop`, `git merge --ff-only origin/develop`, `git switch -c feature/filter-cpu-reference` | 모두 exit 0. 최신 develop 기반 새 기능 브랜치 생성 |
+| `apply_patch` | 코드·테스트 소스·문서 작성 |
+| `npm run lint`, `npm run typecheck`, `npm test -- --runInBand`, `npm run validate:filters` | NOT_RUN |
+| JS/native build, GPU, 실기기 | NOT_RUN |
+
+### 미검증 사항과 다음 작업
+
+1. 새 함수의 수치, 타입, 테스트 환경 호환성은 실행 검증 전이다. 사용자 요청 후 U03/U04 관련 테스트와 기존 seed 검사부터 실행하고 실제 결과를 기록한다.
+2. 다음 독립 개발 후보는 **33³ LUT sample/atlas 생성과 manifest/checksum**이다. analytic 함수와 LUT trilinear 보간 오차는 별도로 취급해야 한다. 이번에는 LUT·PNG를 생성하지 않았다.
+3. 입자·bloom·master intensity, P3/HDR/sRGB 정규화, 카메라·GPU 연결, 9종 색감 승인과 M0 실제 기기 검증은 여전히 남아 있다.
+
+## 이전 기록 — Git Flow 등록 작업 (2026-10-27)
 
 - 사용자 지정 원격: `https://github.com/ddoniddoni/yeoun.git`. 최초 조회에서 `isEmpty: true`, 브랜치 없음, `PUBLIC`, 현재 계정 `ADMIN`을 확인했다.
 - 전역 `/Users/ddoni/.codex/AGENTS.md`를 읽고 `main`/`develop`/작업 브랜치와 `develop` 대상 PR 규칙을 적용한다. 기존 프로젝트에 Git 이력이 없어 최초 등록으로 진행한다.
@@ -17,7 +63,7 @@
 - 공개 대상은 기준 2개 + 프로젝트 50개, 총 52개 추적 파일이다. PR 본문에도 이번 테스트/lint/typecheck/빌드 미실행과 G0/G1 미통과를 기록했다. 병합·릴리스·배포는 수행하지 않았다.
 - 현재 작업 브랜치는 `chore/initial-import`다. `develop`/`main`에는 기준 커밋만 있고 앱 소스는 PR에 있다. 다음 기능은 초기 등록 PR이 `develop`에 통합된 뒤 최신 `develop`에서 새 기능 브랜치를 만들어 진행한다.
 
-## 현재 상태 — 2026-10-27 M1 독립 준비 작업
+## 이전 기록 — 2026-10-27 M1 독립 준비 작업
 
 - 사용자 승인 범위: **필터 데이터 구조와 검증 로직**. M0의 G0 미통과 상태에서 가능한 독립 작업만 진행했다.
 - **사용자 지시: 명시적으로 요청하기 전까지 테스트를 실행하지 않는다.** 이번 작업에서는 Jest, seed 검증 CLI, lint, typecheck, 번들/네이티브 빌드와 실기기 검사 모두 실행하지 않았다. 새 테스트 코드는 작성만 했다.

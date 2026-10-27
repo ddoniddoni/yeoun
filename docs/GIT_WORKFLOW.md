@@ -2,6 +2,14 @@
 
 원격 저장소: https://github.com/ddoniddoni/yeoun.git
 
+## Git Flow 요청의 완료 범위
+
+2026-10-27 사용자는 앞으로 **Git Flow 요청에 작업 브랜치 커밋·푸시, `develop` 대상 PR 생성, `develop` 병합과 원격 반영까지 포함**한다고 명시했다. 이 순서에 포함된 일상 Git 작업은 다시 개별 승인을 묻지 않고 진행한다.
+
+완료 시 로컬 `develop`을 원격과 동기화하고 `develop`에 체크아웃한 상태로 남는다. GitHub PR 병합으로 원격 `develop`이 갱신된 경우에도 로컬을 fast-forward하고 `git push origin develop` 및 원격 커밋 일치를 확인한다. 완료한 기능 브랜치로 자동 복귀하지 않는다.
+
+`main` 승격, 태그·릴리스·배포, force-push와 이력 재작성은 이 승인에 포함하지 않는다. 일반 개발 요청만 받은 경우의 자동 커밋·푸시 허용 범위는 확대하지 않는다.
+
 ## 브랜치 역할
 
 - `develop`: 일상 개발을 통합하는 브랜치. 일반 작업 PR의 대상이다.
@@ -15,8 +23,8 @@
 2. 개발 요청을 받으면 원격 `develop`을 fetch하고 가능한 경우 로컬 기준을 fast-forward한 뒤 작업 브랜치를 만든다. 이 준비는 사용자가 상시 승인했다.
 3. 커밋에는 해당 작업 파일만 명시적으로 stage한다. `git add .`를 사용하지 않는다.
 4. 커밋 메시지는 `type(scope): subject` 형식의 Conventional Commits를 사용한다.
-5. 사용자에게 승인받은 Git 작업 범위에서 커밋·푸시·PR을 수행한다. 일반 PR은 `develop`을 대상으로 한다.
-6. `develop` 병합과 푸시까지 승인된 작업은 마친 뒤 `develop`에 체크아웃한 상태로 둔다.
+5. Git Flow 요청을 받으면 현재 작업을 커밋·푸시하고 `develop` 대상 PR을 만든다.
+6. 해당 PR을 `develop`에 병합하고 원격 반영을 확인한다. 로컬 `develop`을 동기화한 뒤 `develop`에서 마친다.
 
 Git 초기화·커밋·푸시·태그·릴리스·병합·rebase·PR 생성은 명시적으로 요청되거나 사용자가 승인한 워크플로에 포함될 때 수행한다. `develop`/`main`에 직접 커밋하지 않는다. force-push, 공유 이력 재작성, 파괴적 명령은 별도 허락 없이 실행하지 않는다.
 
@@ -25,7 +33,7 @@ Git 초기화·커밋·푸시·태그·릴리스·병합·rebase·PR 생성은 �
 2026-10-27 사용자는 별도로 요청할 때까지 테스트를 실행하지 말라고 지시했고, Git 작업 전에도 테스트를 생략해도 된다고 명시했다. 이 지시는 일반적인 push/PR 전 검사 규칙보다 우선한다.
 
 - 별도 요청 전에는 테스트를 실행하지 않는다.
-- 이번 초기 등록에서는 lint, typecheck, seed 검증 CLI, JS/native build도 실행하지 않는다.
+- 현재 Git Flow 작업에서도 lint, typecheck, seed 검증 CLI, JS/native build를 실행하지 않는다.
 - 실행하지 않은 검사는 `NOT_RUN`으로 기록한다. 이전 M0 결과를 현재 변경의 통과 증거로 사용하지 않는다.
 - 검사 생략은 G0/G1 통과나 출시 승인을 뜻하지 않는다.
 

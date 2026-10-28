@@ -1,6 +1,46 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-28 정적 입자·약한 빛 번짐
+## 현재 상태 — 2026-10-28 카메라 원본 비교
+
+- 사용자 요청: 다음 계획 진행과 남은 계획 수 설명. PR #11은 `develop`에 병합됐고 `4e9eccf`의 깨끗한 작업 트리에서 시작했다. 원격 fetch/fast-forward 확인 후 `feature/camera-original-comparison`을 만들었다. 후속 Git Flow 요청으로 커밋·푸시·develop 대상 PR 생성/병합·동기화가 승인됐다. fetch 후 기준과 원격 develop 차이는 0/0이며 검사 실행은 계속 NOT_RUN이다. 최종 통합 상태는 PR과 Git 이력으로 확인한다.
+- M2의 독립 기능으로 **카메라 미리보기 원본 비교** 코드를 작성했다. '눌러서 원본 비교'는 press in/out에 반응하고 '원본 유지'는 별도 접근성 switch로 제공한다. 원본 모드와 강도 0에서는 비교 조작을 숨긴다. 기존 디자인 토큰과 48px 이상 터치 영역을 사용한다.
+- `usePreviewComparison`은 선택한 촬영 설정을 유지하고 미리보기 설정만 원본으로 만든다. 비교로 grain seed, snapshot, export 설정을 변경하지 않는다. CameraPreview의 device key/active를 비교 상태로 바꾸지 않으며 기존 원본 우회/LUT 캐시 경로를 사용한다. 실제 카메라 세션 유지/캐시 동작은 실행 확인 전이다.
+- 비교 중에는 촬영을 막는다. 각 제스처/토글 변화의 revision과 화면·설정 context를 요청 key에 포함해 해제 후 오래된 ready를 재사용하지 않는다. 새 필터 요청의 draw 통지를 기다린다. 필터/질감/기기 변경, 앱 중단, 카메라 중단/오류, 결과·진단 화면 이탈 때 비교를 해제한다. 이전 선택의 늦은 release는 새로운 선택의 누르기를 취소하지 않는다.
+- 비교 상태 전이와 기존 renderer의 필터→원본→필터 복귀 테스트 소스를 작성했다. **테스트·lint/typecheck·react-doctor·빌드·앱·GPU 검증 모두 NOT_RUN — 사용자 지시**. 개발 서버나 기기 프로세스도 시작하지 않았다. 실제 제스처 취소, VoiceOver/TalkBack, 전환 지연·표시·메모리, 저장 결과는 미검증이다. G0/G1/G2 미통과를 유지한다.
+- 결과 사진의 원본 비교/저장 전 재편집, 촬영 보조 기능과 M3 전체는 이번 범위에 포함하지 않았다. 새 패키지·의존성·필터 자산·네이티브 API 변경은 없다.
+
+### 남은 큰 계획: 5단계
+
+| 단계 | 남은 주요 범위 |
+|---|---|
+| M2 촬영 경험 | 탭 초점·노출·플래시·격자, 결과 사진 원본 비교/편집 연결, 작은 화면·접근성 검증. 기존 UI·원본 비교도 실행 확인 필요 |
+| M3 비교와 개인 레시피 | 한 장 세 분위기, SQLite/레시피·즐겨찾기·설정 지속성, 빛 가이드, 원본도 저장 |
+| M4 필터 완성 | 나머지 6종, 실제 썸네일, 장면별 색감 검수와 사용자 승인, 버전 고정 |
+| M5 가져오기·복구·성능 | 사진 가져오기·공유, 종료 후 저장 복구, 실패/부분 저장, 반복 촬영·연속 미리보기 성능 |
+| M6 출시 검수 | 양 플랫폼/저성능 기기, 접근성·오프라인·release 확인, 권리·고지·스토어 자료와 인수 |
+
+5단계는 개발 요청 5번 또는 완료까지의 일정이 아니다. 단계별로 작은 기능 작업이 여러 개 남았으며 **M0/M1의 실제 검증도 별도로 남아 있다**. 체크박스 수를 미구현 기능 수로 보지 않는다. 다음 독립 구현 후보는 M2 촬영 보조의 3x3 격자·지원 기기 플래시이며, 기기/API 범위를 읽고 좁혀 별도 요청으로 진행한다. 검증은 사용자가 요청할 때만 실행한다.
+
+### 변경 파일
+
+- 신규: `src/domain/filters/previewComparison.ts`, `src/screens/usePreviewComparison.ts`, `src/screens/OriginalComparisonControls.tsx`, `tests/unit/previewComparison.test.ts`.
+- 수정: `src/screens/M0CameraScreen.tsx`, `tests/integration/cameraLut.test.ts`.
+- 문서: `README.md`, `docs/01_PRODUCT_DESIGN.md`, `04_IMPLEMENTATION_PLAN.md`, `05_TEST_RELEASE.md`, `REFERENCES.md`, `STITCH_DESIGN.md`, `PROGRESS.md`.
+
+### 실제 명령과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| `git status`, `git diff`, `cat`, `sed`, `rg` | 깨끗한 develop, 구현 계획·코드·설치 RN 타입 읽음. `jest.config.cjs`는 없어 실제 `jest.config.js`를 찾아 읽음 |
+| `git fetch origin`, `git merge --ff-only origin/develop` | exit 0, Already up to date |
+| `git switch -c feature/camera-original-comparison` | exit 0 |
+| RN 0.83 Pressable/Accessibility 공식 문서 읽기 | 설치 0.83.10 타입과 대조, S32에 기록 |
+| `apply_patch` | 코드·테스트 소스·문서 작성 |
+| 테스트·lint/typecheck·react-doctor·빌드·앱·GPU 검사 | **NOT_RUN — 사용자 지시** |
+
+다음 작업 프롬프트: “PROGRESS와 M2를 읽고 3x3 격자·지원 기기 플래시의 작은 수직 기능을 진행해. 설치된 VisionCamera 5.2.3 타입을 확인하고 지원 여부·촬영 snapshot 계약을 지켜. 테스트·빌드·앱은 실행하지 말고 Git commit/push도 하지 마.”
+
+## 이전 기록 — 2026-10-28 정적 입자·약한 빛 번짐
 
 - 기능 커밋 `c2ffe53`을 원격 작업 브랜치에 푸시하고 [PR #11](https://github.com/ddoniddoni/yeoun/pull/11)을 생성했다. 명시 파일 `git add`, `git commit`, `git push -u`, `gh pr create`는 exit 0이다. PR에 검사 미실행과 실제 색감·방향·성능 미검증을 명시했으며 최종 병합 결과는 PR과 develop 이력을 따른다.
 - 사용자 요청은 앞선 디자인 Git Flow 이후 **다음 기능 개발**이다. PR #10은 develop에 병합됐고 로컬/원격 `e74f201`의 깨끗한 상태에서 시작했다. 원격 fetch/fast-forward 후 `feature/grain-bloom-effects`를 만들었다. 후속 Git Flow 요청으로 이번 기능의 커밋·푸시·develop 대상 PR 생성/병합·동기화가 승인됐다. fetch 후 기준과 원격 develop 차이는 0/0이었다. 검사 실행은 계속 NOT_RUN이며 최종 통합 상태는 PR과 Git 이력으로 확인한다.

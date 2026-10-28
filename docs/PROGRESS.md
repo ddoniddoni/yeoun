@@ -3,6 +3,7 @@
 ## 현재 상태 — 2026-10-28 Stitch 카메라 디자인 적용
 
 - 후속 사용자 요청으로 이번 디자인 변경의 Git Flow(커밋·푸시·develop 대상 PR 생성/병합·동기화)가 승인됐다. 원격 fetch 후 기준 브랜치와 차이 없음(0/0)을 확인했다. 테스트·lint/typecheck·빌드·앱 실행은 계속 NOT_RUN이며 최종 통합 결과는 해당 PR과 Git 이력을 따른다.
+- 디자인 커밋 `6ba0845`를 원격 작업 브랜치에 푸시하고 [PR #10](https://github.com/ddoniddoni/yeoun/pull/10)을 생성했다. 명시 파일 `git add`, `git commit`, `git push -u`, `gh pr create`는 exit 0이다. PR 본문에 실행 미검증 범위를 남겼으며 최종 병합 상태는 PR과 develop 이력으로 확인한다.
 - 사용자 요청: Google Stitch 프로젝트 `7812018568704993424`를 확인하고 디자인 작업. 프로젝트와 카메라/필터 트레이/결과 화면 3종의 스크린샷을 연결 도구로 읽어 현재 앱 코드에 적용했다. 원격 Stitch 시안은 변경하지 않았다.
 - 시작 상태는 깨끗한 `develop`/`origin/develop`이며 앞선 PR #9 병합 결과는 `11078c7`이다. 원격 fetch와 fast-forward 확인 후 `feature/stitch-camera-design`을 만들었다. 최초 디자인 구현 단계에서는 커밋·푸시·PR을 하지 않았고, 이후 위 Git Flow 요청을 받았다.
 - `cameraTheme.ts`에 차콜/따뜻한 흰색/컬렉션 강조색과 시스템 숫자 폰트를 모았다. `CameraControls.tsx`에 48px 이상 동작 버튼, 72px 원형 셔터(84px 링), 프레임 모서리를 작성했다. 새 의존성·폰트·사진 자산은 추가하지 않았다.

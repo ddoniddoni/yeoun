@@ -59,6 +59,14 @@ test('releases an existing binding and source when an offscreen surface is unava
   expect(mockSkia.Paint).not.toHaveBeenCalled();
 });
 
+test('measurement forwards the requested intensity and rejects invalid strength before allocation', () => {
+  const r = setup();
+  expect(() => measureLutSkia(identity, NaN)).toThrow();
+  expect(mockSkia.Data.fromBytes).not.toHaveBeenCalled();
+  measureLutSkia(identity, 0.5);
+  expect(r.pipeline.bindSource).toHaveBeenCalledWith(r.source, 0.5);
+});
+
 test('failed readback still releases every resource and preserves the measurement error', () => {
   const r = setup();
   r.output.readPixels.mockReturnValue(new Uint8Array(3));

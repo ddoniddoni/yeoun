@@ -1,28 +1,16 @@
-import {
-  AlphaType, ColorType, FilterMode, MipmapMode, Skia, TileMode,
-  type SkShader,
-} from '@shopify/react-native-skia';
-import { LUT_CONTRACT, type LutAtlas } from '../reference/lutAtlas';
+import type { SkShader } from '@shopify/react-native-skia';
+import type { LutAtlas } from '../reference/lutAtlas';
 import { createLutAlphaPlanes } from '../reference/lutPlanes';
-import { LUT_SKSL } from '../shaders/lut';
+import { bindLutSource, createLutResources, releaseNativeResources } from './lutResources';
 
 type Resource = { dispose(): void };
 export type LutShaderBinding = Readonly<{ shader: SkShader; dispose(): void }>;
 export type SkiaLutPipeline = Readonly<{
   /** Borrow a source shader from the same runtime/context. Caller owns its lifetime. */
-  bindSource(source: SkShader): LutShaderBinding;
+  bindSource(source: SkShader, intensity?: number): LutShaderBinding;
   /** Call after pending draws finish; releases outstanding bindings and all owned LUT resources. */
   dispose(): void;
 }>;
-
-function disposeAll(resources: Resource[]): void {
-  let failure: { error: unknown } | undefined;
-  while (resources.length) {
-    try { resources.pop()!.dispose(); }
-    catch (error) { failure ??= { error }; }
-  }
-  if (failure) throw failure.error;
-}
 
 /**
  * Create/cache LUT resources on the consuming RN JS runtime. No cross-worklet transfer.
@@ -39,31 +27,16 @@ export function createSkiaLutPipeline(atlas: LutAtlas): SkiaLutPipeline {
     if (disposed) return;
     disposed = true;
     // Bindings depend on plane shaders, then images/data, then the compiled effect.
-    try { disposeAll([...owned.splice(0), ...bindings]); }
+    try { releaseNativeResources([...owned.splice(0), ...bindings]); }
     finally { bindings.clear(); }
   };
   try {
-    const effect = Skia.RuntimeEffect.Make(LUT_SKSL);
-    if (!effect) throw new Error('LUT SkSL compilation failed');
-    owned.push(effect);
-    const children: SkShader[] = [];
-    for (const plane of planes) {
-      const data = Skia.Data.fromBytes(plane);
-      owned.push(data);
-      const image = Skia.Image.MakeImage({
-        width: LUT_CONTRACT.atlasWidth, height: LUT_CONTRACT.atlasHeight,
-        colorType: ColorType.Alpha_8, alphaType: AlphaType.Premul,
-      }, data, LUT_CONTRACT.atlasWidth);
-      if (!image) throw new Error('LUT Alpha_8 image allocation failed');
-      owned.push(image);
-      const shader = image.makeShaderOptions(TileMode.Clamp, TileMode.Clamp, FilterMode.Linear, MipmapMode.None);
-      owned.push(shader);
-      children.push(shader);
-    }
+    const resources = createLutResources(planes);
+    owned.push(...resources.owned);
     return {
-      bindSource(source) {
+      bindSource(source, intensity = 1) {
         if (disposed) throw new Error('LUT pipeline is disposed');
-        const shader = effect.makeShaderWithChildren([], [source, ...children]);
+        const shader = bindLutSource(resources, source, intensity);
         let released = false;
         const binding: LutShaderBinding = {
           get shader() {

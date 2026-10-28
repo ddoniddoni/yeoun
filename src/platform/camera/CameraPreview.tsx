@@ -1,23 +1,24 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { Platform, StyleSheet } from 'react-native';
-import { Skia } from '@shopify/react-native-skia';
 import { SkiaCamera } from 'react-native-vision-camera-skia';
 import { createSynchronizable, scheduleOnRN } from 'react-native-worklets';
 import type { CameraDevice, CameraPhotoOutput, Constraint } from 'react-native-vision-camera';
-import { matrixFor, type TestLook } from '../../domain/filters/testFilter';
+import type { CameraSettings } from '../../domain/filters/cameraSettings';
+import { renderCameraLut, type FilterStatus } from '../../rendering/adapters/cameraLut';
+import { useCameraLut } from './useCameraLut';
 const PREVIEW_SIZE = { width: 1280, height: 960 };
-export function CameraPreview({ device, photoOutput, active, look, onReady, onStopped, onError, onInfo }: {
-  device: CameraDevice; photoOutput: CameraPhotoOutput; active: boolean; look: TestLook;
+export function CameraPreview({ device, photoOutput, active, settings, filterRequestKey, onFilterStatus, onReady, onStopped, onError, onInfo }: {
+  device: CameraDevice; photoOutput: CameraPhotoOutput; active: boolean; settings: CameraSettings;
+  onFilterStatus(status: FilterStatus): void;
+  filterRequestKey: string;
   onReady(): void; onStopped(): void; onError(error: Error): void; onInfo(info: string): void;
 }) {
-  // Small immutable paint/filter objects only; retained by worklet closures and GC.
-  // Disposing them in a React cleanup could race an in-flight frame callback.
-  const paints = useMemo(() => {
-    return (['identity', 'warm'] as const).map(key => {
-      const paint = Skia.Paint(); paint.setColorFilter(Skia.ColorFilter.MakeMatrix(matrixFor(key))); return paint;
-    });
-  }, []);
+  const lut = useCameraLut(settings, filterRequestKey, onFilterStatus);
   const reported = useMemo(() => createSynchronizable(false), []);
+  const reportStopped = useCallback(() => {
+    reported.setBlocking(false);
+    onStopped();
+  }, [reported, onStopped]);
   // SkiaCamera copies a rendered image to RN asynchronously. Its native busy
   // flag only covers the camera callback, not that pending image delivery.
   const previewPending = useMemo(() => createSynchronizable(false), []);
@@ -35,14 +36,13 @@ export function CameraPreview({ device, photoOutput, active, look, onReady, onSt
     { photoHDR: false }, { videoDynamicRange: { bitDepth: 'sdr-8-bit', colorSpace: 'srgb', colorRange: 'full' } },
     { resolutionBias: photoOutput }, { fps: 30 },
   ], [photoOutput]);
-  const paint = paints[look === 'warm' ? 1 : 0]!;
   return <SkiaCamera style={styles.preview} device={device} outputs={outputs} constraints={constraints}
     isActive={active} orientationSource="device" pixelFormat="yuv" targetResolution={PREVIEW_SIZE}
     enablePreviewSizedOutputBuffers
     enablePhysicalBufferRotation={Platform.OS === 'ios'}
     warnIfRenderSkipped={false}
-    onStopped={onStopped} onError={onError}
-    onInterruptionStarted={onStopped}
+    onStopped={reportStopped} onError={onError}
+    onInterruptionStarted={reportStopped}
     onSessionConfigSelected={config => {
       onInfo(`선택 FPS ${config.selectedFPS ?? '?'} / native ${config.nativePixelFormat} / photo HDR ${String(config.isPhotoHDREnabled)}`);
     }}
@@ -57,13 +57,13 @@ export function CameraPreview({ device, photoOutput, active, look, onReady, onSt
         }
         previewPending.setBlocking(true);
         try {
-          render(({ canvas, frameTexture }) => {
-            canvas.drawImage(frameTexture, 0, 0, paint);
-            if (!reported.getBlocking()) {
-              reported.setBlocking(true);
-              scheduleOnRN(reportFrame, `실제 frame ${frame.width}×${frame.height} / ${frame.pixelFormat} / ${frame.orientation} / mirror ${String(frame.isMirrored)}`);
-            }
-          });
+          const status = renderCameraLut(lut, render);
+          // SkiaCamera queues its preview image before these acknowledgements.
+          if (status) scheduleOnRN(onFilterStatus, status);
+          if (!reported.getBlocking()) {
+            reported.setBlocking(true);
+            scheduleOnRN(reportFrame, `실제 frame ${frame.width}×${frame.height} / ${frame.pixelFormat} / ${frame.orientation} / mirror ${String(frame.isMirrored)}`);
+          }
         } finally {
           // Queued after SkiaCamera's updatePreviewTexture on the same RN queue.
           scheduleOnRN(acknowledgePreview);

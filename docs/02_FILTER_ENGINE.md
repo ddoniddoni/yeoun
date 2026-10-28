@@ -259,6 +259,21 @@ manifest parser와 PNG container guard를 `src/rendering/assets/`로 옮겨 Node
 
 PNG 원본과 manifest는 그대로 두고 동일 바이트의 `.lut` 패키징 복사본 4개를 추가했다. Metro가 데이터 자산으로 처리하도록 확장자를 등록한다. 실제 iOS/Android 번들 결과와 오프라인 동작은 미검증이다. 카메라/UI에서 로더를 아직 호출하지 않으며 앱 진입점도 import하지 않는다. [S27](REFERENCES.md#s27), [모바일 패키징 안내](../assets/lut-drafts/README.md)를 참조한다.
 
+### 대표 3종 카메라 통합 (2026-10-28, 코드 작성 / 실행 NOT_RUN)
+
+앞 절 이후 대표 3종의 preview/export 연결 코드를 작성했다. G0/G1은 미통과다. 초안 manifest/seed/PNG는 유지하고 `CameraSettings`에 제작 엔진 `lut-authoring-0.1.0`, look `0.1.0-draft`, 렌더러 `lut-camera-0.1.0`을 고정한다. `grain=bloom=0`만 받으며 미구현 효과를 조용히 무시하지 않는다.
+
+- 기본은 오후 네 시 80%이며 원본/대표 3종과 10% 단위 강도 조절을 제공한다. `CaptureController`는 ID·버전·강도를 촬영 전에 검증/복사/동결하고 동일 snapshot으로 export와 재시도를 수행한다.
+- `LUT_SKSL`의 intensity uniform은 LUT 결과와 원본을 encoded sRGB에서 한 번 혼합한 뒤 working space로 변환한다. backend 버전은 `skia-alpha-planes-0.2.0`이다. 앱의 원본/강도 0은 로딩과 LUT draw를 우회하며 shader도 강도 0에서 source를 바로 반환한다. `intensity.ts`는 합성 sample용 CPU 기준이다.
+- `useCameraLut`는 RN에서 기존 checksum/PNG/decode 로더를 거친 **LUT 자산 데이터**를 Alpha_8 plane으로 준비한다. React state는 설정과 상태 metadata만 보관한다. 이전 로딩 결과는 취소 표식/요청 ID로 무시한다. 기기/전경/선택 revision별 key가 일치하는 draw 통지를 받아야 촬영을 활성화한다.
+- `cameraLut`는 frame runtime에서 effect와 LUT 이미지/child shader를 만들고 현재 자산 hash·thread의 1세트를 재사용한다. RN용 `SkiaLutPipeline` 객체를 worklet에 복사하지 않는다. 공통 `lutResources`의 worklet 함수가 두 경로에서 같은 생성/바인딩/해제를 제공한다.
+- 각 frame의 source/root shader/paint는 frame thread에서 만들고 SkiaCamera `render()`의 snapshot/readback 반환 뒤 해제한다. 화면용 버퍼와 RN 전달 대기 1개 제한은 유지한다. LUT cache에는 camera texture/frame/surface를 보관하지 않는다. 종료 때 RN이 lock을 얻은 후 raster LUT/effect를 해제하며 Skia 2.4.19 이미지 해제는 생성 thread dispatcher를 고려한다.
+- draw와 요청 교체/cleanup은 명시적인 `Synchronizable.lock()`/`finally unlock()`으로 배타 처리한다. 설치 Worklets 0.7.4의 callback setter는 throw 시 unlock을 보장하지 않아 사용하지 않는다. RN이 frame 처리를 기다릴 수 있으며 지연·메모리·실기기 안정성은 측정 전이다.
+- export는 실제 JPEG 방향/crop을 유지하고 RN 전용 pipeline을 소유한다. 두 경로 모두 source image shader를 바인딩한 `drawRect`를 사용한다. Matrix를 중복 적용하지 않는다. 출력 파일 재열기/크기/readback과 실제 갤러리 저장 후 성공 표시는 유지한다.
+- 로딩 중 원본 표시, 자산/shader 실패 시 원본 표시와 안내를 제공한다. 실패한 선택으로 촬영하지 않으며 재시도 또는 원본 선택이 필요하다. export 실패는 draft와 설정을 보존하고 필터 대신 원본을 성공 파일로 저장하지 않는다.
+
+실제 decode byte 보존, SkSL/bridge 실행, 색 프로파일과 preview/photo 일치는 미검증이다. SkiaCamera 5.2.3 내부 snapshot/readback 실패는 콘솔에만 기록될 수 있어 draw 통지로 표시 성공을 확정하지 않는다. [S30](REFERENCES.md#s30), [실행 기록](PROGRESS.md)을 따른다.
+
 ### 외부 .cube
 
 초기 구현은 위 seed와 자체 atlas 생성기만 지원해도 된다. 외부 `.cube`를 지원할 때는 file domain, 채널 순서, input/output color space, Log 기반 여부, 크기를 명시한다. LUT가 sRGB용이라는 설명 없이 다운로드 파일을 임의 적용하지 않는다. 상용 필터 자산을 무단 복제하지 않는다.

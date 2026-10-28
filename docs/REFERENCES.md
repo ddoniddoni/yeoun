@@ -258,6 +258,18 @@ npm metadata: MIT, unpackedSize 9,868,277 bytes, peer React >=19 / RN >=0.78 / R
 
 설치된 VisionCamera 5.2.3의 iOS FrameOutput은 `enablePreviewSizedOutputBuffers`로 화면용 버퍼를 요청하고, `enablePhysicalBufferRotation`으로 connection의 회전·미러를 적용한다. 후자는 처리 비용이 있어 iOS에만 사용한다. 앱은 SkiaCamera가 RN에 전달하는 미리보기 대기 프레임을 하나로 제한한다. 촬영 해상도·저장 Matrix는 그대로다. 실제 출력 metadata와 사용자 확인 범위는 PROGRESS를 따른다.
 
+<a id="s30"></a>
+
+## S30. 카메라 LUT 바인딩과 master intensity
+
+공식 근거: [Skia v2 shader/children/uniforms](https://wcandillon.github.io/react-native-skia/v2/docs/shaders/overview/), [Skia v2 image shader](https://wcandillon.github.io/react-native-skia/v2/docs/shaders/images/), [Worklets Synchronizable](https://docs.swmansion.com/react-native-worklets/docs/0.10-0.12/memory/synchronizable/).
+
+2026-10-28 설치된 Skia 2.4.19의 `RuntimeEffect.ts`, `Canvas.ts`, `JsiSkHostObjects.h`/`JsiSkImage.h`, VisionCamera 5.2.3의 `useFrameOutput.ts`, SkiaCamera 5.2.3의 `views/SkiaCamera.tsx`/`render.ts`/`SurfacesCache.ts`, Worklets 0.7.4의 `synchronizableUnpacker.native.ts`/`SynchronizableAccess.cpp`를 읽었다. 공식 Worklets 페이지는 0.10~0.12이므로 설치 버전의 함수·lock 동작을 소스와 대조했다. 0.7.4 setter callback은 throw 시 unlock을 보장하지 않아 직접 lock/finally unlock을 사용한다.
+
+공통 shader에 intensity float를 전달한다. master mix 위치(encoded sRGB)는 이 프로젝트 계약이다. `drawImage`의 paint shader에 의존하지 않고 source child를 가진 shader를 `drawRect`로 그린다. camera cache는 frame thread에서 생성한 raster LUT/effect만 보관하고 프레임 source/root/paint는 snapshot 반환 뒤 해제한다. RN export는 별도 pipeline을 만든다. 이 구조는 소스에 근거한 구현 결정이며 cross-runtime·GPU·색감·메모리/FPS 성공의 실측 증거가 아니다. SkiaCamera 내부 snapshot/readback 실패가 console에만 기록되는 한계도 남아 있다.
+
+새 패키지나 버전 변경은 없다. shader backend만 `skia-alpha-planes-0.2.0`으로 올리고 제작 seed/PNG/manifest는 유지한다. 실행 결과와 미검증 범위는 PROGRESS를 따른다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

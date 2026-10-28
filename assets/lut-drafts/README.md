@@ -1,6 +1,6 @@
 # LUT 제작 초안
 
-여기는 수치 데이터 텍스처를 보관한다. 카메라 사진, 표시용 이미지나 승인된 필터 프리뷰가 아니다. 현재 identity와 `light-afternoon`, `time-summer`, `scene-dawn`의 초안 PNG 4개와 manifest가 있으며 상태는 모두 `draft`다. 앱용 로더 소스는 작성했으며 앱 진입점/카메라에서는 아직 호출하지 않는다.
+여기는 수치 데이터 텍스처를 보관한다. 카메라 사진, 표시용 이미지나 승인된 필터 프리뷰가 아니다. 현재 identity와 `light-afternoon`, `time-summer`, `scene-dawn`의 초안 PNG 4개와 manifest가 있으며 상태는 모두 `draft`다. 2026-10-28 앱용 로더를 카메라 미리보기와 고해상도 export에 연결하는 코드를 작성했으며 실행 검증은 NOT_RUN이다.
 
 ## 생성
 
@@ -28,7 +28,7 @@ npm run generate:luts -- --seed /path/to/filters.seed.json --out /path/to/new-dr
 
 새 자산을 추가할 때는 새 PNG와 manifest를 먼저 준비하고 `.lut` 복사본·정적 등록 목록·seed hash/version pin을 함께 갱신한다. 생성기는 `.lut`와 등록 코드를 자동 갱신하지 않는다. 복사본과 원본의 바이트 일치·원본 seed 연결을 검사하는 테스트 소스가 있으며 아직 실행하지 않았다. 런타임에서는 `.lut`에서 읽은 실제 바이트의 SHA-256을 manifest와 비교하고 실패하면 적용하지 않는다.
 
-현재 앱 화면은 로더를 import하지 않으므로 이 파일들이 현재 앱 번들에 포함됐다고 주장하지 않는다. 실제 소비 경로 연결 후 iOS/Android 개발·릴리스 번들에서 파일 접근, checksum, 오프라인 재실행과 캐시 복구를 확인해야 한다.
+현재 앱 화면과 export가 로더를 import하지만 실제 번들은 이번에 실행하지 않았다. 사용자 요청 후 iOS/Android 개발·릴리스 번들에서 파일 포함·접근, checksum, 오프라인 재실행과 캐시 복구를 확인해야 한다.
 
 ## 검사 요청 이후 사용할 명령
 

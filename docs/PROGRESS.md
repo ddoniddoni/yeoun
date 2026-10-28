@@ -1,6 +1,37 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-28 아이폰 시작·미리보기 메모리 종료·전면 방향 수정
+## 현재 상태 — 2026-10-28 대표 LUT 카메라·고해상도 저장 연결
+
+- 후속 사용자 요청으로 이번 LUT 통합의 Git Flow(커밋·푸시·develop PR 생성/병합·동기화)가 승인됐다. 이후 새 작업 브랜치에서 개발 진단 화면 분리를 진행한다. 이번 Git Flow에서도 테스트·빌드·별도 검사는 NOT_RUN이다. 통합 결과는 해당 PR과 Git 이력을 따른다.
+- 사용자 승인: 다음 기능인 대표 LUT 3종 선택, 실제 preview/export 연결, 강도 조절, 로딩·오류 처리의 **코드 구현**. 이전 아이폰 수정 PR #7은 `develop` (`8ce1d0e`)에 병합됐고 작업 트리는 깨끗했다. 원격 fetch/fast-forward 후 `feature/lut-camera-integration`에서 진행한다. 이번 요청에는 commit/push/PR이 포함되지 않는다.
+- **구현 코드 작성 / 실행 검증 NOT_RUN.** 테스트·lint/typecheck·react-doctor·번들·native build·GPU probe·실기기 실행을 하지 않았다. 이전 아이폰의 Warm Matrix 사용자 확인을 LUT 경로의 증거로 사용하지 않는다. G0/G1은 계속 NOT_PASSED다. 종료한 Metro/기기 콘솔도 다시 열지 않았다.
+- 원본과 **오후 네 시 / 여름방학 / 푸른 새벽**의 초안 선택 UI를 연결했다. 기본 오후 네 시 80%, 10% 단위로 0~100% 조절하며 스크린 리더 조절 동작도 제공한다. 입자·번짐은 0으로 명시 고정하고 아직 구현하지 않는다. 9종 완성이나 색감 승인을 주장하지 않는다.
+- `cameraSettings.ts`가 ID/lookVersion/제작 엔진/렌더러 버전·강도 유효성을 검사하고 immutable snapshot을 만든다. `CaptureController`는 셔터 시점에 이를 복사하며 처리 재시도에도 같은 snapshot을 쓴다. 알 수 없는 버전·NaN·미지원 공간 효과는 촬영 전에 실패한다.
+- `useCameraLut.ts`에서 기존 manifest/checksum/PNG/decode 로더를 호출한다. 이전 비동기 로딩은 취소 표식과 요청 ID로 무시한다. 선택 변경·강도·기기·전경 상태를 구분하는 요청 key의 첫 draw 통지가 온 뒤 촬영을 활성화한다. 로딩 중 원본 표시, 실패 시 원본 표시+안내+재시도/원본 선택을 제공한다.
+- `cameraLut.ts`/`lutResources.ts`: 카메라 thread에서 LUT resource를 만들어 자산 hash/thread별 현재 1세트만 보관한다. 프레임 source shader/root/paint는 `render()`의 snapshot/readback 반환 뒤 역순 해제한다. RN은 CPU LUT plane만 전달하며 사진/프레임 픽셀을 state/JSON/Base64에 넣지 않는다. draw와 교체/종료를 같은 명시 lock/finally로 보호한다. 설치된 Worklets 0.7.4 setter에는 throw 시 unlock 보장이 없어 callback setter 대신 직접 lock/unlock한다.
+- `lut.ts`/`lutSkia.ts`: 동일 SkSL에서 encoded-sRGB master mix를 한 번 수행한다. 원본과 강도 0은 앱 경로에서 LUT 생성/적용 자체를 우회한다. backend `skia-alpha-planes-0.2.0`, 카메라 설정 버전 `lut-camera-0.1.0`을 사용한다. 제작 엔진/seed/PNG/manifest는 변경하지 않는다.
+- `exportPhoto.ts`: 실제 고해상도 JPEG 방향/crop 경로에 snapshot의 LUT·강도를 적용한다. RN 전용 pipeline을 새로 소유하고 카메라 GPU 자원을 가져오지 않는다. shader가 반영되는 `drawRect`를 사용하며 기존 파일 재열기/크기/readback 확인과 갤러리 성공 상태 분리를 유지한다. 실패하면 원본으로 몰래 저장하지 않고 기존 draft 재시도로 돌아간다. Matrix 함수는 기존 개발 검사 호환용으로만 남는다.
+- 테스트 소스: `cameraSettings.test.ts`, `intensity.test.ts`, `cameraLut.test.ts`를 추가하고 controller/lutSkia/lutSkiaProbe/renderResources 사례를 갱신했다. snapshot 변경 방지·재시도, 강도 0/중간/1 기준, 원본 fallback, cache/frame 수명과 실패 시 unlock을 다룬다. **작성만 했으며 한 번도 실행하지 않았다.** `measureLutSkia(atlas, intensity)`도 이후 명시 검사를 위한 코드이며 이번에 호출하지 않았다.
+- 패키지 추가/버전 변경 없음. 기존 Skia 2.4.19 / VisionCamera 5.2.3 / Worklets 0.7.4의 설치 타입·소스와 공식 문서를 읽었다. README, 필터 계약, 구현 계획, 검사 계획, 참고 자료도 갱신했다.
+
+### 이번 실제 명령과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| `git status`, `git diff`, `cat`, `rg`, `sed` | 기존 변경·문서·설치 타입/소스 읽기. 처음 추정한 SkiaCamera/Canvas 경로는 없어 `rg`로 실제 경로를 찾아 읽음 |
+| `git fetch origin`, `git merge --ff-only origin/develop` | exit 0, Already up to date |
+| `git switch -c feature/lut-camera-integration` | exit 0 |
+| `apply_patch`, Python 파일 치환 | 위 코드·테스트 소스·문서 작성. 문서 다중 패치 2회는 문맥 불일치로 거부돼 변경 미적용을 확인하고 파일별로 다시 적용. 코드 실행/검증 아님 |
+| 공식 Skia/Worklets 문서 읽기 | S30. 구 Skia URL은 404, Worklets 0.7 문서 URL은 접근 실패하여 공식 v2/공개 문서와 설치 0.7.4 소스로 대조 |
+| 테스트·lint/typecheck·react-doctor·빌드·기기·GPU 검사 | **NOT_RUN — 사용자 지시** |
+
+### 다음 작업과 미검증 범위
+
+1. 사용자 요청 후에만 iOS/Android에서 LUT 번들/오프라인 decode, SkSL 컴파일·worklet 전달, 빠른 필터 전환/전후면/앱 복귀와 메모리/FPS를 확인한다. 상호 배제 lock으로 RN이 한 프레임 처리를 기다릴 수 있어 지연도 측정해야 한다.
+2. identity 및 대표 3종에서 강도 0/0.5/1의 CPU/GPU 값, 같은 입력 preview/export 비교, 실제 고해상도 사진·갤러리 파일·방향·색 프로파일을 확인한다. SkiaCamera 내부 snapshot/readback 실패는 라이브러리가 콘솔에만 기록하므로 첫 draw 통지는 표시/GPU 검증 완료를 뜻하지 않는다.
+3. 다음 독립 개발 범위는 촬영 화면의 개발 진단 항목 분리 또는 M1 grain/bloom이며 별도 요청에 따른다. 이번 변경은 M2 전체 UI나 남은 6종, 성능/색감 통과를 포함하지 않는다.
+
+## 이전 기록 — 2026-10-28 아이폰 시작·미리보기 메모리 종료·전면 방향 수정
 
 - 2026-10-28 사용자가 여기까지의 Git Flow를 요청했다. `fix/ios-scene-lifecycle` 커밋·푸시, `develop` 대상 PR 생성·병합과 로컬/원격 동기화를 진행한다. `git fetch origin` 후 기준과 `origin/develop`의 차이는 0/0이었다. 이번 Git Flow에서는 테스트·lint/typecheck·빌드·별도 검사를 실행하지 않으며, 아래 빌드와 사용자 확인은 앞선 기기 실행 작업의 기록이다. 최종 통합 상태는 이 브랜치의 PR과 Git 이력을 따른다.
 - 수정 커밋 `c310bce`를 원격 작업 브랜치에 푸시했고 [PR #7](https://github.com/ddoniddoni/yeoun/pull/7)을 `develop` 대상으로 생성했다. `git commit`, `git push -u origin fix/ios-scene-lifecycle`, `gh pr create`는 각각 exit 0이다. PR에 앞선 기기 확인 범위와 이번 검사 미실행을 명시했다.

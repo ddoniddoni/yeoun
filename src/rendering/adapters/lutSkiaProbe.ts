@@ -4,6 +4,9 @@ import {
 } from '@shopify/react-native-skia';
 import type { LutAtlas } from '../reference/lutAtlas';
 import { createLutSampler } from '../reference/lutSampling';
+import { assertRange } from '../reference/color';
+import { mixMasterIntensity } from '../reference/intensity';
+import type { Rgb } from '../../domain/filters/types';
 import { createSkiaLutPipeline, type LutShaderBinding, type SkiaLutPipeline } from './lutSkia';
 
 export type LutSkiaMeasurement = Readonly<{
@@ -18,7 +21,8 @@ export type LutSkiaMeasurement = Readonly<{
  * Explicitly invoked, synthetic-only measurement. Never called at import or from the camera UI.
  * No PASS label: offscreen backend, color-space behavior and real GPU/device must be identified separately.
  */
-export function measureLutSkia(atlas: LutAtlas): LutSkiaMeasurement {
+export function measureLutSkia(atlas: LutAtlas, intensity = 1): LutSkiaMeasurement {
+  assertRange(intensity, 0, 1, 'Intensity');
   const sample = createLutSampler(atlas);
   const levels = [0, 1, 7, 8, 39, 40, 47, 48, 127, 128, 247, 248, 254, 255];
   const colors: [number, number, number][] = [];
@@ -43,7 +47,7 @@ export function measureLutSkia(atlas: LutAtlas): LutSkiaMeasurement {
     if (!input) throw new Error('Synthetic LUT input allocation failed');
     inputShader = input.makeShaderOptions(TileMode.Clamp, TileMode.Clamp, FilterMode.Nearest, MipmapMode.None);
     pipeline = createSkiaLutPipeline(atlas);
-    binding = pipeline.bindSource(inputShader);
+    binding = pipeline.bindSource(inputShader, intensity);
     surface = Skia.Surface.MakeOffscreen(info.width, info.height);
     if (!surface) throw new Error('LUT offscreen surface unavailable');
     paint = Skia.Paint();
@@ -60,7 +64,8 @@ export function measureLutSkia(atlas: LutAtlas): LutSkiaMeasurement {
     let maxAlphaErrorLsb = 0;
     let worstSample = 0;
     colors.forEach(([red, green, blue], index) => {
-      const expected = sample([red / 255, green / 255, blue / 255]);
+      const original: Rgb = [red / 255, green / 255, blue / 255];
+      const expected = mixMasterIntensity(original, sample(original), intensity);
       for (let channel = 0; channel < 3; channel++) {
         const error = Math.abs(actual[index * 4 + channel]! - Math.round(expected[channel]! * 255));
         if (error > maxRgbErrorLsb) { maxRgbErrorLsb = error; worstSample = index; }

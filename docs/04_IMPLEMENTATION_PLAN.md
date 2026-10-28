@@ -45,17 +45,19 @@
 
 **2026-10-28 승인된 독립 작업:** Skia adapter에 이어 **앱용 LUT 자산 로더**를 작성했다. manifest/version/seed pin, SHA-256, PNG 구조와 Skia decode를 연결하고 CPU 캐시 및 pipeline 생성 API를 추가했다. 승인된 Expo Asset/Crypto를 설치하고 `.lut` 패키징 복사본을 준비했다. 테스트 소스는 작성했지만 실행·번들·native/GPU 검증은 NOT_RUN이다. 사용자 요청 전까지 검사하지 않는다. G0/G1 미통과를 유지하며 카메라 통합은 후속 범위다.
 
+**2026-10-28 후속 승인:** 대표 3종의 preview/export 연결·강도·선택 UI·실패 fallback 코드를 작성했다. 촬영 snapshot에 버전을 고정하고 강도 0은 원본 경로를 사용한다. 실행 검증은 NOT_RUN이며 선행 G0와 G1을 통과 처리하지 않는다. grain/bloom과 개발 진단 UI 분리는 다음 범위다.
+
 - [ ] seed JSON Schema 검증과 추가 의미 검사를 구현한다. (코드 작성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §3)
 - [ ] 색 변환 CPU reference를 구현하고 경계, NaN, identity 테스트를 작성한다. (코드 작성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §5)
 - [ ] 33^3 atlas 생성기와 manifest/checksum 검증기를 만든다. (코드 작성 및 초안 생성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §6)
 - [ ] 양자화된 atlas를 읽는 CPU trilinear reference를 구현한다. (코드·테스트 소스 작성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §6)
 - [ ] 앱용 LUT 로더에서 버전/checksum/raw atlas 계약을 연결한다. (코드·패키징 복사본·테스트 소스 작성, 실제 번들/디코드 검증 전)
 - [ ] identity LUT로 좌표, raw sampling, 색 공간과 gamma를 검증한다. (CPU/Skia adapter·합성 비교 코드 작성, 실행 검증 전)
-- [ ] master intensity의 0/1과 중간값을 테스트한다.
-- [ ] 대표 3종 LUT를 생성하고 실제 preview/export에 연결한다. (PNG 초안 생성, preview/export 연결 전)
+- [ ] master intensity의 0/1과 중간값을 테스트한다. (shared shader/CPU reference·테스트 소스 작성, 실행 전)
+- [ ] 대표 3종 LUT를 생성하고 실제 preview/export에 연결한다. (PNG 초안 및 연결 코드 작성, 기기 실행 전)
 - [ ] 정적인 grain과 약한 bloom을 순서대로 추가한다.
 - [ ] 같은 입력, 같은 설정, 같은 seed에서 결과를 비교한다.
-- [ ] 필터 자산 손상과 shader 실패의 fallback UI를 만든다.
+- [ ] 필터 자산 손상과 shader 실패의 fallback UI를 만든다. (원본 표시·재시도/원본 선택 코드 작성, 실행 전)
 
 **산출물:** 공통 RenderSettings, CPU reference, LUT 자산과 manifest, shader, 자동 수치 테스트와 기기 render 증거.
 

@@ -1,6 +1,42 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-28 Stitch 카메라 디자인 적용
+## 현재 상태 — 2026-10-28 정적 입자·약한 빛 번짐
+
+- 기능 커밋 `c2ffe53`을 원격 작업 브랜치에 푸시하고 [PR #11](https://github.com/ddoniddoni/yeoun/pull/11)을 생성했다. 명시 파일 `git add`, `git commit`, `git push -u`, `gh pr create`는 exit 0이다. PR에 검사 미실행과 실제 색감·방향·성능 미검증을 명시했으며 최종 병합 결과는 PR과 develop 이력을 따른다.
+- 사용자 요청은 앞선 디자인 Git Flow 이후 **다음 기능 개발**이다. PR #10은 develop에 병합됐고 로컬/원격 `e74f201`의 깨끗한 상태에서 시작했다. 원격 fetch/fast-forward 후 `feature/grain-bloom-effects`를 만들었다. 후속 Git Flow 요청으로 이번 기능의 커밋·푸시·develop 대상 PR 생성/병합·동기화가 승인됐다. fetch 후 기준과 원격 develop 차이는 0/0이었다. 검사 실행은 계속 NOT_RUN이며 최종 통합 상태는 PR과 Git 이력으로 확인한다.
+- 기존 다음 후보인 M1 정적 monochrome grain/약한 bloom을 구현 코드로 연결했다. **테스트·lint/typecheck·react-doctor·자산 검사·번들·네이티브 빌드·앱·GPU 실행 모두 NOT_RUN**이다. 개발 서버와 기기 프로세스를 켜지 않았다. 이전 iPhone의 방향/종료 사용자 확인은 이번 shader의 검증 증거가 아니다. G0/G1/G2는 계속 미통과다.
+- `CameraSettings` 렌더러를 `lut-camera-0.2.0`으로 올리고 입자/번짐의 finite 0~1을 검증한다. 대표 3종의 texture defaults는 원본 seed JSON에서 읽는다. 원본은 모든 효과 0, 강도 0은 조절값을 유지하면서 효과 draw를 우회한다. 입자/번짐과 seed 변경도 preview request key에 반영한다. 기존 LUT 제작/자산 버전·파일·의존성은 바꾸지 않았다.
+- 촬영 전에 준비한 고정 정수 seed를 `Snapshot.grainSeed`로 복사한다. 필터 전환/강도 변경/앱 복귀에는 유지하고, export 재시도에도 같은 snapshot을 사용한다. 다음 촬영 또는 촬영/처리 취소 후 새 seed를 준비한다. seed를 프레임마다 갱신하지 않는다. 현재 초안/seed는 세션 안에만 보관하며 앱 종료 복구는 미구현이다.
+- `spatial.ts` 공통 shader는 full-strength LUT → linear highlight bloom → encoded monochrome grain → encoded master mix 한 번을 적용한다. 입자·번짐 모두 0이면 기존 LUT-only 경로다. 긴 변 1600 좌표의 정수 hash, smooth interpolation과 footprint 평균/축소 감쇠를 적용하는 초안이다. 낮은 해상도에서 감쇠되므로 preview/export의 픽셀값이 같다는 주장은 하지 않는다.
+- `spatialGeometry.ts`는 source에서 방향·미러·crop 정규화 좌표로 가는 affine과 역변환을 제공한다. export는 기존 EXIF/crop을, preview는 SkiaCamera 5.2.3 counter-rotation/mirror와 세로 cover를 따른다. 실제 preview/photo FoV·가로 촬영/센서 방향 일치 여부는 확인 전이다.
+- `spatialEffects.ts`는 1/4 이하, 긴 변 최대 512px의 하이라이트 이미지와 수평/수직 11-tap Gaussian pass를 만든다. 각 tap을 linear로 계산하고 최종 업샘플도 linear bilinear를 사용한다. source/frame texture와 작은 surface/image/binding/paint는 consuming thread 안에서 유지하고 snapshot/readback 뒤 역순 해제한다. cache에는 compiled effects와 기존 raster LUT만 남기며 GPU 중간 프레임을 RN으로 넘기지 않는다. export는 별도 RN context 자원만 소유한다.
+- shader/allocation 실패는 preview 원본 fallback+오류/촬영 차단, export 실패/초안 재시도로 처리한다. 효과 없이 저장 성공으로 대체하지 않는다. 중간 surface 크기 상한은 메모리/FPS 통과 근거가 아니며 동기 flush와 매 프레임 할당의 비용은 측정 전이다.
+- 기존 Stitch 조절 패널에 입자·빛 번짐 10% 조절과 필터 기본값 초기화를 연결했다. 강도만 바꿀 때 texture 값을 유지한다. 강도 0 안내, 각 조절의 스크린 리더 동작, 결과 화면 수치와 개발 진단 seed/공간 효과 버전을 추가했다. 디자인 변경과 실제 사용자 색감 승인은 구분한다.
+- CPU 성질/affine/버퍼 크기, seed·snapshot 재시도, LUT 100% 전달/한 번 mix, 부분 shader/surface 실패 정리, cache와 프레임 자원 수명 테스트 소스를 작성/갱신했다. **테스트는 작성만 했으며 실행하거나 통과 수치를 기록하지 않았다.** 기존 Matrix/LUT probe는 공간 효과 검증 도구로 변경하지 않았다.
+
+### 변경 파일
+
+- 도메인: `src/domain/filters/cameraSettings.ts`, 신규 `grainSeed.ts`, `src/domain/capture/controller.ts`.
+- 공통 렌더링: 신규 `src/rendering/shaders/spatial.ts`, `src/rendering/adapters/spatialEffects.ts`, `src/rendering/reference/spatial.ts`, `spatialGeometry.ts`; 기존 `adapters/cameraLut.ts`, `exportPhoto.ts`.
+- 카메라 연결: `src/platform/camera/CameraPreview.tsx`, `useCameraLut.ts`.
+- 화면: `M0CameraScreen.tsx`, `FilterControls.tsx`, `CameraResultScreen.tsx`, `CameraDiagnosticsScreen.tsx`.
+- 테스트 소스: 신규 `tests/unit/spatial.test.ts`, `tests/integration/spatialEffects.test.ts`; 기존 `cameraSettings.test.ts`, `controller.test.ts`, `cameraLut.test.ts`, `renderResources.test.ts`.
+- 문서: `README.md`, `docs/01_PRODUCT_DESIGN.md`, `02_FILTER_ENGINE.md`, `04_IMPLEMENTATION_PLAN.md`, `05_TEST_RELEASE.md`, `REFERENCES.md`, `M0_RUNBOOK.md`, `STITCH_DESIGN.md`, `PROGRESS.md`.
+
+### 실제 명령과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| `git status`, `git diff`, `rg`, `cat`, `sed` | 기존 변경 없음, 렌더링 계약/seed/타입/설치 라이브러리 소스와 변경 내용을 읽음. 일부 추정 파일 경로가 없어 실제 경로를 찾아 다시 읽음 |
+| `git fetch origin`, `git merge --ff-only origin/develop` | exit 0, Already up to date |
+| `git switch -c feature/grain-bloom-effects` | exit 0 |
+| `apply_patch`, 파일 작성용 shell/Python | 코드·테스트 소스·문서 작성, 앱 코드 실행 아님 |
+| Skia/React Native Skia v2 공식 문서 읽기 | 설치 Skia 2.4.19 RuntimeEffect/Image/Surface 타입 및 bridge, SkiaCamera 5.2.3 방향 처리와 대조. 근거 S31 |
+| 테스트·lint/typecheck·react-doctor·빌드·앱·GPU | **NOT_RUN — 사용자 지시** |
+
+다음 확인은 사용자가 요청할 때만 현재 코드의 native shader compile/정적 입력 비교, 실제 대표 색감·원본/0 강도, 전후면/결과 복귀, 저장 재시도와 메모리/FPS를 수행한다. 공간 효과 품질과 G1을 자동 통과 처리하지 않는다. 이후 기능 후보는 M2의 원본 비교 또는 실제 촬영 보조 기능이며 이번 범위로 확장하지 않는다.
+
+## 이전 기록 — 2026-10-28 Stitch 카메라 디자인 적용
 
 - 후속 사용자 요청으로 이번 디자인 변경의 Git Flow(커밋·푸시·develop 대상 PR 생성/병합·동기화)가 승인됐다. 원격 fetch 후 기준 브랜치와 차이 없음(0/0)을 확인했다. 테스트·lint/typecheck·빌드·앱 실행은 계속 NOT_RUN이며 최종 통합 결과는 해당 PR과 Git 이력을 따른다.
 - 디자인 커밋 `6ba0845`를 원격 작업 브랜치에 푸시하고 [PR #10](https://github.com/ddoniddoni/yeoun/pull/10)을 생성했다. 명시 파일 `git add`, `git commit`, `git push -u`, `gh pr create`는 exit 0이다. PR 본문에 실행 미검증 범위를 남겼으며 최종 병합 상태는 PR과 develop 이력으로 확인한다.

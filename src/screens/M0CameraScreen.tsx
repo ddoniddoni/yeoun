@@ -3,7 +3,8 @@ import { AppState, Linking, Pressable, ScrollView, StatusBar, StyleSheet, Text, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCameraDevice, useCameraPermission, usePhotoOutput } from 'react-native-vision-camera';
 import { CaptureController, type CaptureState } from '../domain/capture/controller';
-import { cameraSettings, cameraSettingsKey, type CameraFilterId } from '../domain/filters/cameraSettings';
+import { cameraSettings, cameraSettingsKey, copyCameraSettings, type CameraFilterId } from '../domain/filters/cameraSettings';
+import { createGrainSeed } from '../domain/filters/grainSeed';
 import { CameraPreview } from '../platform/camera/CameraPreview';
 import { capturePhoto } from '../platform/camera/capturePhoto';
 import { removeFile } from '../platform/files/drafts';
@@ -31,6 +32,7 @@ export function M0CameraScreen() {
   const device = useCameraDevice(position, { physicalDevices: ['wide-angle'] });
   const photoOutput = usePhotoOutput({ targetResolution: PHOTO_SIZE, containerFormat: 'jpeg', quality: 0.94, qualityPrioritization: 'quality' });
   const [settings, setSettings] = useState(() => cameraSettings('light-afternoon'));
+  const [grainSeed, setGrainSeed] = useState(createGrainSeed);
   const [filterRevision, setFilterRevision] = useState(0);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>();
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
@@ -43,7 +45,7 @@ export function M0CameraScreen() {
   const [cameraStopped, setCameraStopped] = useState(false);
   const [info, setInfo] = useState('실제 프레임 관측 대기');
   const [state, setState] = useState<CaptureState>({ phase: 'idle' });
-  const filterRequestKey = `${cameraSettingsKey(settings)}/${filterRevision}/${device?.id ?? 'none'}/${foreground}`;
+  const filterRequestKey = `${cameraSettingsKey(settings)}/${filterRevision}/${grainSeed}/${device?.id ?? 'none'}/${foreground}`;
   const currentFilterStatus = filterStatus?.key === filterRequestKey ? filterStatus : undefined;
   const filterReady = currentFilterStatus?.phase === 'ready';
   const markReady = useCallback(() => setReady(true), []);
@@ -85,7 +87,7 @@ export function M0CameraScreen() {
     discardPending.current = true; setReturning(true); setReturnError(undefined);
     setReady(false); setFilterRevision(value => value + 1);
     if (permission.hasPermission && device && foreground && !cameraError) setCameraStopped(false);
-    try { await controller.discard(); }
+    try { await controller.discard(); setGrainSeed(createGrainSeed()); }
     catch (error) { setReturnError(`임시 사진을 정리하지 못했어요. 다시 시도해 주세요. ${String(error)}`); }
     finally { discardPending.current = false; setReturning(false); }
   };
@@ -113,7 +115,7 @@ export function M0CameraScreen() {
           <Text style={styles.text}>아래 전환 버튼으로 다른 카메라를 선택해 주세요.</Text>
         </View> : <View style={[styles.viewfinder, { width: previewWidth }]}>
           <CameraPreview key={device.id} device={device} photoOutput={photoOutput}
-            active={foreground && !cameraError && !overlayOpen} settings={settings} filterRequestKey={filterRequestKey}
+            active={foreground && !cameraError && !overlayOpen} settings={settings} grainSeed={grainSeed} filterRequestKey={filterRequestKey}
             onFilterStatus={setFilterStatus} onReady={markReady} onStopped={markStopped}
             onRunningChange={onRunningChange} onError={onCameraError} onInfo={setInfo} />
           <FrameCorners />
@@ -126,8 +128,10 @@ export function M0CameraScreen() {
       <View style={styles.deck}>
         <FilterControls settings={settings} disabled={busy || !canCapture || returning}
           onSelect={selectFilter} onIntensity={intensity => {
-            setSettings(cameraSettings(settings.filterId, intensity)); setFilterRevision(value => value + 1);
-          }} />
+            setSettings(copyCameraSettings({ ...settings, intensity })); setFilterRevision(value => value + 1);
+          }} onTexture={(control, value) => {
+            setSettings(copyCameraSettings({ ...settings, [control]: value })); setFilterRevision(value => value + 1);
+          }} onReset={() => selectFilter(settings.filterId)} />
         {permission.hasPermission && device && !filterReady ? <Text accessibilityLiveRegion="polite" style={styles.info}>
           {currentFilterStatus?.phase === 'error' ? currentFilterStatus.message
             : currentFilterStatus?.phase === 'applying' ? '색감을 적용하고 있어요…' : '색감 준비 중 · 잠시 원본으로 보여드려요.'}
@@ -140,7 +144,9 @@ export function M0CameraScreen() {
           <View style={styles.sideControl}><Text style={styles.smallLabel}>색감 초안</Text>
             <Text style={styles.info}>대표 3종</Text></View>
           <ShutterButton disabled={shutterDisabled} busy={busy} onPress={() => {
-            if (!shutterDisabled) void controller.capture(settings, position);
+            if (!shutterDisabled) void controller.capture(settings, position, grainSeed).then(() => {
+              if (controller.state.phase === 'cancelled') setGrainSeed(createGrainSeed());
+            });
           }} />
           <Pressable accessibilityRole="button" accessibilityLabel={position === 'back' ? '전면 카메라로 전환' : '후면 카메라로 전환'}
             disabled={busy || !canCapture || returning} accessibilityState={{ disabled: busy || !canCapture || returning }}
@@ -154,7 +160,11 @@ export function M0CameraScreen() {
         {state.message && !resultOpen ? <Text accessibilityRole="alert" style={styles.error}>{state.message}</Text> : null}
         {returnError && !resultOpen ? <Text accessibilityRole="alert" style={styles.error}>{returnError}</Text> : null}
         {state.phase === 'failed' && state.canRetryRender && !resultOpen ? <CameraAction
-          label="보관한 원본으로 다시 처리" disabled={busy || !foreground || returning} onPress={() => { void controller.retryRender(); }} /> : null}
+          label="보관한 원본으로 다시 처리" disabled={busy || !foreground || returning} onPress={() => {
+            void controller.retryRender().then(() => {
+              if (controller.state.phase === 'cancelled') setGrainSeed(createGrainSeed());
+            });
+          }} /> : null}
         {state.phase === 'failed' && !resultOpen ? <CameraAction label="임시 사진 버리고 다시 촬영"
           disabled={busy || returning} onPress={() => { void discardAndReturn(); }} /> : null}
       </View>
@@ -172,7 +182,7 @@ export function M0CameraScreen() {
       returning={returning} returnError={returnError} onReturn={() => { void discardAndReturn(); }}
       onSave={() => { if (!discardPending.current) void controller.save(); }}
       onSettings={() => { void Linking.openSettings().catch(error => setReturnError(String(error))); }} /> : null}
-    {__DEV__ && diagnosticsOpen ? <CameraDiagnosticsScreen frameInfo={info} settings={settings}
+    {__DEV__ && diagnosticsOpen ? <CameraDiagnosticsScreen frameInfo={info} settings={settings} grainSeed={grainSeed}
       filterPhase={currentFilterStatus?.phase ?? '미리보기 대기'} cameraError={cameraError}
       canRun={foreground && (!permission.hasPermission || !device || cameraStopped)} onClose={closeDiagnostics} /> : null}
   </>;

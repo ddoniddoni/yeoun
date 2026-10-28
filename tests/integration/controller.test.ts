@@ -90,3 +90,24 @@ test('invalid settings fail before capture and do not leave the controller busy'
   await controller.capture(cameraSettings('original'), 'back');
   expect(controller.state.phase).toBe('file-ready');
 });
+
+test('preview seed and texture settings survive capture and retry; later shots accept a new seed', async () => {
+  const { controller, ports } = setup();
+  const settings = { ...cameraSettings('time-summer'), grain: 0.7, bloom: 0.4 };
+  ports.render.mockRejectedValueOnce(new Error('GPU'));
+  const capture = controller.capture(settings, 'back', 91);
+  settings.grain = 0; settings.bloom = 0;
+  await capture; await controller.retryRender();
+  expect(ports.render.mock.calls[0]![1]).toBe(ports.render.mock.calls[1]![1]);
+  expect(ports.render.mock.calls[1]![1]).toMatchObject({ grainSeed: 91, settings: { grain: 0.7, bloom: 0.4 } });
+  await controller.discard(); await controller.capture(settings, 'back', 92);
+  expect(ports.capture.mock.calls[1]![0].grainSeed).toBe(92);
+});
+
+test('invalid seed fails before native capture and releases the busy state', async () => {
+  const { controller, ports } = setup();
+  await controller.capture(cameraSettings('time-summer'), 'back', NaN);
+  expect(ports.capture).not.toHaveBeenCalled();
+  await controller.capture(cameraSettings('time-summer'), 'back', 0);
+  expect(controller.state.phase).toBe('file-ready');
+});

@@ -2,18 +2,20 @@ import { FilterMode, MipmapMode, Skia, TileMode } from '@shopify/react-native-sk
 import type { SkiaCameraProps } from 'react-native-vision-camera-skia';
 import { getCurrentThreadMarker } from 'react-native-vision-camera-worklets';
 import type { Synchronizable } from 'react-native-worklets';
+import { previewGeometry } from '../reference/spatialGeometry';
+import { bindSpatialSource, createSpatialResources, type SpatialResources } from './spatialEffects';
 import type { CameraSettings } from '../../domain/filters/cameraSettings';
 import { bindLutSource, createLutResources, releaseNativeResources,
   type LutPlanes, type LutResources, type NativeResource } from './lutResources';
 
 export type FilterStatus = Readonly<{ key: string; phase: 'loading' | 'applying' | 'ready' | 'error'; message?: string }>;
 export type PreviewLutRequest = {
-  id: number; key: string; settings: CameraSettings; loading: boolean;
+  id: number; key: string; settings: CameraSettings; grainSeed: number; loading: boolean;
   assetKey?: string; planes?: LutPlanes; error?: string;
 };
 export type PreviewLutState = {
   closed: boolean; request?: PreviewLutRequest; reportedId?: number;
-  cached?: { key: string; thread: number; resources: LutResources };
+  cached?: { key: string; thread: number; resources: LutResources; spatial?: SpatialResources };
 };
 export type PreviewLutCell = Synchronizable<PreviewLutState>;
 type RenderFrame = Parameters<SkiaCameraProps['onFrame']>[1];
@@ -23,7 +25,7 @@ function clearCachedLut(state: PreviewLutState): void {
   'worklet';
   const previous = state.cached;
   state.cached = undefined;
-  if (previous) releaseNativeResources(previous.resources.owned);
+  if (previous) releaseNativeResources([...previous.resources.owned, ...(previous.spatial?.owned ?? [])]);
 }
 
 export function closePreviewLut(cell: PreviewLutCell): void {
@@ -37,7 +39,8 @@ export function closePreviewLut(cell: PreviewLutCell): void {
 }
 
 /** Hold the lock through SkiaCamera's snapshot, then release per-frame bindings on this thread. */
-export function renderCameraLut(cell: PreviewLutCell, render: RenderFrame): FilterStatus | undefined {
+export function renderCameraLut(cell: PreviewLutCell, render: RenderFrame,
+  frame: { orientation: 'up' | 'down' | 'left' | 'right'; isMirrored: boolean } = { orientation: 'up', isMirrored: false }): FilterStatus | undefined {
   'worklet';
   cell.lock();
   const frameResources: NativeResource[] = [];
@@ -64,8 +67,15 @@ export function renderCameraLut(cell: PreviewLutCell, render: RenderFrame): Filt
           }
           const source = frameTexture.makeShaderOptions(TileMode.Clamp, TileMode.Clamp, FilterMode.Linear, MipmapMode.None);
           frameResources.push(source);
-          const shader = bindLutSource(state.cached.resources, source, request.settings.intensity);
+          const spatial = request.settings.grain > 0 || request.settings.bloom > 0;
+          let shader = bindLutSource(state.cached.resources, source, spatial ? 1 : request.settings.intensity);
           frameResources.push(shader);
+          if (spatial) {
+            state.cached.spatial ??= createSpatialResources();
+            shader = bindSpatialSource(state.cached.spatial, source, shader, request.settings,
+              previewGeometry(frameTexture.width(), frameTexture.height(), frame.orientation, frame.isMirrored),
+              request.grainSeed, frameResources);
+          }
           const paint = Skia.Paint();
           frameResources.push(paint);
           paint.setShader(shader);

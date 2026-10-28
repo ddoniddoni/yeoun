@@ -270,6 +270,18 @@ npm metadata: MIT, unpackedSize 9,868,277 bytes, peer React >=19 / RN >=0.78 / R
 
 새 패키지나 버전 변경은 없다. shader backend만 `skia-alpha-planes-0.2.0`으로 올리고 제작 seed/PNG/manifest는 유지한다. 실행 결과와 미검증 범위는 PROGRESS를 따른다.
 
+<a id="s31"></a>
+
+## S31. 공간 효과의 좌표, 선형 색 합성과 중간 surface
+
+공식 근거: [Skia SkSL 좌표·색 공간·premultiplied alpha](https://skia.org/docs/user/sksl/), [React Native Skia v2 RuntimeEffect와 child shader](https://wcandillon.github.io/react-native-skia/v2/docs/shaders/overview/), [Image shader sampling](https://wcandillon.github.io/react-native-skia/v2/docs/shaders/images/).
+
+2026-10-28 설치된 Skia 2.4.19의 `Image.ts`, `Canvas.ts`, `SurfaceFactory.ts`, `RuntimeEffect.ts`, `JsiSkRuntimeEffect.h`를 읽어 MakeOffscreen/flush/snapshot, Nearest image child, uniform/children 배열의 계약을 확인했다. SkiaCamera 5.2.3의 `render.ts`, `OrientationUtils.ts`, `views/SkiaCamera.tsx`에서 counter-rotation→mirror, interface 방향의 frame output, `fit="cover"`를 확인했다. 실제 장치 프레임 방향/색 프로파일 일치의 검증은 아니다.
+
+별도 패키지 없이 RuntimeEffect 3개로 밝은 영역 추출, 선형 tap blur, bloom/grain/master 합성을 구성했다. `toLinearSrgb`/`fromLinearSrgb`로 선형 연산과 working space 저장을 구분한다. blur의 중간 image shader는 Nearest로 읽고 최종 업샘플 시 선형 값에서 bilinear한다. source/frame texture와 intermediate는 소비 thread 안에서만 사용하며 캐시에는 compiled effects만 추가한다. 구체적인 수식·hash·sigma·512px 상한은 라이브러리 표준이 아닌 [프로젝트 렌더링 계약](02_FILTER_ENGINE.md)의 버전 고정 선택이다.
+
+SkSL 컴파일, uniform layout, CPU/GPU 수치 일치, intermediate 양자화, 고해상도/기기 호환성, 메모리·FPS·지연은 모두 NOT_RUN이다. 기존 LUT 단색 probe가 공간 효과 검증까지 수행한다고 표현하지 않는다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

@@ -1,8 +1,10 @@
 import { Skia } from '@shopify/react-native-skia';
+import { bindSpatialSource, createSpatialResources } from '../../src/rendering/adapters/spatialEffects';
 import { renderJpeg, renderLutJpeg } from '../../src/rendering/adapters/exportPhoto';
 import { matrixFor } from '../../src/domain/filters/testFilter';
 import { cameraSettings } from '../../src/domain/filters/cameraSettings';
 import type { SkiaLutPipeline } from '../../src/rendering/adapters/lutSkia';
+jest.mock('../../src/rendering/adapters/spatialEffects', () => ({ createSpatialResources: jest.fn(), bindSpatialSource: jest.fn() }));
 jest.mock('../../src/rendering/adapters/bundledLutLoader', () => ({
   createBundledDraftLutLoader: jest.fn(), loadDraftLutPipeline: jest.fn(),
 }));
@@ -75,11 +77,30 @@ test('export passes exact master intensity and releases frame binding after JPEG
   const binding = { shader: {} as ReturnType<SkiaLutPipeline['bindSource']>['shader'], dispose: jest.fn() };
   const pipeline: SkiaLutPipeline = { bindSource: jest.fn(() => binding), dispose: jest.fn() };
   r.rendered.encodeToBytes.mockImplementation(() => { throw new Error('encode'); });
-  expect(() => renderLutJpeg(jpeg, cameraSettings('scene-dawn', 0.3), pipeline)).toThrow('encode');
+  expect(() => renderLutJpeg(jpeg, { ...cameraSettings('scene-dawn', 0.3), grain: 0, bloom: 0 }, pipeline)).toThrow('encode');
   expect(pipeline.bindSource).toHaveBeenCalledWith(r.source, 0.3);
   expect(r.canvas.drawRect).toHaveBeenCalled();
   expect(r.canvas.drawImage).not.toHaveBeenCalled();
   expect(r.source.dispose).toHaveBeenCalledTimes(1);
   expect(binding.dispose).toHaveBeenCalledTimes(1);
   expect(pipeline.dispose).not.toHaveBeenCalled(); // Export caller owns the cached LUT.
+});
+
+test('export shares spatial settings/seed, full strength LUT and normalized geometry; errors release bindings', () => {
+  const r = setup();
+  const binding = { shader: {} as ReturnType<SkiaLutPipeline['bindSource']>['shader'], dispose: jest.fn() };
+  const pipeline: SkiaLutPipeline = { bindSource: jest.fn(() => binding), dispose: jest.fn() };
+  const compiled = { dispose: jest.fn() }, root = { dispose: jest.fn() };
+  jest.mocked(createSpatialResources).mockReturnValue({ owned: [compiled] } as ReturnType<typeof createSpatialResources>);
+  jest.mocked(bindSpatialSource).mockImplementation((_resources, _source, _looked, _settings, _geometry, _seed, owned) => {
+    owned.push(root); return root as ReturnType<typeof bindSpatialSource>;
+  });
+  r.rendered.encodeToBytes.mockImplementation(() => { throw new Error('encode'); });
+  const settings = cameraSettings('time-summer', 0.5);
+  expect(() => renderLutJpeg(jpeg, settings, pipeline, 23)).toThrow('encode');
+  expect(pipeline.bindSource).toHaveBeenCalledWith(r.source, 1);
+  expect(jest.mocked(bindSpatialSource).mock.calls[0]!.slice(3, 6)).toEqual([
+    settings, expect.objectContaining({ width: 4032, height: 3024, forward: [1, 0, 0, 1, 0, 0] }), 23,
+  ]);
+  for (const resource of [compiled, root, binding, r.source, r.image, r.surface]) expect(resource.dispose).toHaveBeenCalledTimes(1);
 });

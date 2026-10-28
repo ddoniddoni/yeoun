@@ -3,10 +3,11 @@ import { Button, Modal, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { CameraSettings } from '../domain/filters/cameraSettings';
 import { runGpuProbe } from '../rendering/adapters/gpuProbe';
+import { SPATIAL_BACKEND_VERSION } from '../rendering/shaders/spatial';
 import { LUT_SKIA_BACKEND_VERSION } from '../rendering/shaders/lut';
 
-export function CameraDiagnosticsScreen({ frameInfo, settings, filterPhase, cameraError, canRun, onClose }: {
-  frameInfo: string; settings: CameraSettings; filterPhase: string; cameraError?: string;
+export function CameraDiagnosticsScreen({ frameInfo, settings, grainSeed, filterPhase, cameraError, canRun, onClose }: {
+  frameInfo: string; settings: CameraSettings; grainSeed: number; filterPhase: string; cameraError?: string;
   canRun: boolean; onClose(): void;
 }) {
   const [probe, setProbe] = useState('NOT_RUN · 아직 실행하지 않았어요.');
@@ -29,6 +30,7 @@ export function CameraDiagnosticsScreen({ frameInfo, settings, filterPhase, came
           <Text selectable style={styles.info}>{[
             `${settings.filterId} · ${Math.round(settings.intensity * 100)}%`,
             `상태: ${filterPhase}`, `look: ${settings.lookVersion}`, `LUT: ${settings.engineVersion}`,
+            `입자 ${settings.grain} / 번짐 ${settings.bloom} / seed ${grainSeed}`, `spatial: ${SPATIAL_BACKEND_VERSION}`,
             `renderer: ${settings.rendererVersion}`, `shader: ${LUT_SKIA_BACKEND_VERSION}`,
           ].join('\n')}</Text>
         </View>

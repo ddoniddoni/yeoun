@@ -2,6 +2,7 @@
 
 ## 현재 상태 — 2026-10-28 카메라 원본 비교
 
+- 기능 커밋 `8bab3bb`을 원격 작업 브랜치에 푸시하고 [PR #12](https://github.com/ddoniddoni/yeoun/pull/12)을 생성했다. 명시 파일 `git add`, `git commit`, `git push -u`, `gh pr create`는 exit 0이다. PR 본문에 검사 미실행과 실제 기기·접근성 미검증 범위를 남겼으며 최종 병합 결과는 PR과 develop 이력을 따른다.
 - 사용자 요청: 다음 계획 진행과 남은 계획 수 설명. PR #11은 `develop`에 병합됐고 `4e9eccf`의 깨끗한 작업 트리에서 시작했다. 원격 fetch/fast-forward 확인 후 `feature/camera-original-comparison`을 만들었다. 후속 Git Flow 요청으로 커밋·푸시·develop 대상 PR 생성/병합·동기화가 승인됐다. fetch 후 기준과 원격 develop 차이는 0/0이며 검사 실행은 계속 NOT_RUN이다. 최종 통합 상태는 PR과 Git 이력으로 확인한다.
 - M2의 독립 기능으로 **카메라 미리보기 원본 비교** 코드를 작성했다. '눌러서 원본 비교'는 press in/out에 반응하고 '원본 유지'는 별도 접근성 switch로 제공한다. 원본 모드와 강도 0에서는 비교 조작을 숨긴다. 기존 디자인 토큰과 48px 이상 터치 영역을 사용한다.
 - `usePreviewComparison`은 선택한 촬영 설정을 유지하고 미리보기 설정만 원본으로 만든다. 비교로 grain seed, snapshot, export 설정을 변경하지 않는다. CameraPreview의 device key/active를 비교 상태로 바꾸지 않으며 기존 원본 우회/LUT 캐시 경로를 사용한다. 실제 카메라 세션 유지/캐시 동작은 실행 확인 전이다.

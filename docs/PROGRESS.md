@@ -2,6 +2,7 @@
 
 ## 현재 상태 — 2026-10-29 탭 초점·촬영 노출 보정
 
+- 초점·노출 커밋 `8af4eba`와 자동 Git Flow 규칙 커밋 `236b92b`를 작업 브랜치에 푸시하고 [PR #14](https://github.com/ddoniddoni/yeoun/pull/14)를 생성했다. 명시 파일 `git add`, `git commit`, `git push -u`, `gh pr create`는 exit 0이며 PR에 실행 미검증 범위를 명시했다. 최종 병합 결과는 PR과 develop 이력으로 확인한다.
 - 사용자 요청: **격자·플래시 Git Flow 후 다음 기능 개발**. 기능 커밋 `228678e`를 푸시하고 [PR #13](https://github.com/ddoniddoni/yeoun/pull/13)을 develop에 병합했다. 로컬/추적/실제 원격은 `92baf8c`로 일치했고 깨끗한 develop에서 `feature/camera-focus-exposure`를 만들었다. 후속 사용자 지시로 2026-10-29부터 개발 후 Git Flow 전체 실행이 상시 승인되어 이번 초점·노출 변경에도 적용한다. fetch 후 기준과 원격 develop 차이는 0/0이며 최종 통합 결과는 PR과 develop 이력을 따른다.
 - 새 상시 승인과 기존 검사 보류를 `docs/GIT_WORKFLOW.md`, `CODEX_START.md`에 반영했다. 이후 개발은 별도 Git Flow 요청 없이 커밋·푸시·develop PR 생성/병합·동기화 후 develop에서 마친다. main/릴리스/배포/초기화/이력 재작성은 포함하지 않는다.
 - M2 촬영 보조의 탭/중앙 AF와 노출 보정 코드를 작성했다. 현재 SkiaCamera ref의 native controller를 빌리고 기기 지원/연결 상태를 확인한다. 화면 AF는 cover crop을 역변환한 뒤 Android frame 방향/미러, iOS portrait-only 물리 회전/전면 미러 경로를 센서 좌표로 옮긴다. iPhone 방향 수정의 physical rotation 옵션은 유지했다. AF만 요청하고 AE/AWB 탭 측광은 하지 않는다. 중앙 버튼과 짧은 위치 표식, 미지원 안내를 제공한다.

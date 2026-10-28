@@ -2,6 +2,7 @@
 
 ## 현재 상태 — 2026-10-28 정적 입자·약한 빛 번짐
 
+- 기능 커밋 `c2ffe53`을 원격 작업 브랜치에 푸시하고 [PR #11](https://github.com/ddoniddoni/yeoun/pull/11)을 생성했다. 명시 파일 `git add`, `git commit`, `git push -u`, `gh pr create`는 exit 0이다. PR에 검사 미실행과 실제 색감·방향·성능 미검증을 명시했으며 최종 병합 결과는 PR과 develop 이력을 따른다.
 - 사용자 요청은 앞선 디자인 Git Flow 이후 **다음 기능 개발**이다. PR #10은 develop에 병합됐고 로컬/원격 `e74f201`의 깨끗한 상태에서 시작했다. 원격 fetch/fast-forward 후 `feature/grain-bloom-effects`를 만들었다. 후속 Git Flow 요청으로 이번 기능의 커밋·푸시·develop 대상 PR 생성/병합·동기화가 승인됐다. fetch 후 기준과 원격 develop 차이는 0/0이었다. 검사 실행은 계속 NOT_RUN이며 최종 통합 상태는 PR과 Git 이력으로 확인한다.
 - 기존 다음 후보인 M1 정적 monochrome grain/약한 bloom을 구현 코드로 연결했다. **테스트·lint/typecheck·react-doctor·자산 검사·번들·네이티브 빌드·앱·GPU 실행 모두 NOT_RUN**이다. 개발 서버와 기기 프로세스를 켜지 않았다. 이전 iPhone의 방향/종료 사용자 확인은 이번 shader의 검증 증거가 아니다. G0/G1/G2는 계속 미통과다.
 - `CameraSettings` 렌더러를 `lut-camera-0.2.0`으로 올리고 입자/번짐의 finite 0~1을 검증한다. 대표 3종의 texture defaults는 원본 seed JSON에서 읽는다. 원본은 모든 효과 0, 강도 0은 조절값을 유지하면서 효과 draw를 우회한다. 입자/번짐과 seed 변경도 preview request key에 반영한다. 기존 LUT 제작/자산 버전·파일·의존성은 바꾸지 않았다.

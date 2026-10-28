@@ -43,8 +43,9 @@ export function useCameraLut(settings: CameraSettings, grainSeed: number, key: s
             }
           } finally { cell.unlock(); }
           onStatus({ key, phase: 'applying' });
-        } catch {
+        } catch (error) {
           if (cancelled) return;
+          if (__DEV__) console.warn('[camera-lut-load]', String(error));
           const message = '필터를 불러오지 못해 원본으로 보여드려요. 다시 선택하거나 원본으로 촬영해 주세요.';
           cell.lock();
           try {

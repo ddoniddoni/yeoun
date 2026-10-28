@@ -20,8 +20,8 @@ export async function readBundledLutBytes(moduleId: number): Promise<Uint8Array>
 }
 
 export async function digestLutBytes(bytes: Uint8Array): Promise<string> {
-  // Explicit ArrayBuffer ownership also handles Buffer/subarray inputs without hashing neighboring bytes.
-  const result = new Uint8Array(await digest(CryptoDigestAlgorithm.SHA256, Uint8Array.from(bytes).buffer));
+  // Native Expo Crypto requires a TypedArray. Copy the exact view without neighboring bytes.
+  const result = new Uint8Array(await digest(CryptoDigestAlgorithm.SHA256, Uint8Array.from(bytes)));
   if (result.length !== 32) throw new Error('Invalid SHA-256 digest length');
   return Array.from(result, byte => byte.toString(16).padStart(2, '0')).join('');
 }

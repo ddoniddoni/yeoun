@@ -55,11 +55,19 @@ test('rechecks the byte length after reading and propagates download failures', 
 });
 
 test('hashes binary bytes of the selected view and emits padded lowercase SHA-256 hex', async () => {
-  mockDigest.mockResolvedValue(Uint8Array.from({ length: 32 }, (_, index) => index).buffer);
+  mockDigest.mockImplementation(async (_algorithm: string, data: unknown) => {
+    // The native iOS/Android boundary accepts a TypedArray, not a bare ArrayBuffer.
+    if (!(data instanceof Uint8Array)) throw new Error('Expected native TypedArray input');
+    return Uint8Array.from({ length: 32 }, (_, index) => index).buffer;
+  });
   const view = new Uint8Array([99, 10, 20, 88]).subarray(1, 3);
   expect(await digestLutBytes(view)).toBe('000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f');
   expect(mockDigest.mock.calls[0]![0]).toBe('SHA-256');
-  expect(Array.from(new Uint8Array(mockDigest.mock.calls[0]![1] as ArrayBuffer))).toEqual([10, 20]);
+  const input = mockDigest.mock.calls[0]![1] as Uint8Array;
+  expect(input).toBeInstanceOf(Uint8Array);
+  expect(input.buffer).not.toBe(view.buffer);
+  expect(input.byteOffset).toBe(0);
+  expect(Array.from(input)).toEqual([10, 20]);
   mockDigest.mockResolvedValue(new ArrayBuffer(31));
   await expect(digestLutBytes(view)).rejects.toThrow(/digest length/);
 });

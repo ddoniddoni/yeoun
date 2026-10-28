@@ -306,6 +306,12 @@ SkSL 컴파일, uniform layout, CPU/GPU 수치 일치, intermediate 양자화, �
 
 **문서와 설치 구현의 단위 차이:** 일반 API 설명은 exposureBias를 EV로 기술하지만 설치 Android `HybridCameraController.kt`는 exposureCompensationIndex를 읽고 setExposureCompensationIndex(exposure.toInt())를 호출한다. `HybridCameraDevice.kt`의 min/max도 정수 index 범위다. JS API에 exposureCompensationStep 노출이 없어 임의 환산하지 않고 1단계 버튼/단위 태그를 사용한다. iOS는 exposureTargetBias/setExposureTargetBias를 사용하므로 0.5 EV 조작을 제공한다. 라이브러리를 패치하거나 새 의존성을 설치하지 않았다. 기기 노출 효과, callback 순서, 네이티브 수명·정적/자동 검사는 NOT_RUN이다.
 
+<a id="s35"></a>
+
+## S35. Expo Crypto native digest 입력 타입
+
+2026-10-29 실기기 `ArgumentCastException` / `NotTypedArrayException`을 설치 `expo-crypto@55.0.19` 소스와 대조했다. `src/Crypto.ts`의 공개 타입은 `BufferSource`지만 native fallback은 `ExpoCrypto.digest(algorithm, output, data)`로 그대로 전달한다. iOS `ios/CryptoModule.swift`의 `digest`와 Android `android/src/main/java/expo/modules/crypto/CryptoModule.kt`는 output/data를 TypedArray로 선언한다. 따라서 앱 adapter는 `.buffer`로 벗기지 않은 `Uint8Array.from(bytes)`를 전달한다. 복사는 subarray/Buffer 주변 바이트를 제외하고 네이티브 호출 동안 소유권을 분리한다. 해시를 문자열 입력으로 바꾸거나 검사를 우회하지 않는다. 실제 iPhone 재로딩 뒤 로딩 실패 안내가 해소됐으나 전체 색감/Android/저장 성공의 증거는 아니다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

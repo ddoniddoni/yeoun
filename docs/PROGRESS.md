@@ -1,6 +1,18 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-29 Stitch 촬영 화면 구성 수정
+## 현재 상태 — 2026-10-29 iPhone LUT 로딩 오류 수정
+
+- Stitch 화면 수정은 [PR #15](https://github.com/ddoniddoni/yeoun/pull/15)로 develop `fd1f4d5`에 병합·동기화했고 새 `fix/ios-lut-digest-input`에서 발견된 로딩 오류만 수정했다.
+- 원인 증거: 아이폰 화면의 필터 로딩 실패와 `[camera-lut-load]` 로그의 ExpoCrypto digest 3번째 인자 TypedArray cast 실패. 설치 `expo-crypto@55.0.19`의 `src/Crypto.ts`는 입력을 native에 그대로 넘기고 iOS `CryptoModule.swift`와 Android `CryptoModule.kt`는 TypedArray를 받는다. 기존 코드는 Uint8Array 복사본의 `.buffer`를 전달했다.
+- `src/platform/files/lutAssets.ts`에서 정확한 view 바이트를 복사한 **Uint8Array 자체**를 전달하도록 수정했다. SHA-256/manifest 비교/32-byte digest 검증/파일 경계 검사는 유지했다. `src/platform/camera/useCameraLut.ts`는 개발 빌드에서 취소되지 않은 로딩 실패 원인을 기록한다. 사진 데이터는 로그하지 않는다.
+- `tests/integration/lutFileAdapter.test.ts`의 native mock은 ArrayBuffer 입력을 거부하도록 보강하고 복사된 view의 타입/offset/바이트만 검증하는 테스트 소스를 작성했다. 실행은 **NOT_RUN**이다. 패키지·native 소스·자산 변경 없음.
+- 실제 확인: 사용자 요청의 앱 실행 세션에서 Metro reload(`r`)로 최신 JS 번들 로딩(37ms, 1 module)과 실제 후면 frame 로그를 확인했다. `/private/tmp/yeoun-camera-layout-final.png` (1179×2556)에서 오후 네 시 80%, 로딩 오류 안내 없음, 활성 셔터와 큰 3:4 미리보기를 확인했다. 검은 프레임은 사용자가 렌즈가 가려진 상태라고 확인했다. 이 화면만으로 실제 색감/촬영/저장 품질을 통과 처리하지 않는다.
+- 프레임 지연 `frame-was-late` 경고는 남는다. 원인 분석/성능 측정은 이번 hash 입력 수정의 증거에 포함하지 않는다. Android 실행, 전체 LUT/색감, 고해상도 저장, 접근성/패널 왕복은 미검증이다.
+- 테스트·lint·typecheck·react-doctor·네이티브 빌드 **NOT_RUN — 사용자 지시**. 실행된 것은 요청된 iPhone 앱/Metro와 화면 캡처이며 G0/G1/G2는 미통과를 유지한다. 화면 캡처는 임시 폴더에만 있고 커밋하지 않는다.
+- 상시 승인된 Git Flow로 develop에 병합·동기화 후 마친다. 최종 PR/커밋은 Git 이력을 따른다. Metro와 기기 실행 콘솔은 사용자가 계속 확인할 수 있게 켜둔다. 다음 개발 후보는 결과 원본 비교이며, 현재 색감/성능은 별도 기기 확인이 필요하다.
+
+
+## 이전 기록 — 2026-10-29 Stitch 촬영 화면 구성 수정
 
 - 사용자 피드백으로 최신 앱의 작은 미리보기/세로 버튼 나열을 확인했다. PR #14는 develop `b3f0c32`에 병합됐고 깨끗한 최신 develop에서 `fix/stitch-camera-layout`을 시작했다.
 - Stitch 원본 3개 화면을 다시 읽었다. 고정 `height - 400` 공제를 없애고 가용 영역에 3:4 미리보기를 맞췄다. 상단 도구, 짧은 필터 줄, 스크롤 밖 고정 셔터를 구성하고 상세 조작을 접근 가능한 스크롤 바텀 패널로 이동했다. 둥근 사각 셔터/YEOWUN 표기를 시안에 맞췄다. 원본 비교는 하단 switch로 즉시 켜고 끈다.

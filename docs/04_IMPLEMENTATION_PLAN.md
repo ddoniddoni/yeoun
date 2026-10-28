@@ -47,6 +47,8 @@
 
 **2026-10-28 후속 승인:** 대표 3종의 preview/export 연결·강도·선택 UI·실패 fallback 코드를 작성했다. 촬영 snapshot에 버전을 고정하고 강도 0은 원본 경로를 사용한다. 실행 검증은 NOT_RUN이며 선행 G0와 G1을 통과 처리하지 않는다. grain/bloom과 개발 진단 UI 분리는 다음 범위다.
 
+**2026-10-28 화면 정리:** LUT 통합 PR #8 병합 후 개발 진단 화면 분리 코드를 작성했다. 프레임 metadata와 Matrix 합성 검사를 개발 전용 Modal로 옮겼으며 화면 진입 시 자동 검사하지 않는다. 촬영 설정/저장 대기 사진을 유지하고 진단 중 카메라를 일시 정지하도록 연결했다. 실행 검증은 NOT_RUN이며 다음 엔진 구현 후보는 grain/bloom이다.
+
 - [ ] seed JSON Schema 검증과 추가 의미 검사를 구현한다. (코드 작성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §3)
 - [ ] 색 변환 CPU reference를 구현하고 경계, NaN, identity 테스트를 작성한다. (코드 작성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §5)
 - [ ] 33^3 atlas 생성기와 manifest/checksum 검증기를 만든다. (코드 작성 및 초안 생성, 실행 검증 대기 — `docs/02_FILTER_ENGINE.md` §6)

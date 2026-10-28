@@ -7,10 +7,10 @@ import { CameraPreview } from '../platform/camera/CameraPreview';
 import { capturePhoto } from '../platform/camera/capturePhoto';
 import { removeFile } from '../platform/files/drafts';
 import { saveToGallery } from '../platform/media/gallery';
-import { runGpuProbe } from '../rendering/adapters/gpuProbe';
 import { exportPhoto } from '../rendering/adapters/exportPhoto';
 import type { FilterStatus } from '../rendering/adapters/cameraLut';
 import { FilterControls } from './FilterControls';
+import { CameraDiagnosticsScreen } from './CameraDiagnosticsScreen';
 const PHOTO_SIZE = { width: 4032, height: 3024 };
 const LABELS: Record<CaptureState['phase'], string> = {
   idle: '촬영 준비', capturing: '고해상도 사진 촬영 중', rendering: '같은 필터로 JPEG 처리 중',
@@ -28,7 +28,8 @@ export function M0CameraScreen() {
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
   const [ready, setReady] = useState(false);
   const [cameraError, setCameraError] = useState<string>();
-  const [probe, setProbe] = useState('합성 GPU 검사 NOT_RUN');
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
+  const [cameraStopped, setCameraStopped] = useState(false);
   const [info, setInfo] = useState('실제 프레임 관측 대기');
   const [state, setState] = useState<CaptureState>({ phase: 'idle' });
   const filterRequestKey = `${cameraSettingsKey(settings)}/${filterRevision}/${device?.id ?? 'none'}/${foreground}`;
@@ -36,6 +37,7 @@ export function M0CameraScreen() {
   const filterReady = currentFilterStatus?.phase === 'ready';
   const markReady = useCallback(() => setReady(true), []);
   const markStopped = useCallback(() => setReady(false), []);
+  const onRunningChange = useCallback((running: boolean) => setCameraStopped(!running), []);
   const showError = useCallback((error: unknown) => setCameraError(String(error)), []);
   const onCameraError = useCallback((error: Error) => { setReady(false); setCameraError(String(error)); }, []);
   const controller = useMemo(() => new CaptureController({
@@ -58,7 +60,13 @@ export function M0CameraScreen() {
     setSettings(cameraSettings(id)); setFilterRevision(value => value + 1);
   };
   const openSettings = () => { void Linking.openSettings().catch(showError); };
-  return <ScrollView style={styles.page} contentContainerStyle={styles.content}>
+  const closeDiagnostics = useCallback(() => {
+    setReady(false); setDiagnosticsOpen(false); setFilterRevision(value => value + 1);
+    if (permission.hasPermission && device && foreground && !cameraError) setCameraStopped(false);
+  }, [permission.hasPermission, device, foreground, cameraError]);
+  return <>
+    <ScrollView style={styles.page} contentContainerStyle={styles.content}
+      accessibilityElementsHidden={diagnosticsOpen} importantForAccessibility={diagnosticsOpen ? 'no-hide-descendants' : 'auto'}>
     <Text style={styles.title}>여운 · 카메라</Text>
     <Text style={styles.text}>대표 색감 3종 미리보기 · 아직 검수 중인 초안이에요. 입자와 빛 번짐은 다음 단계에서 추가돼요.</Text>
     {!permission.hasPermission ? <View style={styles.controls}>
@@ -68,10 +76,9 @@ export function M0CameraScreen() {
         : <Button title="설정에서 카메라 권한 허용" onPress={openSettings} />}
     </View> : !device ? <Text style={styles.text}>선택한 카메라를 찾지 못했어요. 실제 기기에서 확인해 주세요.</Text>
       : <CameraPreview key={device.id} device={device} photoOutput={photoOutput}
-        active={foreground && !cameraError} settings={settings} filterRequestKey={filterRequestKey}
+        active={foreground && !cameraError && !diagnosticsOpen} settings={settings} filterRequestKey={filterRequestKey}
         onFilterStatus={setFilterStatus} onReady={markReady} onStopped={markStopped}
-        onError={onCameraError} onInfo={setInfo} />}
-    <Text style={styles.info}>{info}</Text>
+        onRunningChange={onRunningChange} onError={onCameraError} onInfo={setInfo} />}
     {cameraError ? <View>
       <Text accessibilityRole="alert" style={styles.error}>{cameraError}</Text>
       <Button title="카메라 다시 연결" onPress={() => { setReady(false); setCameraError(undefined); setFilterRevision(value => value + 1); }} />
@@ -93,8 +100,8 @@ export function M0CameraScreen() {
       <Button title={position === 'back' ? '전면으로 전환' : '후면으로 전환'} disabled={busy || !canCapture} onPress={() => {
         setReady(false); setCameraError(undefined); setPosition(value => value === 'back' ? 'front' : 'back');
       }} />
-      <Button title="고해상도 촬영 · 필터 파일 만들기" disabled={!permission.hasPermission || !device || !ready || !filterReady || !foreground || !!cameraError || busy || !canCapture}
-        onPress={() => { if (filterReady) void controller.capture(settings, position); }} />
+      <Button title="사진 촬영" disabled={!permission.hasPermission || !device || !ready || !filterReady || !foreground || !!cameraError || busy || !canCapture || diagnosticsOpen}
+        onPress={() => { if (filterReady && !diagnosticsOpen) void controller.capture(settings, position); }} />
     </View>
     <Text accessibilityLiveRegion="polite" style={styles.text}>{LABELS[state.phase]}</Text>
     {state.message ? <Text accessibilityRole="alert" style={styles.error}>{state.message}</Text> : null}
@@ -105,12 +112,16 @@ export function M0CameraScreen() {
     </View> : state.phase === 'failed' && state.canRetryRender ? <Button title="보관한 원본으로 처리 재시도" disabled={busy || !foreground} onPress={() => { void controller.retryRender(); }} /> : null}
     {!canCapture ? <Button title={state.phase === 'saved' ? '다음 사진 촬영' : '임시 사진 버리고 다시 촬영'} disabled={busy} onPress={() => { void controller.discard().catch(showError); }} /> : null}
     {state.phase === 'failed' ? <Button title="저장 권한 설정 열기" onPress={openSettings} /> : null}
-    <Button title="합성 픽셀 GPU/CPU 검사" disabled={busy || !foreground} onPress={() => {
-      try { setProbe(runGpuProbe()); } catch (error) { setProbe(`GPU 검사 FAIL: ${String(error)}`); }
-    }} />
-    <Text style={styles.info}>{probe}</Text>
-    <Text style={styles.info}>사진은 기기 안에서만 처리합니다. M0 임시 사진은 앱 재시작 시 정리됩니다. 저장 중 앱이 종료되면 갤러리를 먼저 확인하세요.</Text>
-  </ScrollView>;
+    {__DEV__ ? <Button title="개발 진단" disabled={busy || !foreground} onPress={() => {
+      if (!__DEV__ || !foreground || ['capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
+      setReady(false); setDiagnosticsOpen(true);
+    }} /> : null}
+    <Text style={styles.info}>사진은 기기 안에서만 처리합니다. 임시 사진은 앱 재시작 시 정리됩니다. 저장 중 앱이 종료되면 갤러리를 먼저 확인하세요.</Text>
+    </ScrollView>
+    {__DEV__ && diagnosticsOpen ? <CameraDiagnosticsScreen frameInfo={info} settings={settings}
+      filterPhase={currentFilterStatus?.phase ?? '미리보기 대기'} cameraError={cameraError}
+      canRun={foreground && (!permission.hasPermission || !device || cameraStopped)} onClose={closeDiagnostics} /> : null}
+  </>;
 }
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: '#171717' }, content: { padding: 16, gap: 12 },

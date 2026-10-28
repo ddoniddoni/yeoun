@@ -1,6 +1,31 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-28 대표 LUT 카메라·고해상도 저장 연결
+## 현재 상태 — 2026-10-28 개발 진단 화면 분리
+
+- 후속 사용자 요청으로 개발 진단 화면 분리의 Git Flow(커밋·푸시·develop 대상 PR 생성/병합·동기화)가 승인됐다. 이번에도 테스트·lint/typecheck·빌드·앱 실행은 NOT_RUN이다. 최종 통합 상태는 작업 브랜치의 PR과 Git 이력을 따른다.
+- 사용자 요청: **앞선 LUT 작업 Git Flow를 마친 뒤 다음 기능 개발**. LUT 커밋 `b235ecc`를 푸시하고 [PR #8](https://github.com/ddoniddoni/yeoun/pull/8)을 `develop`에 병합했다. 병합 커밋은 `c2d4d40`이며 로컬/원격 develop 일치와 깨끗한 작업 트리를 확인한 뒤 새 `feature/camera-diagnostics-screen`을 만들었다. 후속 개발 변경은 아직 커밋·푸시하지 않았다.
+- 앞서 계획한 촬영 화면의 개발 항목 분리를 구현했다. `M0CameraScreen.tsx`에서 프레임 정보/합성 검사 버튼·결과를 옮기고 촬영 버튼을 '사진 촬영'으로 정리했다. 개발 빌드에만 '개발 진단' 진입점을 노출한다.
+- `CameraDiagnosticsScreen.tsx`는 별도 full-screen Modal로 마지막 프레임 metadata, 선택 필터·버전, 합성 검사의 목적과 범위를 표시한다. iOS 닫기 버튼과 Android 뒤로가기 모두 같은 복귀 처리를 쓴다. 닫힌 화면은 unmount되며 다시 열면 검사 결과는 NOT_RUN으로 시작한다. release는 진입점·화면을 모두 `__DEV__`로 숨긴다(번들 제거 여부는 검증 전).
+- 진단을 여는 것만으로 검사/촬영/저장하지 않는다. 기존 7색 × Identity/Warm Matrix 검사는 진단 화면의 명시 버튼에만 남겼으며 이번 작업에서는 호출하지 않았다. LUT/실제 카메라/갤러리 성공과 구분하는 설명을 추가했다.
+- 촬영/렌더링/갤러리 저장 중에는 진단 진입을 막는다. 진단 중 `CameraPreview`의 isActive를 끄고 실제 session onStopped를 받은 뒤 합성 검사를 활성화한다(권한 없음/기기 없음은 카메라 정지 대기 제외). interruption과 실제 stop 통지를 구분한다. 앱 비활성 시 검사를 막고, 복귀 때 새 필터 draw 확인을 기다린다. 카메라 컴포넌트/controller는 유지하므로 선택 설정과 저장 대기 결과를 지우지 않는다.
+- 패키지/필터 엔진/자산 변경 없음. UI 분리의 수동 확인 항목은 M0_RUNBOOK에 남겼다. **테스트·lint/typecheck·react-doctor·빌드·실기기·GPU 검사 모두 NOT_RUN**, 개발 서버와 기기 프로세스도 시작하지 않았다. 이전 결과를 이번 화면 전환 검증으로 사용하지 않는다.
+
+### 이번 실제 명령과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| `git status`, `git diff`, `cat`, `rg`, `sed` | 기존 작업/문서/React Native Modal·VisionCamera 이벤트 타입 및 소스 읽음 |
+| `git fetch origin`, 명시 파일 `git add`, `git commit`, 작업 브랜치 `git push -u` | 각각 exit 0, LUT 커밋 `b235ecc` |
+| `gh pr create`, `gh pr view`, `gh pr merge --merge --match-head-commit ...` | exit 0, PR #8 MERGED |
+| `git fetch origin`, `git switch develop`, `git merge --ff-only origin/develop`, `git push origin develop` | exit 0, develop `c2d4d40`, Everything up-to-date |
+| `git rev-parse HEAD origin/develop`, `git ls-remote origin refs/heads/develop` | 로컬/추적/실제 원격 커밋 일치 |
+| `git switch -c feature/camera-diagnostics-screen`, `apply_patch` | 새 기능 브랜치 생성 exit 0, 코드/문서 작성 |
+| React Native 0.83 Modal 공식 문서 읽기 | fullScreen/onRequestClose 계약과 설치 타입 대조 |
+| 테스트·검사·빌드·앱 실행 | **NOT_RUN — 사용자 지시** |
+
+다음 구현 후보는 M1의 정적 grain/약한 bloom이다. 사용자 요청 후 별도 범위로 진행한다. 진단 진입/종료, 앱 복귀, 설정·저장 대기 사진 유지, release 비노출, 실제 카메라 stop 이벤트와 접근성은 실행 확인 전이다. G0/G1은 계속 NOT_PASSED다.
+
+## 이전 기록 — 2026-10-28 대표 LUT 카메라·고해상도 저장 연결
 
 - 후속 사용자 요청으로 이번 LUT 통합의 Git Flow(커밋·푸시·develop PR 생성/병합·동기화)가 승인됐다. 이후 새 작업 브랜치에서 개발 진단 화면 분리를 진행한다. 이번 Git Flow에서도 테스트·빌드·별도 검사는 NOT_RUN이다. 통합 결과는 해당 PR과 Git 이력을 따른다.
 - 사용자 승인: 다음 기능인 대표 LUT 3종 선택, 실제 preview/export 연결, 강도 조절, 로딩·오류 처리의 **코드 구현**. 이전 아이폰 수정 PR #7은 `develop` (`8ce1d0e`)에 병합됐고 작업 트리는 깨끗했다. 원격 fetch/fast-forward 후 `feature/lut-camera-integration`에서 진행한다. 이번 요청에는 commit/push/PR이 포함되지 않는다.

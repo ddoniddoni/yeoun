@@ -1,10 +1,16 @@
 import { Skia } from '@shopify/react-native-skia';
-import { renderJpeg } from '../../src/rendering/adapters/exportPhoto';
+import { renderJpeg, renderLutJpeg } from '../../src/rendering/adapters/exportPhoto';
 import { matrixFor } from '../../src/domain/filters/testFilter';
+import { cameraSettings } from '../../src/domain/filters/cameraSettings';
+import type { SkiaLutPipeline } from '../../src/rendering/adapters/lutSkia';
+jest.mock('../../src/rendering/adapters/bundledLutLoader', () => ({
+  createBundledDraftLutLoader: jest.fn(), loadDraftLutPipeline: jest.fn(),
+}));
 jest.mock('expo-file-system', () => ({ Directory: jest.fn(), Paths: { cache: 'cache' }, File: jest.fn() }));
 jest.mock('@shopify/react-native-skia', () => ({
-  Skia: { Data: { fromBytes: jest.fn() }, Image: { MakeImageFromEncoded: jest.fn() }, Surface: { MakeOffscreen: jest.fn() }, Paint: jest.fn(), ColorFilter: { MakeMatrix: jest.fn() }, Color: jest.fn() },
+  Skia: { Data: { fromBytes: jest.fn() }, Image: { MakeImageFromEncoded: jest.fn() }, Surface: { MakeOffscreen: jest.fn() }, Paint: jest.fn(), ColorFilter: { MakeMatrix: jest.fn() }, Color: jest.fn(), XYWHRect: jest.fn() },
   ImageFormat: { JPEG: 3 }, AlphaType: { Opaque: 1 }, ColorType: { RGBA_8888: 4 },
+  FilterMode: { Linear: 1 }, MipmapMode: { None: 0 }, TileMode: { Clamp: 0 },
 }));
 const mockSkia = jest.requireMock<{ Skia: {
   Data: { fromBytes: jest.Mock }; Image: { MakeImageFromEncoded: jest.Mock };
@@ -13,11 +19,12 @@ const mockSkia = jest.requireMock<{ Skia: {
 const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
 function setup() {
   const data = { dispose: jest.fn() };
-  const image = { dispose: jest.fn(), width: () => 4032, height: () => 3024 };
-  const paint = { dispose: jest.fn(), setColorFilter: jest.fn() };
+  const source = { dispose: jest.fn() };
+  const image = { dispose: jest.fn(), width: () => 4032, height: () => 3024, makeShaderOptions: jest.fn(() => source) };
+  const paint = { dispose: jest.fn(), setColorFilter: jest.fn(), setShader: jest.fn() };
   const filter = { dispose: jest.fn() };
   const rendered = { dispose: jest.fn(), encodeToBytes: jest.fn(() => new Uint8Array([1, 2, 3])) };
-  const canvas = { clear: jest.fn(), translate: jest.fn(), concat: jest.fn(), drawImage: jest.fn() };
+  const canvas = { clear: jest.fn(), translate: jest.fn(), concat: jest.fn(), drawImage: jest.fn(), drawRect: jest.fn() };
   const surface = { dispose: jest.fn(), getCanvas: () => canvas, flush: jest.fn(), makeImageSnapshot: () => rendered };
   // Jest mocks accept plain test doubles; production signatures remain checked by tsc.
   mockSkia.Data.fromBytes.mockReturnValue(data);
@@ -25,7 +32,7 @@ function setup() {
   mockSkia.Surface.MakeOffscreen.mockReturnValue(surface);
   mockSkia.Paint.mockReturnValue(paint);
   mockSkia.ColorFilter.MakeMatrix.mockReturnValue(filter);
-  return { data, image, paint, filter, rendered, canvas, surface };
+  return { data, image, paint, filter, rendered, canvas, surface, source };
 }
 afterEach(() => jest.resetAllMocks());
 test('full source resolution and immutable matrix reach offscreen path; all owned resources release', () => {
@@ -44,4 +51,35 @@ test('encode failure still releases all high-resolution GPU objects', () => {
   const r = setup(); r.rendered.encodeToBytes.mockImplementation(() => { throw new Error('encode'); });
   expect(() => renderJpeg(jpeg, matrixFor('identity'))).toThrow('encode');
   for (const key of ['data', 'image', 'paint', 'filter', 'rendered', 'surface'] as const) expect(r[key].dispose).toHaveBeenCalledTimes(1);
+});
+
+test('original and zero intensity bypass LUT and Matrix without changing output dimensions', () => {
+  for (const settings of [cameraSettings('original'), cameraSettings('time-summer', 0)]) {
+    const r = setup();
+    expect(renderLutJpeg(jpeg, settings)).toMatchObject({ width: 4032, height: 3024 });
+    expect(r.canvas.drawImage).toHaveBeenCalledWith(r.image, 0, 0);
+    expect(r.image.makeShaderOptions).not.toHaveBeenCalled();
+  }
+  expect(Skia.ColorFilter.MakeMatrix).not.toHaveBeenCalled();
+});
+
+test('missing LUT refuses filtered export instead of silently saving an original', () => {
+  const r = setup();
+  expect(() => renderLutJpeg(jpeg, cameraSettings('time-summer'))).toThrow('선택한 필터');
+  expect(r.rendered.encodeToBytes).not.toHaveBeenCalled();
+  expect(r.image.dispose).toHaveBeenCalled();
+});
+
+test('export passes exact master intensity and releases frame binding after JPEG encoding fails', () => {
+  const r = setup();
+  const binding = { shader: {} as ReturnType<SkiaLutPipeline['bindSource']>['shader'], dispose: jest.fn() };
+  const pipeline: SkiaLutPipeline = { bindSource: jest.fn(() => binding), dispose: jest.fn() };
+  r.rendered.encodeToBytes.mockImplementation(() => { throw new Error('encode'); });
+  expect(() => renderLutJpeg(jpeg, cameraSettings('scene-dawn', 0.3), pipeline)).toThrow('encode');
+  expect(pipeline.bindSource).toHaveBeenCalledWith(r.source, 0.3);
+  expect(r.canvas.drawRect).toHaveBeenCalled();
+  expect(r.canvas.drawImage).not.toHaveBeenCalled();
+  expect(r.source.dispose).toHaveBeenCalledTimes(1);
+  expect(binding.dispose).toHaveBeenCalledTimes(1);
+  expect(pipeline.dispose).not.toHaveBeenCalled(); // Export caller owns the cached LUT.
 });

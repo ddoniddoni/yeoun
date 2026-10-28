@@ -62,6 +62,12 @@ CPU 소스 작성이나 이후 테스트 통과만으로 G01/G02 또는 실제 �
 
 공유 parser/PNG guard 변경 때문에 기존 `lutAssets.test.ts`와 CPU sampling 자산 검사도 회귀 범위에 포함한다. 사용자 요청 후에만 실행한다. native 검증은 Crypto가 포함된 개발 빌드를 먼저 준비한 뒤 수행한다. 실제 로더 소비 경로를 연결한 iOS/Android 개발·릴리스 번들에서 `.lut` 포함, 설치 직후 오프라인 로딩, 캐시 제거 후 재실행, 4종 checksum과 decoder의 전체 176,400 RGBA 바이트를 Node PNG reference와 비교한다. Skia 2.4.18의 Graphite 경로는 설치 bridge의 `readPixels`가 미구현이므로 지원으로 간주하지 않는다. 실패를 원본이나 다른 LUT 성공으로 표시하지 않는다.
 
+### 카메라 LUT 통합 검사 준비 (2026-10-28)
+
+이번 테스트 소스는 **모두 NOT_RUN**이다. `cameraSettings.test.ts`/`intensity.test.ts`는 지원 버전·효과·강도 범위와 encoded-sRGB 0/중간/1 혼합 기준을 다룬다. `controller.test.ts`는 호출자가 설정을 변경해도 촬영 snapshot과 재시도 설정이 고정되는지 다룬다. `cameraLut.test.ts`는 로딩 시 미준비 상태, 강도 0 우회, frame 해제 시점, LUT 재사용, 실패 뒤 원본 fallback과 lock 해제를 mock으로 다룬다. 기존 Skia/export 검사에도 강도 전달·필터 누락 거부·encode 실패 해제를 추가했다.
+
+사용자 실행 요청 후 빠른 필터 전환과 로딩 중 기기 전환/앱 복귀/재시도, 오프라인 파일 로딩 실패, shader 실패를 확인한다. 현재 선택의 첫 draw 통지 전에 촬영이 활성화되거나 이전 요청 결과가 새 선택을 덮으면 실패다. 같은 입력을 preview/export에 공급해 원본/강도 0/0.5/1을 비교하고 실제 갤러리 JPEG의 해상도·방향·색감도 확인한다. mock/첫 draw 통지는 GPU·표시 성공의 증거가 아니다. lock의 RN 지연과 장시간 LUT 전환 메모리도 실측해야 한다.
+
 ## 3. GPU와 이미지 일관성
 
 | ID | 검사 | 기준 |
@@ -78,7 +84,7 @@ G01의 숫자는 구현을 검증할 시작 기준이다. 초과하면 오차 �
 
 ### Skia LUT 비교 준비
 
-`src/rendering/adapters/lutSkiaProbe.ts`의 `measureLutSkia(atlas)`는 사용자가 검사 실행을 요청한 뒤 실제 development build에서 명시적으로 호출할 함수다. import나 앱 시작 시 자동 실행하지 않으며 UI에 연결하지 않았다. `createBundledDraftLutLoader().load(selection)`으로 checksum을 확인하고 디코드한 identity 및 대표 3종의 atlas를 각각 전달하도록 준비했다. 로더 자체의 실제 번들/디코드 검증도 먼저 필요하다.
+`src/rendering/adapters/lutSkiaProbe.ts`의 `measureLutSkia(atlas, intensity = 1)`는 사용자 요청 뒤 development build에서 명시적으로 호출할 함수다. import나 앱 시작 시 실행하지 않으며 UI에 연결하지 않았다. 로더로 checksum을 확인하고 디코드한 identity/대표 3종을 전달한다. 강도 0/0.5/1에서 encoded-sRGB master mix CPU 기준과 비교하도록 작성했다. 실제 번들/디코드 검증도 먼저 필요하다.
 
 함수는 불투명 RGB 8개 corner와 14개 byte 값 `[0,1,7,8,39,40,47,48,127,128,247,248,254,255]`의 회색·채널별 변화, 총 64색을 그린다. 채널별 변화에서 나머지 두 채널은 93/207이다. fractional 좌표, blue tile 줄바꿈 근처와 끝점의 초기 점검용이며 전체 격자·모든 slice·색 공간·반투명 입력을 포괄하지 않는다.
 

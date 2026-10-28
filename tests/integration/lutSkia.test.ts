@@ -56,7 +56,7 @@ test('uploads three owned alpha planes once and borrows the source for each bind
     }, r.data[channel], 210);
     expect(r.images[channel]!.makeShaderOptions).toHaveBeenCalledWith(TileMode.Clamp, TileMode.Clamp, FilterMode.Linear, MipmapMode.None);
   }
-  expect(r.effect.makeShaderWithChildren).toHaveBeenNthCalledWith(1, [], [r.source, ...r.children]);
+  expect(r.effect.makeShaderWithChildren).toHaveBeenNthCalledWith(1, [1], [r.source, ...r.children]);
   expect(first.shader).toBe(r.roots[0]);
   expect(second.shader).toBe(r.roots[1]);
   first.dispose();
@@ -122,6 +122,18 @@ test('failed binding leaves the cached pipeline usable', () => {
   expect(binding.shader).toBe(r.roots[0]);
   pipeline.dispose();
   expect(r.roots[0]!.dispose).toHaveBeenCalledTimes(1);
+});
+
+test('master intensity is passed once; invalid values fail before native binding', () => {
+  const r = setup();
+  const pipeline = createSkiaLutPipeline(atlas);
+  for (const value of [NaN, Infinity, -0.1, 1.1]) expect(() => pipeline.bindSource(r.source, value)).toThrow(/intensity/);
+  expect(r.effect.makeShaderWithChildren).not.toHaveBeenCalled();
+  for (const value of [0, 0.5, 1]) pipeline.bindSource(r.source, value).dispose();
+  for (const [index, value] of [0, 0.5, 1].entries()) {
+    expect(r.effect.makeShaderWithChildren).toHaveBeenNthCalledWith(index + 1, [value], [r.source, ...r.children]);
+  }
+  pipeline.dispose();
 });
 
 test('continues cleanup after a binding disposal failure and never disposes the borrowed source', () => {

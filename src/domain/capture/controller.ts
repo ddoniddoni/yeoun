@@ -1,7 +1,6 @@
-import { ENGINE_VERSION, LOOK_VERSION, matrixFor, type TestLook } from '../filters/testFilter';
+import { copyCameraSettings, type CameraSettings } from '../filters/cameraSettings';
 export type Snapshot = Readonly<{
-  id: string; look: TestLook; matrix: readonly number[]; engineVersion: string;
-  lookVersion: string; position: 'front' | 'back'; capturedAt: string;
+  id: string; settings: CameraSettings; position: 'front' | 'back'; capturedAt: string;
 }>;
 export type Draft = Readonly<{ sourceUri: string; width: number; height: number; orientation: string; mirrored: boolean }>;
 export type Output = Readonly<{ uri: string; width: number; height: number; bytes: number }>;
@@ -35,14 +34,13 @@ export class CaptureController {
     if (this.busy) return;
     await this.clearFiles(); this.emit({ phase: 'idle' });
   }
-  async capture(look: TestLook, position: 'front' | 'back'): Promise<void> {
+  async capture(settings: CameraSettings, position: 'front' | 'back'): Promise<void> {
     if (this.busy || this.closed || this.draft) return;
     this.busy = true;
     const epoch = this.epoch;
-    this.snapshot = Object.freeze({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      capturedAt: new Date().toISOString(), look, position,
-      matrix: Object.freeze(matrixFor(look)), engineVersion: ENGINE_VERSION, lookVersion: LOOK_VERSION });
     try {
+      this.snapshot = Object.freeze({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        capturedAt: new Date().toISOString(), position, settings: copyCameraSettings(settings) });
       this.emit({ phase: 'capturing' });
       this.draft = await this.ports.capture(this.snapshot);
       if (epoch !== this.epoch) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }

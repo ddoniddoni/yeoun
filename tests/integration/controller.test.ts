@@ -111,3 +111,30 @@ test('invalid seed fails before native capture and releases the busy state', asy
   await controller.capture(cameraSettings('time-summer'), 'back', 0);
   expect(controller.state.phase).toBe('file-ready');
 });
+
+test('flash choice is frozen at capture and render retry never recaptures or refires flash', async () => {
+  const { controller, ports } = setup();
+  ports.render.mockRejectedValueOnce(new Error('GPU'));
+  await controller.capture(cameraSettings('time-summer'), 'back', 91, 'auto');
+  const snapshot = ports.capture.mock.calls[0]![0];
+  expect(snapshot.flashMode).toBe('auto');
+  expect(Object.isFrozen(snapshot)).toBe(true);
+  await controller.capture(cameraSettings('original'), 'front', 92, 'off');
+  await controller.retryRender();
+  expect(ports.capture).toHaveBeenCalledTimes(1);
+  expect(ports.render.mock.calls[1]![1]).toBe(snapshot);
+  await controller.discard();
+  await controller.capture(cameraSettings('original'), 'front', 92);
+  expect(ports.capture.mock.calls[1]![0].flashMode).toBe('off');
+});
+
+test('native flash failure retains no draft and never retries automatically with flash off', async () => {
+  const { controller, ports } = setup();
+  ports.capture.mockRejectedValueOnce(new Error('flash unavailable'));
+  await controller.capture(cameraSettings('original'), 'back', 91, 'on');
+  expect(controller.state).toMatchObject({ phase: 'failed', canRetryRender: false });
+  expect(ports.capture).toHaveBeenCalledTimes(1);
+  expect(ports.render).not.toHaveBeenCalled();
+  await controller.retryRender();
+  expect(ports.capture).toHaveBeenCalledTimes(1);
+});

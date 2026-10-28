@@ -3,6 +3,7 @@ import { AppState, Linking, Pressable, ScrollView, StatusBar, StyleSheet, Text, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCameraDevice, useCameraPermission, usePhotoOutput } from 'react-native-vision-camera';
 import { CaptureController, type CaptureState } from '../domain/capture/controller';
+import { selectedFlashMode, type FlashSelection } from '../domain/capture/flash';
 import { cameraSettings, cameraSettingsKey, copyCameraSettings, type CameraFilterId } from '../domain/filters/cameraSettings';
 import { createGrainSeed } from '../domain/filters/grainSeed';
 import { CameraPreview } from '../platform/camera/CameraPreview';
@@ -15,6 +16,7 @@ import { FilterControls } from './FilterControls';
 import { CameraDiagnosticsScreen } from './CameraDiagnosticsScreen';
 import { CameraAction, FrameCorners, ShutterButton } from './CameraControls';
 import { CameraResultScreen } from './CameraResultScreen';
+import { CameraAssistControls, CameraGrid } from './CameraAssistControls';
 import { OriginalComparisonControls } from './OriginalComparisonControls';
 import { usePreviewComparison } from './usePreviewComparison';
 import { cameraTheme as theme, filterPresentation } from './cameraTheme';
@@ -32,6 +34,10 @@ export function M0CameraScreen() {
     Math.max(180, (height - insets.top - insets.bottom - 400) * 3 / 4));
   const [position, setPosition] = useState<'front' | 'back'>('back');
   const device = useCameraDevice(position, { physicalDevices: ['wide-angle'] });
+  const [grid, setGrid] = useState(true);
+  const [flashSelection, setFlashSelection] = useState<FlashSelection>();
+  const flashMode = selectedFlashMode(flashSelection, device);
+  useEffect(() => { setFlashSelection(undefined); }, [device?.id, device?.hasFlash]);
   const photoOutput = usePhotoOutput({ targetResolution: PHOTO_SIZE, containerFormat: 'jpeg', quality: 0.94, qualityPrioritization: 'quality' });
   const [settings, setSettings] = useState(() => cameraSettings('light-afternoon'));
   const [grainSeed, setGrainSeed] = useState(createGrainSeed);
@@ -71,6 +77,8 @@ export function M0CameraScreen() {
   const canCapture = ['idle', 'cancelled'].includes(state.phase);
   const resultOpen = !!state.output;
   const overlayOpen = diagnosticsOpen || resultOpen;
+  const assistDisabled = !permission.hasPermission || !device || !ready || !foreground || !!cameraError ||
+    busy || !canCapture || overlayOpen || returning;
   const hasStyle = settings.filterId !== 'original' && settings.intensity > 0;
   const comparisonAvailable = hasStyle && permission.hasPermission && !!device && ready && foreground &&
     !cameraError && !busy && canCapture && !overlayOpen && !returning;
@@ -108,6 +116,9 @@ export function M0CameraScreen() {
         <Text style={styles.edition}>오늘의 빛, 나의 색</Text>
       </View>
       <View style={styles.viewfinderArea}>
+        {permission.hasPermission && device ? <CameraAssistControls grid={grid} flashMode={flashMode}
+          hasFlash={device.hasFlash} disabled={assistDisabled} onGrid={() => setGrid(value => !value)}
+          onFlash={mode => { if (!assistDisabled && device.hasFlash) setFlashSelection({ deviceId: device.id, mode }); }} /> : null}
         <View style={styles.frameLabel}><Text style={styles.metadata}>{comparison.active
           ? filterReady ? '원본 비교' : '원본 전환 중' : 'PHOTO'}</Text>
           <Text style={styles.metadata}>3:4 · {position === 'back' ? '후면' : '전면'}</Text></View>
@@ -126,6 +137,7 @@ export function M0CameraScreen() {
             active={foreground && !cameraError && !overlayOpen} settings={comparison.previewSettings} grainSeed={grainSeed} filterRequestKey={filterRequestKey}
             onFilterStatus={setFilterStatus} onReady={markReady} onStopped={markStopped}
             onRunningChange={onRunningChange} onError={onCameraError} onInfo={setInfo} />
+          {grid ? <CameraGrid /> : null}
           <FrameCorners />
         </View>}
       </View>
@@ -155,13 +167,13 @@ export function M0CameraScreen() {
           <View style={styles.sideControl}><Text style={styles.smallLabel}>색감 초안</Text>
             <Text style={styles.info}>대표 3종</Text></View>
           <ShutterButton disabled={shutterDisabled} busy={busy} onPress={() => {
-            if (!shutterDisabled) void controller.capture(settings, position, grainSeed).then(() => {
+            if (!shutterDisabled) void controller.capture(settings, position, grainSeed, flashMode).then(() => {
               if (controller.state.phase === 'cancelled') setGrainSeed(createGrainSeed());
             });
           }} />
           <Pressable accessibilityRole="button" accessibilityLabel={position === 'back' ? '전면 카메라로 전환' : '후면 카메라로 전환'}
             disabled={busy || !canCapture || returning} accessibilityState={{ disabled: busy || !canCapture || returning }}
-            onPress={() => { setReady(false); setCameraError(undefined); setPosition(value => value === 'back' ? 'front' : 'back'); }}
+            onPress={() => { setReady(false); setCameraError(undefined); setFlashSelection(undefined); setPosition(value => value === 'back' ? 'front' : 'back'); }}
             style={({ pressed }) => [styles.sideControl, styles.switchButton, pressed && styles.pressed,
               (busy || !canCapture || returning) && styles.disabled]}>
             <Text style={styles.switchIcon}>↻</Text><Text style={styles.smallLabel}>전환</Text>

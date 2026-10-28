@@ -221,6 +221,7 @@ type CaptureSnapshot = Readonly<{
   render: RenderSettings;
   grainSeed: number;
   cameraPosition?: 'front' | 'back';
+  flashMode?: 'off' | 'auto' | 'on'; // 촬영 요청 모드. 실제 발광 여부와 다름
   deviceOrientation: 'portrait' | 'portrait-upside-down' |
     'landscape-left' | 'landscape-right';
   mirrorOutput: boolean;
@@ -231,6 +232,8 @@ type CaptureSnapshot = Readonly<{
 ```
 
 이 타입은 앱 내부 계약이다. 특정 라이브러리의 옵션 타입이 아니다. 이미지 metadata와 실제 buffer 크기는 캡처 후 확정된 descriptor로 추가한다.
+
+2026-10-28 현재 카메라 전용 `Snapshot`에는 필수 `flashMode`를 추가했다. `CaptureController.capture`의 생략 기본값은 off이며 허용 모드를 검증한 뒤 불변 snapshot으로 고정한다. UI 선택은 기기 ID에 묶고 `hasFlash`가 false이거나 다른 기기의 선택이면 off를 사용한다. adapter는 설치 VisionCamera 5.2.3의 `capturePhoto({ flashMode, enableShutterSound: true }, {})`에 그대로 전달한다. 앱 차원의 자동 off 재촬영은 없고, render/save 재시도는 기존 원본/출력을 사용한다. 플래시는 필터 RenderSettings/레시피/export 효과가 아니며 격자도 미리보기 View에만 존재한다. iOS native의 supportedFlashModes 조건부 적용 등 실제 발광 보장의 한계는 S33과 기기 확인 항목을 따른다.
 
 고해상도 capture/export 작업은 한 번에 하나만 실행한다. 처리 중 추가 촬영을 무제한 대기열에 넣지 않는다. 필터 조절이나 새 비교 요청에는 request ID를 부여해 오래된 결과가 최신 화면을 덮지 않게 한다.
 

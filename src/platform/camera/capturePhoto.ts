@@ -1,9 +1,11 @@
 import type { CameraPhotoOutput } from 'react-native-vision-camera';
 import type { Draft, Snapshot } from '../../domain/capture/controller';
+import { assertFlashMode } from '../../domain/capture/flash';
 import { draftFile, removeFile } from '../files/drafts';
-export async function capturePhoto(output: CameraPhotoOutput, snapshot: Snapshot): Promise<Draft> {
+export async function capturePhoto(output: Pick<CameraPhotoOutput, 'capturePhoto'>, snapshot: Snapshot): Promise<Draft> {
+  assertFlashMode(snapshot.flashMode);
   const file = draftFile(snapshot.id, 'source.jpg');
-  const photo = await output.capturePhoto({ flashMode: 'off', enableShutterSound: true }, {});
+  const photo = await output.capturePhoto({ flashMode: snapshot.flashMode, enableShutterSound: true }, {});
   try {
     if (photo.isRawPhoto || photo.containerFormat !== 'jpeg') throw new Error('M0 supports SDR JPEG photos only');
     if (photo.width * photo.height > 16_000_000) throw new Error('선택된 사진이 M0 처리 한도(16MP)를 넘어요. 해상도를 자동으로 낮추지 않았습니다.');

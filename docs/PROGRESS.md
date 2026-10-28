@@ -3,6 +3,7 @@
 ## 현재 상태 — 2026-10-28 개발 진단 화면 분리
 
 - 후속 사용자 요청으로 개발 진단 화면 분리의 Git Flow(커밋·푸시·develop 대상 PR 생성/병합·동기화)가 승인됐다. 이번에도 테스트·lint/typecheck·빌드·앱 실행은 NOT_RUN이다. 최종 통합 상태는 작업 브랜치의 PR과 Git 이력을 따른다.
+- 진단 화면 커밋 `8df5d99`를 원격 작업 브랜치에 푸시하고 [PR #9](https://github.com/ddoniddoni/yeoun/pull/9)을 생성했다. `git commit`, `git push -u`, `gh pr create`는 exit 0이며 PR 본문에 실행 미검증 범위를 명시했다.
 - 사용자 요청: **앞선 LUT 작업 Git Flow를 마친 뒤 다음 기능 개발**. LUT 커밋 `b235ecc`를 푸시하고 [PR #8](https://github.com/ddoniddoni/yeoun/pull/8)을 `develop`에 병합했다. 병합 커밋은 `c2d4d40`이며 로컬/원격 develop 일치와 깨끗한 작업 트리를 확인한 뒤 새 `feature/camera-diagnostics-screen`을 만들었다. 후속 개발 변경은 아직 커밋·푸시하지 않았다.
 - 앞서 계획한 촬영 화면의 개발 항목 분리를 구현했다. `M0CameraScreen.tsx`에서 프레임 정보/합성 검사 버튼·결과를 옮기고 촬영 버튼을 '사진 촬영'으로 정리했다. 개발 빌드에만 '개발 진단' 진입점을 노출한다.
 - `CameraDiagnosticsScreen.tsx`는 별도 full-screen Modal로 마지막 프레임 metadata, 선택 필터·버전, 합성 검사의 목적과 범위를 표시한다. iOS 닫기 버튼과 Android 뒤로가기 모두 같은 복귀 처리를 쓴다. 닫힌 화면은 unmount되며 다시 열면 검사 결과는 NOT_RUN으로 시작한다. release는 진입점·화면을 모두 `__DEV__`로 숨긴다(번들 제거 여부는 검증 전).

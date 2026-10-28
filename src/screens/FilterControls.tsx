@@ -30,8 +30,8 @@ export function FilterControls({ settings, disabled, onSelect, onOpen }: {
         disabled={disabled} accessibilityState={{ disabled }} onPress={onOpen}
         style={({ pressed }) => [styles.selectionButton, pressed && styles.pressed, disabled && styles.disabled]}>
         <View style={[styles.dot, { backgroundColor: accent }]} />
-        <Text style={styles.name}>{selected?.name}</Text>
-        {!original ? <Text style={[styles.percent, { color: accent }]}>{percent}%</Text> : null}
+        <Text numberOfLines={1} style={styles.name}>{selected?.name}</Text>
+        <Text numberOfLines={1} style={[styles.percent, { color: accent }]}>{original ? '' : `${percent}%`}</Text>
         <Text style={styles.chevron}>⌄</Text>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="색감 조절 열기" disabled={disabled}
@@ -107,10 +107,10 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   tabText: { color: theme.secondary, fontSize: 16 }, activeText: { color: theme.text, fontWeight: '600' },
   selection: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 },
-  selectionButton: { flex: 1, minHeight: 48, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center',
+  selectionButton: { flex: 1, minHeight: 48, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 12, paddingVertical: 8, gap: 8, backgroundColor: theme.inset, borderWidth: 1, borderColor: theme.line, borderRadius: 3 },
   description: { flex: 1, gap: 4 }, nameRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
-  name: { color: theme.text, fontSize: 18, fontWeight: '500', flexShrink: 1 },
+  name: { color: theme.text, fontSize: 18, fontWeight: '500', flex: 1 },
   optionName: { color: theme.text, fontSize: 17, fontWeight: '500' }, chevron: { color: theme.secondary, marginLeft: 'auto', fontSize: 18 },
   dot: { width: 6, height: 6, borderRadius: 3 }, percent: { fontFamily: theme.mono, fontSize: 13 },
   caption: { color: theme.secondary, fontSize: 13, lineHeight: 20 },

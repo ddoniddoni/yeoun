@@ -312,6 +312,18 @@ SkSL 컴파일, uniform layout, CPU/GPU 수치 일치, intermediate 양자화, �
 
 2026-10-29 실기기 `ArgumentCastException` / `NotTypedArrayException`을 설치 `expo-crypto@55.0.19` 소스와 대조했다. `src/Crypto.ts`의 공개 타입은 `BufferSource`지만 native fallback은 `ExpoCrypto.digest(algorithm, output, data)`로 그대로 전달한다. iOS `ios/CryptoModule.swift`의 `digest`와 Android `android/src/main/java/expo/modules/crypto/CryptoModule.kt`는 output/data를 TypedArray로 선언한다. 따라서 앱 adapter는 `.buffer`로 벗기지 않은 `Uint8Array.from(bytes)`를 전달한다. 복사는 subarray/Buffer 주변 바이트를 제외하고 네이티브 호출 동안 소유권을 분리한다. 해시를 문자열 입력으로 바꾸거나 검사를 우회하지 않는다. 실제 iPhone 재로딩 뒤 로딩 실패 안내가 해소됐으나 전체 색감/Android/저장 성공의 증거는 아니다.
 
+<a id="s36"></a>
+
+## S36. Worklets 0.7.4 LUT 전달 방향과 카메라 스레드 캐시
+
+2026-10-29 [Worklets Synchronizable 설명](https://docs.swmansion.com/react-native-worklets/docs/memory/synchronizable/)과 [0.10.0 변경 기록](https://swmansion.com/changelog/worklets-0-10-0/)을 읽고 설치 0.7.4 소스에 대조했다. 최신 버전의 전용 ArrayBufferView serializer를 설치 버전 기능으로 간주하지 않는다.
+
+설치 `src/memory/serializable.native.ts`의 `cloneArrayBufferView`는 `__init` worklet을 만들고, `Common/cpp/worklets/SharedItems/Serializable.cpp`의 SerializableInitializer/SerializableWorklet 복원은 `__valueUnpacker`를 요구한다. RN initializer는 non-bundle 모드에서 이를 설치하지 않는다. 실제 앱 crash의 RN thread가 synchronizableGetBlocking에서 이 경로로 진입해 SIGABRT를 일으켰다. plain ArrayBuffer는 SerializableArrayBuffer 경로를 사용하므로 공유 LUT payload를 ArrayBuffer tuple로 제한하고 consuming camera runtime에서만 Uint8Array view를 만든다. 이것은 Crypto API의 TypedArray 요구(S35)와 서로 다른 경계다. raw 카메라 픽셀은 이 공유 상태에 넣지 않으며 필터 효과/자원 해제 순서는 유지한다.
+
+반대 방향의 `makeShareableCloneOnUIRecursiveLEGACY`는 ArrayBuffer 전용 분기가 없어 `Object.entries`로 빈 객체를 만든다. 실제 계측에서도 첫 upload의 44,100 bytes가 camera state 재저장 후 0 bytes가 되어 `LUT Alpha_8 image allocation failed`가 발생했다. 따라서 **RN만 쓰는 request cell과 camera가 갱신하는 state/cache cell을 분리**한다. 카메라는 request를 읽기만 하며, RN은 선택 변경 때 GPU cache를 읽거나 잠그지 않고 완전한 새 요청을 게시한다. cache 상태에는 숫자/문자열/plain record와 Skia HostObject만 들어간다. 종료는 state lock 안에서 closed 표시·요청 제거·캐시 해제를 수행한다.
+
+VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread marker는 실제 `thread_local` ID다. 실기기에서 동일 LUT를 유지해도 ID가 계속 바뀌어 단일 캐시가 반복 생성되는 것을 관찰했다. 설치 SkiaCamera의 `SurfacesCache.ts`처럼 thread별 자원 소유권을 유지하되, 앱 LUT/effect 캐시는 현재 자산에 대해 최대 16개 LRU로 제한한다. 자산 변경/종료 시 전체를 해제하며 frame source·중간 surface·paint는 여전히 해당 프레임 snapshot 뒤 해제한다. 프레임 texture/GPU surface를 공유 캐시에 추가하지 않는다. 이 상한은 프로젝트 선택이며 장기 성능 통과 수치는 아니다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

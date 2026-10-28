@@ -7,11 +7,12 @@ import type { CameraSettings } from '../../domain/filters/cameraSettings';
 import { renderCameraLut, type FilterStatus } from '../../rendering/adapters/cameraLut';
 import { useCameraLut } from './useCameraLut';
 const PREVIEW_SIZE = { width: 1280, height: 960 };
-export function CameraPreview({ device, photoOutput, active, settings, filterRequestKey, onFilterStatus, onReady, onStopped, onError, onInfo }: {
+export function CameraPreview({ device, photoOutput, active, settings, filterRequestKey, onFilterStatus, onReady, onStopped, onRunningChange, onError, onInfo }: {
   device: CameraDevice; photoOutput: CameraPhotoOutput; active: boolean; settings: CameraSettings;
   onFilterStatus(status: FilterStatus): void;
   filterRequestKey: string;
   onReady(): void; onStopped(): void; onError(error: Error): void; onInfo(info: string): void;
+  onRunningChange(running: boolean): void;
 }) {
   const lut = useCameraLut(settings, filterRequestKey, onFilterStatus);
   const reported = useMemo(() => createSynchronizable(false), []);
@@ -19,6 +20,10 @@ export function CameraPreview({ device, photoOutput, active, settings, filterReq
     reported.setBlocking(false);
     onStopped();
   }, [reported, onStopped]);
+  const reportSessionStopped = useCallback(() => {
+    reportStopped(); onRunningChange(false);
+  }, [reportStopped, onRunningChange]);
+  const reportSessionStarted = useCallback(() => onRunningChange(true), [onRunningChange]);
   // SkiaCamera copies a rendered image to RN asynchronously. Its native busy
   // flag only covers the camera callback, not that pending image delivery.
   const previewPending = useMemo(() => createSynchronizable(false), []);
@@ -41,7 +46,7 @@ export function CameraPreview({ device, photoOutput, active, settings, filterReq
     enablePreviewSizedOutputBuffers
     enablePhysicalBufferRotation={Platform.OS === 'ios'}
     warnIfRenderSkipped={false}
-    onStopped={reportStopped} onError={onError}
+    onStarted={reportSessionStarted} onStopped={reportSessionStopped} onError={onError}
     onInterruptionStarted={reportStopped}
     onSessionConfigSelected={config => {
       onInfo(`선택 FPS ${config.selectedFPS ?? '?'} / native ${config.nativePixelFormat} / photo HDR ${String(config.isPhotoHDREnabled)}`);

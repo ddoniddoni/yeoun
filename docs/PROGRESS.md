@@ -1,6 +1,23 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-29 iPhone LUT 로딩 오류 수정
+## 현재 상태 — 2026-10-29 필터 전환 크기 변동·버튼 종료 수정
+
+- 사용자 보고: 원본/빛/시간/장면 전환마다 카메라가 확대·축소되고 깨짐. 후속으로 “렉이 심하고 아무 버튼을 누르면 종료”를 보고해 종료 원인을 우선 조사했다. PR #16이 병합된 develop `2d48406`에서 `fix/stable-filter-preview-layout`을 생성했다. 기존 사용자 변경은 없었다.
+- 레이아웃 원인: 필터 로딩/실패 안내가 정상 레이아웃의 높이를 늘리고 `onLayout`으로 계산한 3:4 preview 폭까지 바꿨다. 로딩/오류 진입을 프레임 내부 absolute overlay로 옮기고 필터명 줄바꿈을 막았다. 전체 이름은 접근성 label과 조절 패널에서 유지한다. 촬영 상태 줄도 fontScale에 맞는 두 줄 공간을 고정 예약했다. 초점 좌표는 동일한 실제 preview 폭을 사용한다.
+- 종료 증거: devicectl로 앱의 최근 crash 목록과 `M0-2026-10-29-033136.ips`를 읽었다. SIGABRT, RN JavaScript thread의 `synchronizableGetBlocking → SerializableInitializer/SerializableWorklet → getValueUnpacker` 경로였고 `valueUnpacker not found` assert로 종료됐다. 단순 UI 크기 문제나 HMR만의 문제로 판단하지 않는다.
+- 설치 Worklets 0.7.4의 `cloneArrayBufferView`는 TypedArray를 worklet initializer로 감싼다. 기존 공유 request의 LUT `planes`(Uint8Array 3개)를 RN에서 다시 읽으면 RN runtime에 없는 value unpacker를 요구했다. raw ArrayBuffer는 별도 native serializer로 복원된다. **공유 request에는 정확한 복사본 ArrayBuffer 3개만 저장하고, camera renderer의 cache 생성 때만 로컬 Uint8Array view를 만든다.** Crypto digest에 Uint8Array를 넘기는 앞선 수정은 별도 경계이며 그대로 유지한다.
+- 후속 색감 오류 증거: `LUT Alpha_8 image allocation failed`. upload 계측의 첫 각 plane은 44,100 bytes였으나 camera가 전체 공유 상태를 다시 기록한 뒤 0 bytes가 됐다. 설치 `makeShareableCloneOnUIRecursiveLEGACY`에는 ArrayBuffer 전용 분기가 없어 빈 객체로 변환된다. **RN만 게시하는 request cell과 camera가 갱신하는 state/cache cell을 분리**해 역방향 전달을 없앴다. RN의 필터 변경도 GPU cache 읽기/lock을 기다리지 않는다. 비동기 로딩은 취소/generation을 확인하고 실패는 요청 ID별로 fallback과 readiness 취소를 유지한다.
+- 실기기에서는 같은 자산인데 camera OS thread가 1/4/5/7/8/9 등으로 교대해 기존 단일 캐시가 반복 생성됐다. 현재 자산의 raster LUT/compiled effect만 thread별 최대 16개 LRU로 보관한다. 교체/종료 시 전체 해제, 한도 초과 시 가장 오래 안 쓴 항목 해제를 유지하며 프레임 texture·surface·paint는 캐시에 넣지 않는다. 재실행 후 첫 8개 thread cache와 뒤이어 새 thread 1개가 만들어졌고, 후속 로그 구간에서는 추가 upload 3개(새 thread의 3 planes)만 관찰했다. 해당 구간의 새 frame-drop 경고는 0이다. 전체 FPS/장기 성능 합격을 뜻하지 않는다.
+- 변경 파일: `src/platform/camera/useCameraLut.ts`, `src/rendering/adapters/cameraLut.ts`, `src/screens/M0CameraScreen.tsx`, `FilterControls.tsx`, `tests/integration/cameraLut.test.ts`, `docs/REFERENCES.md`, `docs/STITCH_DESIGN.md`, 이 문서. 테스트 소스는 공유 raw buffer/바이트 보존, camera의 request 쓰기 금지, 이후 원본 전환/close, thread별 재사용·자산 교체 해제·LRU 상한을 다룬다. 실행하지 않았으며 native serializer의 실제 검증을 mock 테스트로 주장하지 않는다.
+- 실제 명령: `git status/diff`, fetch/fast-forward/작업 branch 생성 exit 0. 설치 native/JS source와 Worklets 공식 docs/changelog를 읽었다. 추정 경로 일부는 없어 실제 경로로 재조회했다. `devicectl device info files --domain-type systemCrashLogs --search M0`, `device copy from`, 관련 crash JSON 분석 수행. 보고서는 `/private/tmp/yeoun-button-crash.ips`에만 두고 커밋하지 않는다.
+- 사용자 요청의 iPhone 15 실행 세션에서 새 process로 재실행했고 JS bundle/후면 1178×1572 frame을 확인했다. 임시 계측 30-frame 묶음의 `renderCameraLut` 평균은 대체로 7.8~8.9ms, 초기 묶음 최대 약 22.9ms였다. 수정 후 두 후속 로그 수집 구간의 신규 frame-was-late 경고는 0이고 연결 콘솔은 실행 중이었다. 이는 전체 FPS, 입력 지연, 배터리/장기 메모리 통과 수치가 아니다. 임시 timing/layout/selection 로그는 제거했다.
+- 레이아웃 수정 뒤 시간/장면 선택 직전의 측정 영역은 각각 393×456.3333pt로 같았다. 이 측정은 이후 TypedArray crash 수정 전 수집한 것이며 전체 버튼/크기 변동 검증 완료와 구분한다. 사용자는 종료 수정 뒤 “안 꺼지고 렉도 괜찮아졌는데, 색감은 다 못 불러온다”고 확인했다. 따라서 위 처리 시간은 필터 적용 성공의 성능 증거가 아니며 fallback 가능성을 포함한다. 이후 두 cell 분리 버전의 `/private/tmp/yeoun-filter-fix.png`에서 오류 안내 없는 오후 네 시 80%/활성 셔터를 확인했다. 렌즈는 사용자가 가려져 있다고 확인한 상태여서 실제 색감 품질 증거로 삼지 않는다. 수정 앱에서 빛/시간/장면 전환의 사용자 확인을 요청했다. 임시 upload/cache-miss 로그는 제거했다.
+- 테스트·lint·typecheck·react-doctor·네이티브 빌드 **NOT_RUN — 사용자 지시**. 요청된 앱 실행/종료 로그/임시 프레임 계측만 수행했다. Android, 모든 버튼/패널 왕복, 전면, 촬영·저장, 큰 글자/접근성, 장기 안정성은 미검증이다. G0/G1/G2 미통과를 유지한다. 새 의존성·native 패치·자산·필터 수치 변경 없음.
+- 임시 로그 제거 후 요청된 앱의 console process가 유지되고 추가 오류가 없음을 확인했다. 최종 `/private/tmp/yeoun-filter-final.png`(1179×2556)에서도 오후 네 시 80%/활성 셔터/오류 안내 없음이 확인됐다. 수동 색감 전환의 최종 사용자 답변은 아직 받지 않았으며 전체 3종 적용·색감 품질·장기 성능을 통과 처리하지 않는다.
+- `git diff --check` exit 0, `git fetch origin` exit 0, 원격 develop 대비 차이 0/0을 확인했다. 자동 Git Flow로 focused 수정 통합 후 develop에서 마친다. 최종 커밋/병합 상태는 PR과 develop 이력을 따른다. 사용자 확인을 이어갈 수 있게 Metro와 앱은 유지한다. 다음 작업은 실제 색감 전환 피드백 확인 후 기존 결과 원본 비교 계획으로 복귀하는 것이다.
+
+
+## 이전 기록 — 2026-10-29 iPhone LUT 로딩 오류 수정
 
 - Stitch 화면 수정은 [PR #15](https://github.com/ddoniddoni/yeoun/pull/15)로 develop `fd1f4d5`에 병합·동기화했고 새 `fix/ios-lut-digest-input`에서 발견된 로딩 오류만 수정했다.
 - 원인 증거: 아이폰 화면의 필터 로딩 실패와 `[camera-lut-load]` 로그의 ExpoCrypto digest 3번째 인자 TypedArray cast 실패. 설치 `expo-crypto@55.0.19`의 `src/Crypto.ts`는 입력을 native에 그대로 넘기고 iOS `CryptoModule.swift`와 Android `CryptoModule.kt`는 TypedArray를 받는다. 기존 코드는 Uint8Array 복사본의 `.buffer`를 전달했다.

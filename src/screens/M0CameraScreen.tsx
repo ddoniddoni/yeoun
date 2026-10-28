@@ -174,6 +174,16 @@ export function M0CameraScreen() {
                 <Text style={styles.badge}>{comparison.active ? filterReady ? '원본 비교' : '원본 전환 중' : '3:4'}</Text>
                 {exposureLabel ? <Text style={styles.badge}>{exposureLabel}</Text> : null}
               </View>
+              <View pointerEvents="box-none" style={styles.filterNotice}>
+                {currentFilterStatus?.phase === 'error' ? <Pressable accessibilityRole="button"
+                  accessibilityLabel="색감을 불러오지 못했어요. 해결 방법 열기" style={styles.filterError}
+                  onPress={() => setPanel('filter')}>
+                  <Text style={styles.filterNoticeText}>색감을 불러오지 못했어요 · 해결 ›</Text>
+                </Pressable> : !filterReady && !comparison.active ? <Text pointerEvents="none"
+                  accessibilityLiveRegion="polite" style={styles.filterNoticeText}>
+                  {currentFilterStatus?.phase === 'applying' ? '색감을 적용하고 있어요…' : '색감 준비 중…'}
+                </Text> : null}
+              </View>
             </View>}
           </View>
         </View>
@@ -185,11 +195,6 @@ export function M0CameraScreen() {
           </View> : null}
           {metering.error ? <Pressable accessibilityRole="button" accessibilityLabel={`${metering.error} 촬영 설정 열기`}
             style={styles.notice} onPress={() => setPanel('camera')}><Text style={styles.error}>{metering.error} ›</Text></Pressable> : null}
-          {currentFilterStatus?.phase === 'error' ? <Pressable accessibilityRole="button" accessibilityLabel="색감을 불러오지 못했어요. 해결 방법 열기"
-            style={styles.errorLink} onPress={() => setPanel('filter')}><Text style={styles.error}>색감을 불러오지 못했어요 · 해결 ›</Text></Pressable>
-            : permission.hasPermission && device && !filterReady && !comparison.active ? <Text accessibilityLiveRegion="polite" style={styles.info}>
-              {currentFilterStatus?.phase === 'applying' ? '색감을 적용하고 있어요…' : '색감 준비 중…'}
-            </Text> : null}
           {state.message && !resultOpen ? <Text accessibilityRole="alert" style={styles.error}>{state.message}</Text> : null}
           {returnError && !resultOpen ? <Text accessibilityRole="alert" style={styles.error}>{returnError}</Text> : null}
           {state.phase === 'failed' && state.canRetryRender && !resultOpen ? <CameraAction
@@ -224,7 +229,7 @@ export function M0CameraScreen() {
           <Text style={styles.switchIcon}>↻</Text><Text style={styles.smallLabel}>전환</Text>
         </Pressable>
       </View>
-      <Text accessibilityLiveRegion="polite" style={styles.captureStatus}>
+      <Text accessibilityLiveRegion="polite" numberOfLines={2} style={[styles.captureStatus, { height: 36 * fontScale + 4 }]}>
         {comparison.active ? '원본 비교 중 · 색감으로 돌아가면 촬영할 수 있어요' : metering.busy ? metering.message
           : state.phase !== 'idle' ? LABELS[state.phase] : ' '}
       </Text>
@@ -290,13 +295,17 @@ const styles = StyleSheet.create({
   frameLabel: { position: 'absolute', left: 12, right: 12, top: 12, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   badge: { color: theme.text, backgroundColor: 'rgba(23,23,23,0.65)', paddingHorizontal: 6, paddingVertical: 3,
     fontFamily: theme.mono, fontSize: 10, letterSpacing: 1 },
+  filterNotice: { position: 'absolute', left: 12, right: 12, bottom: 20, alignItems: 'center' },
+  filterNoticeText: { color: theme.text, fontSize: 12, lineHeight: 18, textAlign: 'center',
+    backgroundColor: 'rgba(23,23,23,0.85)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 4 },
+  filterError: { minHeight: 48, justifyContent: 'center' },
   viewfinder: { backgroundColor: theme.inset, overflow: 'hidden' },
   emptyFrame: { width: '100%', padding: 24, gap: 16, justifyContent: 'center', backgroundColor: theme.inset },
   welcome: { color: theme.text, fontSize: 23, lineHeight: 32, fontWeight: '500' },
   text: { color: theme.secondary, fontSize: 15, lineHeight: 24 },
   info: { color: theme.secondary, fontSize: 13, lineHeight: 20 },
   deck: { paddingHorizontal: 16, paddingBottom: 4, gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.line },
-  notice: { paddingVertical: 12, minHeight: 48, gap: 12 }, errorLink: { minHeight: 48, justifyContent: 'center' },
+  notice: { paddingVertical: 12, minHeight: 48, gap: 12 },
   error: { color: theme.error, fontSize: 14, lineHeight: 22 },
   captureRow: { paddingHorizontal: 16, paddingVertical: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   sideControl: { width: 80, minHeight: 64, paddingVertical: 4, alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 6 },

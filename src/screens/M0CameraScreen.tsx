@@ -15,6 +15,8 @@ import { FilterControls } from './FilterControls';
 import { CameraDiagnosticsScreen } from './CameraDiagnosticsScreen';
 import { CameraAction, FrameCorners, ShutterButton } from './CameraControls';
 import { CameraResultScreen } from './CameraResultScreen';
+import { OriginalComparisonControls } from './OriginalComparisonControls';
+import { usePreviewComparison } from './usePreviewComparison';
 import { cameraTheme as theme, filterPresentation } from './cameraTheme';
 const PHOTO_SIZE = { width: 4032, height: 3024 };
 const LABELS: Record<CaptureState['phase'], string> = {
@@ -45,9 +47,7 @@ export function M0CameraScreen() {
   const [cameraStopped, setCameraStopped] = useState(false);
   const [info, setInfo] = useState('실제 프레임 관측 대기');
   const [state, setState] = useState<CaptureState>({ phase: 'idle' });
-  const filterRequestKey = `${cameraSettingsKey(settings)}/${filterRevision}/${grainSeed}/${device?.id ?? 'none'}/${foreground}`;
-  const currentFilterStatus = filterStatus?.key === filterRequestKey ? filterStatus : undefined;
-  const filterReady = currentFilterStatus?.phase === 'ready';
+  const comparisonContext = `${cameraSettingsKey(settings)}/${filterRevision}/${grainSeed}/${device?.id ?? 'none'}/${foreground}`;
   const markReady = useCallback(() => setReady(true), []);
   const markStopped = useCallback(() => setReady(false), []);
   const onRunningChange = useCallback((running: boolean) => setCameraStopped(!running), []);
@@ -71,8 +71,15 @@ export function M0CameraScreen() {
   const canCapture = ['idle', 'cancelled'].includes(state.phase);
   const resultOpen = !!state.output;
   const overlayOpen = diagnosticsOpen || resultOpen;
+  const hasStyle = settings.filterId !== 'original' && settings.intensity > 0;
+  const comparisonAvailable = hasStyle && permission.hasPermission && !!device && ready && foreground &&
+    !cameraError && !busy && canCapture && !overlayOpen && !returning;
+  const comparison = usePreviewComparison(settings, comparisonContext, comparisonAvailable);
+  const filterRequestKey = comparison.requestKey;
+  const currentFilterStatus = filterStatus?.key === filterRequestKey ? filterStatus : undefined;
+  const filterReady = currentFilterStatus?.phase === 'ready';
   const shutterDisabled = !permission.hasPermission || !device || !ready || !filterReady ||
-    !foreground || !!cameraError || busy || !canCapture || overlayOpen || returning;
+    !foreground || !!cameraError || busy || !canCapture || overlayOpen || returning || comparison.active;
   const accent = filterPresentation[settings.filterId].color;
   const selectFilter = (id: CameraFilterId) => {
     setSettings(cameraSettings(id)); setFilterRevision(value => value + 1);
@@ -101,7 +108,8 @@ export function M0CameraScreen() {
         <Text style={styles.edition}>오늘의 빛, 나의 색</Text>
       </View>
       <View style={styles.viewfinderArea}>
-        <View style={styles.frameLabel}><Text style={styles.metadata}>PHOTO</Text>
+        <View style={styles.frameLabel}><Text style={styles.metadata}>{comparison.active
+          ? filterReady ? '원본 비교' : '원본 전환 중' : 'PHOTO'}</Text>
           <Text style={styles.metadata}>3:4 · {position === 'back' ? '후면' : '전면'}</Text></View>
         {!permission.hasPermission ? <View style={[styles.emptyFrame, { width: previewWidth }]}>
           <Text style={styles.welcome}>오늘의 빛을,{"\n"}오래 남을 색으로.</Text>
@@ -115,7 +123,7 @@ export function M0CameraScreen() {
           <Text style={styles.text}>아래 전환 버튼으로 다른 카메라를 선택해 주세요.</Text>
         </View> : <View style={[styles.viewfinder, { width: previewWidth }]}>
           <CameraPreview key={device.id} device={device} photoOutput={photoOutput}
-            active={foreground && !cameraError && !overlayOpen} settings={settings} grainSeed={grainSeed} filterRequestKey={filterRequestKey}
+            active={foreground && !cameraError && !overlayOpen} settings={comparison.previewSettings} grainSeed={grainSeed} filterRequestKey={filterRequestKey}
             onFilterStatus={setFilterStatus} onReady={markReady} onStopped={markStopped}
             onRunningChange={onRunningChange} onError={onCameraError} onInfo={setInfo} />
           <FrameCorners />
@@ -132,7 +140,10 @@ export function M0CameraScreen() {
           }} onTexture={(control, value) => {
             setSettings(copyCameraSettings({ ...settings, [control]: value })); setFilterRevision(value => value + 1);
           }} onReset={() => selectFilter(settings.filterId)} />
-        {permission.hasPermission && device && !filterReady ? <Text accessibilityLiveRegion="polite" style={styles.info}>
+        {hasStyle ? <OriginalComparisonControls active={comparison.active} pinned={comparison.pinned}
+          disabled={!comparisonAvailable} ready={filterReady} onHold={comparison.hold}
+          onRelease={comparison.release} onToggle={comparison.toggle} /> : null}
+        {permission.hasPermission && device && !filterReady && (!comparison.active || currentFilterStatus?.phase === 'error') ? <Text accessibilityLiveRegion="polite" style={styles.info}>
           {currentFilterStatus?.phase === 'error' ? currentFilterStatus.message
             : currentFilterStatus?.phase === 'applying' ? '색감을 적용하고 있어요…' : '색감 준비 중 · 잠시 원본으로 보여드려요.'}
         </Text> : null}

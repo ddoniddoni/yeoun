@@ -79,6 +79,27 @@ test('zero intensity bypasses even a missing LUT', () => {
   expect(r.texture.makeShaderOptions).not.toHaveBeenCalled();
 });
 
+test('temporary original comparison reuses the LUT cache and reports a fresh restored draw without changing the selection', () => {
+  const r = setup();
+  const selected = r.cell.getBlocking().request!;
+  const settings = selected.settings;
+  expect(renderCameraLut(r.cell, r.render)?.key).toBe('selection-1');
+  r.cell.getBlocking().request = { id: 2, key: 'comparison-2', loading: false,
+    settings: cameraSettings('original'), grainSeed: selected.grainSeed };
+  expect(renderCameraLut(r.cell, r.render)).toMatchObject({ key: 'comparison-2', phase: 'ready' });
+  expect(r.canvas.drawImage).toHaveBeenCalledTimes(1);
+  expect(bindLutSource).toHaveBeenCalledTimes(1);
+  expect(r.cached.dispose).not.toHaveBeenCalled();
+  r.cell.getBlocking().request = { ...selected, id: 3, key: 'restored-3' };
+  expect(renderCameraLut(r.cell, r.render)).toMatchObject({ key: 'restored-3', phase: 'ready' });
+  expect(createLutResources).toHaveBeenCalledTimes(1);
+  expect(bindLutSource).toHaveBeenCalledTimes(2);
+  expect(r.cell.getBlocking().request!.settings).toBe(settings);
+  expect(settings.filterId).toBe('time-summer');
+  expect(settings.intensity).toBe(0.8);
+  expect(r.cell.getBlocking().request!.grainSeed).toBe(17);
+});
+
 test('binding failure after a ready frame revokes readiness and stays on original until retry', () => {
   const r = setup(); renderCameraLut(r.cell, r.render);
   jest.mocked(bindLutSource).mockImplementationOnce(() => { throw new Error('GPU'); });

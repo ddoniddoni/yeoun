@@ -1,6 +1,17 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-29 탭 초점·촬영 노출 보정
+## 현재 상태 — 2026-10-29 Stitch 촬영 화면 구성 수정
+
+- 사용자 피드백으로 최신 앱의 작은 미리보기/세로 버튼 나열을 확인했다. PR #14는 develop `b3f0c32`에 병합됐고 깨끗한 최신 develop에서 `fix/stitch-camera-layout`을 시작했다.
+- Stitch 원본 3개 화면을 다시 읽었다. 고정 `height - 400` 공제를 없애고 가용 영역에 3:4 미리보기를 맞췄다. 상단 도구, 짧은 필터 줄, 스크롤 밖 고정 셔터를 구성하고 상세 조작을 접근 가능한 스크롤 바텀 패널로 이동했다. 둥근 사각 셔터/YEOWUN 표기를 시안에 맞췄다. 원본 비교는 하단 switch로 즉시 켜고 끈다.
+- 변경: `src/screens/M0CameraScreen.tsx`, `FilterControls.tsx`, `CameraControls.tsx`, 신규 `CameraSheet.tsx`, `docs/STITCH_DESIGN.md`, 이 문서. 렌더러/촬영/저장/초점 도메인과 의존성 변경 없음.
+- 실제 실행: `git fetch`, fast-forward, 작업 브랜치 생성 exit 0. `git diff`/소스 읽기, Stitch `list_screens`/`download_file` 수행. 직접 이미지 URL curl은 401이었고 도구 다운로드로 대체했다. 사용자 요청으로 Metro 8081과 devicectl 앱 실행, JS bundle/카메라 프레임 로그를 확인했다. 연결 첫 조회는 reset by peer였으나 재조회 성공. 첫 앱 세션 종료는 exit 0이며 재실행했다.
+- `devicectl device capture screenshot` exit 0, `/private/tmp/yeoun-camera-layout.png` 1179×2556을 직접 읽어 새 기본 배치를 확인했다. 사진/스크린샷은 커밋하지 않는다. 화면 확인 중 필터 오류 안내를 발견했고 임시 진단 로그로 ExpoCrypto `digest` 3번째 인자의 TypedArray cast 실패를 확인했다. 임시 로그는 제거했고 이 문제는 다음 별도 fix로 처리한다.
+- 테스트·lint·typecheck·react-doctor·네이티브 빌드 **NOT_RUN — 사용자 지시**. 앱 실행/화면 캡처만 이번 요청으로 수행했다. Android/글자 확대/VoiceOver/TalkBack/패널 왕복/촬영·저장 검증은 미실행이며 G0/G1/G2는 미통과다. 개발 서버는 사용자가 앱을 볼 수 있도록 유지한다.
+- 개발 후 자동 Git Flow 지시에 따라 이 화면 변경을 develop에 통합한다. 최종 커밋/병합 상태는 PR 및 develop 이력을 따른다. 다음 작업: 확인된 iOS LUT hash 입력 형식을 별도 수정하고 실제 앱에 다시 반영한다. 그 뒤 기존 계획의 결과 원본 비교가 남는다.
+
+
+## 이전 기록 — 2026-10-29 탭 초점·촬영 노출 보정
 
 - 초점·노출 커밋 `8af4eba`와 자동 Git Flow 규칙 커밋 `236b92b`를 작업 브랜치에 푸시하고 [PR #14](https://github.com/ddoniddoni/yeoun/pull/14)를 생성했다. 명시 파일 `git add`, `git commit`, `git push -u`, `gh pr create`는 exit 0이며 PR에 실행 미검증 범위를 명시했다. 최종 병합 결과는 PR과 develop 이력으로 확인한다.
 - 사용자 요청: **격자·플래시 Git Flow 후 다음 기능 개발**. 기능 커밋 `228678e`를 푸시하고 [PR #13](https://github.com/ddoniddoni/yeoun/pull/13)을 develop에 병합했다. 로컬/추적/실제 원격은 `92baf8c`로 일치했고 깨끗한 develop에서 `feature/camera-focus-exposure`를 만들었다. 후속 사용자 지시로 2026-10-29부터 개발 후 Git Flow 전체 실행이 상시 승인되어 이번 초점·노출 변경에도 적용한다. fetch 후 기준과 원격 develop 차이는 0/0이며 최종 통합 결과는 PR과 develop 이력을 따른다.

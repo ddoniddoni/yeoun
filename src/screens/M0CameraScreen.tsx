@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Linking, Pressable, ScrollView, StatusBar, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCameraDevice, useCameraPermission, usePhotoOutput } from 'react-native-vision-camera';
 import { CaptureController, type CaptureState } from '../domain/capture/controller';
 import { selectedFlashMode, type FlashSelection } from '../domain/capture/flash';
@@ -13,7 +12,8 @@ import { removeFile } from '../platform/files/drafts';
 import { saveToGallery } from '../platform/media/gallery';
 import { exportPhoto } from '../rendering/adapters/exportPhoto';
 import type { FilterStatus } from '../rendering/adapters/cameraLut';
-import { FilterControls } from './FilterControls';
+import { FilterControls, FilterAdjustmentPanel } from './FilterControls';
+import { CameraSheet } from './CameraSheet';
 import { CameraDiagnosticsScreen } from './CameraDiagnosticsScreen';
 import { CameraAction, FrameCorners, ShutterButton } from './CameraControls';
 import { CameraResultScreen } from './CameraResultScreen';
@@ -30,10 +30,10 @@ const LABELS: Record<CaptureState['phase'], string> = {
 };
 export function M0CameraScreen() {
   const permission = useCameraPermission();
-  const { width, height } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
-  const previewWidth = Math.min(width - insets.left - insets.right - 32, 480,
-    Math.max(180, (height - insets.top - insets.bottom - 400) * 3 / 4));
+  const { width, fontScale } = useWindowDimensions();
+  const [viewfinderSize, setViewfinderSize] = useState({ width, height: 180 });
+  const previewWidth = Math.max(1, Math.min(viewfinderSize.width, viewfinderSize.height * 3 / 4));
+  const [panel, setPanel] = useState<'camera' | 'filter'>();
   const [position, setPosition] = useState<'front' | 'back'>('back');
   const device = useCameraDevice(position, { physicalDevices: ['wide-angle'] });
   const [grid, setGrid] = useState(true);
@@ -93,7 +93,7 @@ export function M0CameraScreen() {
   const currentFilterStatus = filterStatus?.key === filterRequestKey ? filterStatus : undefined;
   const filterReady = currentFilterStatus?.phase === 'ready';
   const shutterDisabled = !permission.hasPermission || !device || !ready || !filterReady ||
-    !foreground || !!cameraError || busy || !canCapture || overlayOpen || returning || comparison.active || !metering.ready || metering.busy;
+    !foreground || !!cameraError || busy || !canCapture || overlayOpen || returning || comparison.active || !metering.ready || metering.busy || panel !== undefined;
   const meteringDisabled = assistDisabled || comparison.active;
   const accent = filterPresentation[settings.filterId].color;
   const selectFilter = (id: CameraFilterId) => {
@@ -113,58 +113,149 @@ export function M0CameraScreen() {
     catch (error) { setReturnError(`임시 사진을 정리하지 못했어요. 다시 시도해 주세요. ${String(error)}`); }
     finally { discardPending.current = false; setReturning(false); }
   };
+  const controlsHidden = overlayOpen || panel !== undefined;
+  const settingsDisabled = busy || !canCapture || returning;
+  const flashLabel = flashMode === 'off' ? '끔' : flashMode === 'auto' ? '자동' : '켬';
+  const exposureLabel = metering.exposure === undefined ? undefined
+    : `${metering.unit === 'step' ? '노출' : 'EV'} ${metering.exposure > 0 ? '+' : ''}${metering.unit === 'step'
+      ? `${metering.exposure} 단계` : metering.exposure.toFixed(1)}`;
   return <>
     <StatusBar barStyle="light-content" />
-    <ScrollView style={styles.page} contentContainerStyle={styles.content}
-      accessibilityElementsHidden={overlayOpen} importantForAccessibility={overlayOpen ? 'no-hide-descendants' : 'auto'}>
+    <View style={styles.page} accessibilityElementsHidden={controlsHidden}
+      importantForAccessibility={controlsHidden ? 'no-hide-descendants' : 'auto'}>
       <View style={styles.header}>
-        <View style={styles.brandRow}><Text accessibilityRole="header" style={styles.brand}>여운</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={`플래시 ${flashLabel}, 촬영 설정 열기`}
+          disabled={settingsDisabled} accessibilityState={{ disabled: settingsDisabled }} onPress={() => setPanel('camera')}
+          style={({ pressed }) => [styles.toolbarAction, pressed && styles.pressed, settingsDisabled && styles.disabled]}>
+          <Text style={styles.toolbarText}>ϟ <Text style={styles.smallLabel}>{flashLabel}</Text></Text>
+        </Pressable>
+        <View style={styles.brandRow}><Text accessibilityRole="header" accessibilityLabel="여운" style={styles.brand}>YEOWUN</Text>
           <View style={[styles.brandDot, { backgroundColor: accent }]} /></View>
-        <Text style={styles.edition}>오늘의 빛, 나의 색</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="촬영 설정 열기" onPress={() => setPanel('camera')}
+          disabled={settingsDisabled} accessibilityState={{ disabled: settingsDisabled }}
+          style={({ pressed }) => [styles.toolbarAction, pressed && styles.pressed, settingsDisabled && styles.disabled]}>
+          <View accessible={false} style={styles.settingsIcon}>
+            {[0, 1, 2].map(index => <View key={index} style={styles.settingsLine}>
+              <View style={[styles.settingsKnob, { left: index === 1 ? 5 : 15 }]} />
+            </View>)}
+          </View>
+        </Pressable>
       </View>
-      <View style={styles.viewfinderArea}>
-        {permission.hasPermission && device ? <CameraAssistControls grid={grid} flashMode={flashMode}
-          hasFlash={device.hasFlash} disabled={assistDisabled} onGrid={() => setGrid(value => !value)}
-          onFlash={mode => { if (!assistDisabled && device.hasFlash) setFlashSelection({ deviceId: device.id, mode }); }} /> : null}
-        <View style={styles.frameLabel}><Text style={styles.metadata}>{comparison.active
-          ? filterReady ? '원본 비교' : '원본 전환 중' : 'PHOTO'}</Text>
-          <Text style={styles.metadata}>3:4 · {position === 'back' ? '후면' : '전면'}</Text></View>
-        {!permission.hasPermission ? <View style={[styles.emptyFrame, { width: previewWidth }]}>
-          <Text style={styles.welcome}>오늘의 빛을,{"\n"}오래 남을 색으로.</Text>
-          <Text style={styles.text}>눈앞의 순간에 색감을 더해 보세요. 촬영하려면 카메라 권한이 필요해요.</Text>
-          {permission.canRequestPermission
-            ? <CameraAction primary label="카메라 시작" onPress={() => { void permission.requestPermission().catch(showError); }} />
-            : <CameraAction primary label="설정에서 카메라 허용" onPress={openSettings} />}
-          <Text style={styles.info}>사진은 기기 안에서만 처리해요.</Text>
-        </View> : !device ? <View style={[styles.emptyFrame, { width: previewWidth }]}>
-          <Text style={styles.welcome}>카메라를 찾지 못했어요</Text>
-          <Text style={styles.text}>아래 전환 버튼으로 다른 카메라를 선택해 주세요.</Text>
-        </View> : <View style={[styles.viewfinder, { width: previewWidth }]}>
-          <CameraPreview ref={preview} key={device.id} device={device} photoOutput={photoOutput}
-            controlsEnabled={!meteringDisabled} onMetering={setMeteringState}
-            active={foreground && !cameraError && !overlayOpen} settings={comparison.previewSettings} grainSeed={grainSeed} filterRequestKey={filterRequestKey}
-            onFilterStatus={setFilterStatus} onReady={markReady} onStopped={markStopped}
-            onRunningChange={onRunningChange} onError={onCameraError} onInfo={setInfo} />
-          {grid ? <CameraGrid /> : null}
-          <FrameCorners />
-          <Pressable accessible={false} importantForAccessibility="no" style={StyleSheet.absoluteFill}
-            disabled={meteringDisabled || !metering.ready || metering.busy || !metering.focusSupported}
-            onPress={event => { void preview.current?.focus({ x: event.nativeEvent.locationX / previewWidth,
-              y: event.nativeEvent.locationY / (previewWidth * 4 / 3) }); }} />
-          <FocusTarget state={metering} />
-        </View>}
+      <ScrollView style={styles.body} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={[styles.viewfinderArea, (!permission.hasPermission || !device) && { minHeight: 340 * fontScale }]} onLayout={event => {
+          const { width: nextWidth, height: nextHeight } = event.nativeEvent.layout;
+          setViewfinderSize(previous => previous.width === nextWidth && previous.height === nextHeight
+            ? previous : { width: nextWidth, height: nextHeight });
+        }}>
+          <View style={styles.previewCenter}>
+            {!permission.hasPermission ? <View style={styles.emptyFrame}>
+              <Text style={styles.welcome}>오늘의 빛을,{"\n"}오래 남을 색으로.</Text>
+              <Text style={styles.text}>눈앞의 순간에 색감을 더해 보세요.</Text>
+              {permission.canRequestPermission
+                ? <CameraAction primary label="카메라 시작" onPress={() => { void permission.requestPermission().catch(showError); }} />
+                : <CameraAction primary label="설정에서 카메라 허용" onPress={openSettings} />}
+            </View> : !device ? <View style={styles.emptyFrame}>
+              <Text style={styles.welcome}>카메라를 찾지 못했어요</Text>
+              <Text style={styles.text}>아래 전환 버튼으로 다른 카메라를 선택해 주세요.</Text>
+            </View> : <View style={[styles.viewfinder, { width: previewWidth }]}>
+              <CameraPreview ref={preview} key={device.id} device={device} photoOutput={photoOutput}
+                controlsEnabled={!meteringDisabled} onMetering={setMeteringState}
+                active={foreground && !cameraError && !overlayOpen} settings={comparison.previewSettings} grainSeed={grainSeed} filterRequestKey={filterRequestKey}
+                onFilterStatus={setFilterStatus} onReady={markReady} onStopped={markStopped}
+                onRunningChange={onRunningChange} onError={onCameraError} onInfo={setInfo} />
+              {grid ? <CameraGrid /> : null}
+              <FrameCorners />
+              <Pressable accessible={false} importantForAccessibility="no" style={StyleSheet.absoluteFill}
+                disabled={meteringDisabled || !metering.ready || metering.busy || !metering.focusSupported}
+                onPress={event => { void preview.current?.focus({ x: event.nativeEvent.locationX / previewWidth,
+                  y: event.nativeEvent.locationY / (previewWidth * 4 / 3) }); }} />
+              <FocusTarget state={metering} />
+              <View pointerEvents="none" style={styles.frameLabel}>
+                <Text style={styles.badge}>{comparison.active ? filterReady ? '원본 비교' : '원본 전환 중' : '3:4'}</Text>
+                {exposureLabel ? <Text style={styles.badge}>{exposureLabel}</Text> : null}
+              </View>
+            </View>}
+          </View>
+        </View>
+        <View style={styles.deck}>
+          <FilterControls settings={settings} disabled={settingsDisabled} onSelect={selectFilter} onOpen={() => setPanel('filter')} />
+          {cameraError ? <View style={styles.notice}>
+            <Text accessibilityRole="alert" style={styles.error}>{cameraError}</Text>
+            <CameraAction label="카메라 다시 연결" onPress={() => { setReady(false); setCameraError(undefined); setFilterRevision(value => value + 1); }} />
+          </View> : null}
+          {metering.error ? <Pressable accessibilityRole="button" accessibilityLabel={`${metering.error} 촬영 설정 열기`}
+            style={styles.notice} onPress={() => setPanel('camera')}><Text style={styles.error}>{metering.error} ›</Text></Pressable> : null}
+          {currentFilterStatus?.phase === 'error' ? <Pressable accessibilityRole="button" accessibilityLabel="색감을 불러오지 못했어요. 해결 방법 열기"
+            style={styles.errorLink} onPress={() => setPanel('filter')}><Text style={styles.error}>색감을 불러오지 못했어요 · 해결 ›</Text></Pressable>
+            : permission.hasPermission && device && !filterReady && !comparison.active ? <Text accessibilityLiveRegion="polite" style={styles.info}>
+              {currentFilterStatus?.phase === 'applying' ? '색감을 적용하고 있어요…' : '색감 준비 중…'}
+            </Text> : null}
+          {state.message && !resultOpen ? <Text accessibilityRole="alert" style={styles.error}>{state.message}</Text> : null}
+          {returnError && !resultOpen ? <Text accessibilityRole="alert" style={styles.error}>{returnError}</Text> : null}
+          {state.phase === 'failed' && state.canRetryRender && !resultOpen ? <CameraAction
+            label="보관한 원본으로 다시 처리" disabled={busy || !foreground || returning} onPress={() => {
+              void controller.retryRender().then(() => {
+                if (controller.state.phase === 'cancelled') setGrainSeed(createGrainSeed());
+              });
+            }} /> : null}
+          {state.phase === 'failed' && !resultOpen ? <CameraAction label="임시 사진 버리고 다시 촬영"
+            disabled={busy || returning} onPress={() => { void discardAndReturn(); }} /> : null}
+        </View>
+      </ScrollView>
+      <View style={styles.captureRow}>
+        <Pressable accessibilityRole="switch" accessibilityLabel="원본 비교" accessibilityHint="미리보기만 원본으로 바꿔요. 다시 누르면 색감으로 돌아가요."
+          accessibilityState={{ checked: comparison.pinned, disabled: !comparisonAvailable }} disabled={!comparisonAvailable}
+          onPress={comparison.toggle} style={({ pressed }) => [styles.sideControl, pressed && styles.pressed,
+            !comparisonAvailable && styles.disabled, comparison.active && styles.selected]}>
+          <View accessible={false} style={styles.compareIcon}><View style={styles.compareHalf} /></View>
+          <Text style={styles.smallLabel}>{comparison.pinned ? '색감 복귀' : '원본 비교'}</Text>
+        </Pressable>
+        <ShutterButton disabled={shutterDisabled} busy={busy} onPress={() => {
+          const exposure = preview.current?.captureExposure();
+          if (!shutterDisabled && exposure) void controller.capture(settings, position, grainSeed, flashMode, exposure).then(() => {
+            if (controller.state.phase === 'cancelled') setGrainSeed(createGrainSeed());
+          });
+        }} />
+        <Pressable accessibilityRole="button" accessibilityLabel={position === 'back' ? '전면 카메라로 전환' : '후면 카메라로 전환'}
+          disabled={busy || metering.busy || !canCapture || returning} accessibilityState={{ disabled: busy || metering.busy || !canCapture || returning }}
+          onPress={() => { setReady(false); setCameraError(undefined); setFlashSelection(undefined); setPosition(value => value === 'back' ? 'front' : 'back'); }}
+          style={({ pressed }) => [styles.sideControl, pressed && styles.pressed,
+            (busy || metering.busy || !canCapture || returning) && styles.disabled]}>
+          <Text style={styles.switchIcon}>↻</Text><Text style={styles.smallLabel}>전환</Text>
+        </Pressable>
       </View>
-      {cameraError ? <View style={styles.notice}>
-        <Text accessibilityRole="alert" style={styles.error}>{cameraError}</Text>
-        <CameraAction label="카메라 다시 연결" onPress={() => { setReady(false); setCameraError(undefined); setFilterRevision(value => value + 1); }} />
-      </View> : null}
-      <View style={styles.deck}>
-        {permission.hasPermission && device ? <CameraMeteringControls state={metering} disabled={meteringDisabled}
-          onFocusCenter={() => { void preview.current?.focus({ x: 0.5, y: 0.5 }); }}
-          onExposure={value => { void preview.current?.expose(value); }}
-          onReconnect={() => { void preview.current?.reconnectMetering(); }} /> : null}
-        <FilterControls settings={settings} disabled={busy || !canCapture || returning}
-          onSelect={selectFilter} onIntensity={intensity => {
+      <Text accessibilityLiveRegion="polite" style={styles.captureStatus}>
+        {comparison.active ? '원본 비교 중 · 색감으로 돌아가면 촬영할 수 있어요' : metering.busy ? metering.message
+          : state.phase !== 'idle' ? LABELS[state.phase] : ' '}
+      </Text>
+    </View>
+    {panel && !overlayOpen ? <CameraSheet title={panel === 'camera' ? '촬영 설정' : '나의 색감'} onClose={() => {
+      comparison.release(); setPanel(undefined);
+    }}>
+      {panel === 'camera' ? <>
+        {permission.hasPermission && device ? <>
+          <CameraAssistControls grid={grid} flashMode={flashMode} hasFlash={device.hasFlash} disabled={assistDisabled}
+            onGrid={() => setGrid(value => !value)} onFlash={mode => {
+              if (!assistDisabled && device.hasFlash) setFlashSelection({ deviceId: device.id, mode });
+            }} />
+          <CameraMeteringControls state={metering} disabled={meteringDisabled}
+            onFocusCenter={() => { void preview.current?.focus({ x: 0.5, y: 0.5 }); }}
+            onExposure={value => { void preview.current?.expose(value); }}
+            onReconnect={() => { void preview.current?.reconnectMetering(); }} />
+        </> : <Text style={styles.info}>카메라를 허용하면 촬영 설정을 사용할 수 있어요.</Text>}
+        <Text style={styles.info}>사진은 기기 안에서만 처리해요.</Text>
+        {__DEV__ ? <CameraAction label="개발 진단" disabled={busy || !foreground || returning} onPress={() => {
+          if (!__DEV__ || !foreground || discardPending.current || ['capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
+          setPanel(undefined); setReady(false); setDiagnosticsOpen(true);
+        }} /> : null}
+      </> : <>
+        {currentFilterStatus?.phase === 'error' ? <View style={styles.notice}>
+          <Text accessibilityRole="alert" style={styles.error}>{currentFilterStatus.message}</Text>
+          <CameraAction label="색감 다시 불러오기" disabled={settingsDisabled} onPress={() => setFilterRevision(value => value + 1)} />
+          <CameraAction label="원본으로 전환" disabled={settingsDisabled} onPress={() => selectFilter('original')} />
+        </View> : null}
+        <FilterAdjustmentPanel settings={settings} disabled={settingsDisabled} onSelect={selectFilter}
+          onIntensity={intensity => {
             setSettings(copyCameraSettings({ ...settings, intensity })); setFilterRevision(value => value + 1);
           }} onTexture={(control, value) => {
             setSettings(copyCameraSettings({ ...settings, [control]: value })); setFilterRevision(value => value + 1);
@@ -172,53 +263,8 @@ export function M0CameraScreen() {
         {hasStyle ? <OriginalComparisonControls active={comparison.active} pinned={comparison.pinned}
           disabled={!comparisonAvailable} ready={filterReady} onHold={comparison.hold}
           onRelease={comparison.release} onToggle={comparison.toggle} /> : null}
-        {permission.hasPermission && device && !filterReady && (!comparison.active || currentFilterStatus?.phase === 'error') ? <Text accessibilityLiveRegion="polite" style={styles.info}>
-          {currentFilterStatus?.phase === 'error' ? currentFilterStatus.message
-            : currentFilterStatus?.phase === 'applying' ? '색감을 적용하고 있어요…' : '색감 준비 중 · 잠시 원본으로 보여드려요.'}
-        </Text> : null}
-        {currentFilterStatus?.phase === 'error' ? <View style={styles.notice}>
-          <CameraAction label="색감 다시 불러오기" disabled={busy || !canCapture} onPress={() => setFilterRevision(value => value + 1)} />
-          <CameraAction label="원본으로 전환" disabled={busy || !canCapture} onPress={() => selectFilter('original')} />
-        </View> : null}
-        <View style={styles.captureRow}>
-          <View style={styles.sideControl}><Text style={styles.smallLabel}>색감 초안</Text>
-            <Text style={styles.info}>대표 3종</Text></View>
-          <ShutterButton disabled={shutterDisabled} busy={busy} onPress={() => {
-            const exposure = preview.current?.captureExposure();
-            if (!shutterDisabled && exposure) void controller.capture(settings, position, grainSeed, flashMode, exposure).then(() => {
-              if (controller.state.phase === 'cancelled') setGrainSeed(createGrainSeed());
-            });
-          }} />
-          <Pressable accessibilityRole="button" accessibilityLabel={position === 'back' ? '전면 카메라로 전환' : '후면 카메라로 전환'}
-            disabled={busy || metering.busy || !canCapture || returning} accessibilityState={{ disabled: busy || metering.busy || !canCapture || returning }}
-            onPress={() => { setReady(false); setCameraError(undefined); setFlashSelection(undefined); setPosition(value => value === 'back' ? 'front' : 'back'); }}
-            style={({ pressed }) => [styles.sideControl, styles.switchButton, pressed && styles.pressed,
-              (busy || metering.busy || !canCapture || returning) && styles.disabled]}>
-            <Text style={styles.switchIcon}>↻</Text><Text style={styles.smallLabel}>전환</Text>
-          </Pressable>
-        </View>
-        <Text accessibilityLiveRegion="polite" style={styles.captureStatus}>{LABELS[state.phase]}</Text>
-        {state.message && !resultOpen ? <Text accessibilityRole="alert" style={styles.error}>{state.message}</Text> : null}
-        {returnError && !resultOpen ? <Text accessibilityRole="alert" style={styles.error}>{returnError}</Text> : null}
-        {state.phase === 'failed' && state.canRetryRender && !resultOpen ? <CameraAction
-          label="보관한 원본으로 다시 처리" disabled={busy || !foreground || returning} onPress={() => {
-            void controller.retryRender().then(() => {
-              if (controller.state.phase === 'cancelled') setGrainSeed(createGrainSeed());
-            });
-          }} /> : null}
-        {state.phase === 'failed' && !resultOpen ? <CameraAction label="임시 사진 버리고 다시 촬영"
-          disabled={busy || returning} onPress={() => { void discardAndReturn(); }} /> : null}
-      </View>
-      <View style={styles.footer}>
-        <Text style={styles.footnote}>사진은 기기 안에만 머물러요.</Text>
-        {__DEV__ ? <Pressable accessibilityRole="button" disabled={busy || !foreground || returning}
-          accessibilityState={{ disabled: busy || !foreground || returning }} style={styles.diagnostics}
-          onPress={() => {
-            if (!__DEV__ || !foreground || discardPending.current || ['capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
-            setReady(false); setDiagnosticsOpen(true);
-          }}><Text style={styles.footnote}>개발 진단 ›</Text></Pressable> : null}
-      </View>
-    </ScrollView>
+      </>}
+    </CameraSheet> : null}
     {state.output ? <CameraResultScreen state={state} output={state.output} settings={settings} foreground={foreground}
       returning={returning} returnError={returnError} onReturn={() => { void discardAndReturn(); }}
       onSave={() => { if (!discardPending.current) void controller.save(); }}
@@ -229,30 +275,36 @@ export function M0CameraScreen() {
   </>;
 }
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: theme.background }, content: { flexGrow: 1, paddingBottom: 12 },
-  header: { paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', flexWrap: 'wrap',
-    alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  brand: { color: theme.text, fontSize: 25, fontWeight: '500', letterSpacing: 4 },
-  brandDot: { width: 5, height: 5, borderRadius: 3 }, edition: { color: theme.secondary, fontSize: 12 },
-  viewfinderArea: { paddingHorizontal: 16, alignItems: 'center', paddingBottom: 12 },
-  frameLabel: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, paddingBottom: 8 },
-  metadata: { color: theme.secondary, fontFamily: theme.mono, fontSize: 11, letterSpacing: 1 },
+  page: { flex: 1, backgroundColor: theme.background }, body: { flex: 1 }, content: { flexGrow: 1 },
+  header: { paddingHorizontal: 12, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  toolbarAction: { minWidth: 56, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  toolbarText: { color: theme.secondary, fontSize: 28 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
+  brand: { color: theme.text, fontSize: 18, fontWeight: '600', letterSpacing: 3, flexShrink: 1 },
+  brandDot: { width: 4, height: 4, borderRadius: 2 },
+  settingsIcon: { width: 24, height: 24, justifyContent: 'space-around' },
+  settingsLine: { height: 1.5, width: 24, backgroundColor: theme.secondary },
+  settingsKnob: { width: 3, height: 7, top: -3, backgroundColor: theme.secondary, position: 'absolute' },
+  viewfinderArea: { flex: 1, minHeight: 260, backgroundColor: '#111111' },
+  previewCenter: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  frameLabel: { position: 'absolute', left: 12, right: 12, top: 12, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  badge: { color: theme.text, backgroundColor: 'rgba(23,23,23,0.65)', paddingHorizontal: 6, paddingVertical: 3,
+    fontFamily: theme.mono, fontSize: 10, letterSpacing: 1 },
   viewfinder: { backgroundColor: theme.inset, overflow: 'hidden' },
-  emptyFrame: { minHeight: 320, padding: 24, gap: 20, justifyContent: 'center', backgroundColor: theme.inset },
-  welcome: { color: theme.text, fontSize: 25, lineHeight: 36, fontWeight: '500' },
+  emptyFrame: { width: '100%', padding: 24, gap: 16, justifyContent: 'center', backgroundColor: theme.inset },
+  welcome: { color: theme.text, fontSize: 23, lineHeight: 32, fontWeight: '500' },
   text: { color: theme.secondary, fontSize: 15, lineHeight: 24 },
   info: { color: theme.secondary, fontSize: 13, lineHeight: 20 },
-  deck: { paddingHorizontal: 20, paddingBottom: 12, gap: 12, borderTopWidth: 1, borderTopColor: theme.line },
-  notice: { padding: 16, gap: 12 }, error: { color: theme.error, fontSize: 14, lineHeight: 22 },
-  captureRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingTop: 4 },
-  sideControl: { width: 72, minHeight: 64, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  smallLabel: { color: theme.secondary, fontSize: 13 },
-  switchButton: { borderWidth: 1, borderColor: theme.line, borderRadius: 8, padding: 8 },
-  switchIcon: { color: theme.text, fontSize: 26, lineHeight: 28 },
-  captureStatus: { color: theme.secondary, fontSize: 12, textAlign: 'center', lineHeight: 20 },
-  footer: { paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  footnote: { color: theme.secondary, fontSize: 11, lineHeight: 18 },
-  diagnostics: { minHeight: 48, minWidth: 48, justifyContent: 'center', paddingHorizontal: 8 },
+  deck: { paddingHorizontal: 16, paddingBottom: 4, gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.line },
+  notice: { paddingVertical: 12, minHeight: 48, gap: 12 }, errorLink: { minHeight: 48, justifyContent: 'center' },
+  error: { color: theme.error, fontSize: 14, lineHeight: 22 },
+  captureRow: { paddingHorizontal: 16, paddingVertical: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  sideControl: { width: 80, minHeight: 64, paddingVertical: 4, alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 6 },
+  smallLabel: { color: theme.secondary, fontSize: 12 },
+  switchIcon: { color: theme.secondary, fontSize: 32, lineHeight: 32 },
+  compareIcon: { width: 22, height: 22, borderWidth: 1.5, borderColor: theme.secondary, borderRadius: 3, padding: 2 },
+  compareHalf: { width: '50%', height: '100%', backgroundColor: theme.secondary },
+  selected: { backgroundColor: theme.surface },
+  captureStatus: { color: theme.secondary, fontSize: 11, textAlign: 'center', paddingHorizontal: 16, lineHeight: 18, paddingBottom: 4 },
   pressed: { opacity: 0.7 }, disabled: { opacity: 0.4 },
 });

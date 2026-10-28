@@ -1,6 +1,39 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-28 개발 진단 화면 분리
+## 현재 상태 — 2026-10-28 Stitch 카메라 디자인 적용
+
+- 후속 사용자 요청으로 이번 디자인 변경의 Git Flow(커밋·푸시·develop 대상 PR 생성/병합·동기화)가 승인됐다. 원격 fetch 후 기준 브랜치와 차이 없음(0/0)을 확인했다. 테스트·lint/typecheck·빌드·앱 실행은 계속 NOT_RUN이며 최종 통합 결과는 해당 PR과 Git 이력을 따른다.
+- 디자인 커밋 `6ba0845`를 원격 작업 브랜치에 푸시하고 [PR #10](https://github.com/ddoniddoni/yeoun/pull/10)을 생성했다. 명시 파일 `git add`, `git commit`, `git push -u`, `gh pr create`는 exit 0이다. PR 본문에 실행 미검증 범위를 남겼으며 최종 병합 상태는 PR과 develop 이력으로 확인한다.
+- 사용자 요청: Google Stitch 프로젝트 `7812018568704993424`를 확인하고 디자인 작업. 프로젝트와 카메라/필터 트레이/결과 화면 3종의 스크린샷을 연결 도구로 읽어 현재 앱 코드에 적용했다. 원격 Stitch 시안은 변경하지 않았다.
+- 시작 상태는 깨끗한 `develop`/`origin/develop`이며 앞선 PR #9 병합 결과는 `11078c7`이다. 원격 fetch와 fast-forward 확인 후 `feature/stitch-camera-design`을 만들었다. 최초 디자인 구현 단계에서는 커밋·푸시·PR을 하지 않았고, 이후 위 Git Flow 요청을 받았다.
+- `cameraTheme.ts`에 차콜/따뜻한 흰색/컬렉션 강조색과 시스템 숫자 폰트를 모았다. `CameraControls.tsx`에 48px 이상 동작 버튼, 72px 원형 셔터(84px 링), 프레임 모서리를 작성했다. 새 의존성·폰트·사진 자산은 추가하지 않았다.
+- `M0CameraScreen.tsx`는 브랜드 헤더, 높이에 따라 폭을 조정하는 실제 3:4 프레임, 하단 촬영 조작부, 권한 안내와 오류 재시도, 작은 개발 진단 진입점으로 구성했다. 스크롤과 시스템 글자 크기를 유지한다. `FilterControls.tsx`는 원본/빛/시간/장면 선택, 현재 필터와 강도 표시, 접이식 10% 단위 조절이다. 대표 필터 3종만 연결하고 초안임을 표시한다.
+- `CameraResultScreen.tsx`에 실제 JPEG 결과, 실제 크기/용량, 저장 대기·저장 중·성공·실패/재시도를 분리했다. 미저장 이탈은 확인 후 버리고, 저장/임시 파일 정리 중 뒤로가기와 중복 요청을 막는다. 실제 controller `saved`만 저장 성공으로 표시한다. 결과 화면에서는 기존 카메라 컴포넌트를 유지하며 비활성화하고 복귀 때 새 필터 draw와 프레임 준비를 기다리도록 연결했다.
+- 렌더러, LUT 자산, 촬영 snapshot, 고해상도 export, 갤러리 저장 adapter는 변경하지 않았다. 시안의 RAW/ISO/EV 예시와 미구현 공유·가져오기·레시피·원본 비교 버튼/필터 썸네일은 실제 동작으로 표시하지 않는다. 상세 근거는 [STITCH_DESIGN.md](STITCH_DESIGN.md), 제품/계획 문서와 README에도 현재 범위를 반영했다.
+- **구현 코드 작성 / 실행 확인 NOT_RUN.** 테스트·lint/typecheck·react-doctor·번들·네이티브 빌드·실기기·GPU·앱 스크린샷 검증을 실행하지 않았다. 개발 서버나 기기 앱도 시작하지 않았다. Stitch 원본 이미지를 본 것은 네이티브 앱 화면 검증이 아니다. G0/G1/G2는 미통과다.
+
+### 이번 변경 파일
+
+- `src/screens/cameraTheme.ts`, `CameraControls.tsx`, `CameraResultScreen.tsx` 신규.
+- `src/screens/M0CameraScreen.tsx`, `FilterControls.tsx` 수정.
+- `docs/STITCH_DESIGN.md` 신규, `docs/01_PRODUCT_DESIGN.md`, `docs/04_IMPLEMENTATION_PLAN.md`, `docs/PROGRESS.md`, `README.md` 수정.
+
+### 실제 작업과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| Stitch `get_project`, `list_screens`, `download_file` | 프로젝트/디자인 시스템과 3개 화면 PNG 읽음, 원격 변경 없음 |
+| `git status`, `git diff`, `rg`, `cat`, `sed` | 기존 변경 없음 확인, 코드·문서·설치 RN Pressable/Modal/SafeArea 타입과 변경 diff 읽음 |
+| `git fetch origin` | exit 0 |
+| `git merge --ff-only origin/develop` | exit 0, Already up to date |
+| `git switch -c feature/stitch-camera-design` | exit 0 |
+| `apply_patch`, 파일 작성용 shell/Python | 코드·문서 작성. 최초 중복 경로 patch는 적용 전 거부되어 분리해 작성 |
+| RN 0.83 Pressable/Modal/useWindowDimensions 공식 문서 읽기 | 사용한 UI API 근거를 디자인 기록에 링크 |
+| 테스트·lint/typecheck·react-doctor·빌드·앱 실행 | **NOT_RUN — 사용자 지시** |
+
+다음 확인 항목은 사용자 요청 후 iPhone/Android의 기본 배치·작은 화면·글자 확대·접근성, 필터 로딩/오류, 전후면, 결과 화면 복귀/새 draw, 미저장 취소, 저장 실패/재시도와 앱 복귀다. 새 기능 후보 grain/bloom은 이번 디자인 범위에 포함하지 않았다.
+
+## 이전 기록 — 2026-10-28 개발 진단 화면 분리
 
 - 후속 사용자 요청으로 개발 진단 화면 분리의 Git Flow(커밋·푸시·develop 대상 PR 생성/병합·동기화)가 승인됐다. 이번에도 테스트·lint/typecheck·빌드·앱 실행은 NOT_RUN이다. 최종 통합 상태는 작업 브랜치의 PR과 Git 이력을 따른다.
 - 진단 화면 커밋 `8df5d99`를 원격 작업 브랜치에 푸시하고 [PR #9](https://github.com/ddoniddoni/yeoun/pull/9)을 생성했다. `git commit`, `git push -u`, `gh pr create`는 exit 0이며 PR 본문에 실행 미검증 범위를 명시했다.

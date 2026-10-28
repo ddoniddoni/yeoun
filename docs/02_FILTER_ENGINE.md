@@ -306,6 +306,29 @@ LUT 결과를 선형화한 후 밝은 영역을 추출한다. `Ylinear=0.2126R+0
 
 ## 9. 공유 데이터 계약
 
+### 정적 Grain / 약한 Bloom 구현 — 2026-10-28, 실행 NOT_RUN
+
+카메라 렌더러는 `lut-camera-0.2.0`, 공간 효과 backend는 `grain-bloom-0.1.0`이다. LUT 제작 엔진 `lut-authoring-0.1.0` / look `0.1.0-draft` / LUT backend `skia-alpha-planes-0.2.0`과 기존 PNG·manifest·seed는 변경하지 않는다. 앞 절의 grain/bloom=0 전용 구현 기록은 이전 버전이며, 이제 세 강도 모두 finite 0~1을 검증한다. 예전 카메라 렌더러 버전을 자동 대체하지 않는다.
+
+`spatial.ts` shader와 `spatialEffects.ts` adapter를 미리보기/저장이 공유한다. 공간 효과가 있으면 LUT를 **100%**로 평가한 다음 선형 bloom → encoded grain → 원본과 master intensity 혼합을 한 번 수행한다. 입자/번짐이 모두 0이면 기존 LUT 경로를 그대로 사용한다. 원본과 강도 0은 LUT·공간 효과 생성/중간 버퍼를 우회한다. 기본 입자/번짐은 별도 복제 상수가 아니라 `spec/filters.seed.json`의 대표 3종 defaults에서 가져온다.
+
+#### 고정 입자와 좌표
+
+- 다음 촬영에 사용할 0~4092 정수 seed를 미리보기 준비 시 한 번 생성하고, 촬영 snapshot에 복사한다. 필터 선택/강도/진단/앱 복귀는 seed를 바꾸지 않는다. 저장 처리 재시도는 같은 snapshot seed를 쓰며 초안을 버리고 다음 촬영으로 돌아가거나 촬영이 취소되면 새 seed를 준비한다. 프로세스 종료 후 초안 복구는 아직 없으며 seed도 세션 안에서만 보관한다.
+- 방향·미러·중앙 crop을 affine 좌표로 정규화한다. preview는 설치된 SkiaCamera의 counter-rotation/mirror와 세로 cover crop을 따르고, export는 JPEG의 EXIF 변환과 기존 4:3 crop을 따른다. 사진/프레임을 추가로 CPU 복사하지 않는다. 촬영 원본과 프리뷰의 센서 FoV/가로 촬영 구도 차이가 사라졌다는 뜻은 아니다.
+- 긴 변 1600 가상 격자에서 정수 hash를 사용한다. `h=(x+131*y+17*seed) mod 4093`, 반복 modular multiplication으로 `h^5 mod 4093`, 마지막 `(109*h+1021) mod 4093`을 구해 `h/2046-1`로 바꾼다. 정수 곱은 float32의 정확한 정수 범위 안이다. 고정 cell에서 전체 seed 집합에 대해 대칭 분포를 목표로 하며 개별 사진의 평균이 반드시 0이라는 주장은 아니다. GPU 실제 정밀도는 확인 전이다.
+- 격자 이웃을 smoothstep 보간하고 pixel footprint의 4개 지점 평균을 쓴다. 작은 출력은 `min(1, longSide/1600)` 감쇠를 적용해 aliasing을 줄이는 초안이다. 따라서 축소 preview의 진폭과 export 진폭이 픽셀 단위로 같다고 주장하지 않는다. `0.04*grain*envelope` 계수와 최종 clamp는 §7을 따른다. 실제 입자 질감/대역 제한 품질 검수 전이다.
+
+#### 하이라이트 번짐과 자원 수명
+
+- LUT 이후 linear RGB의 밝기 mask를 먼저 추출하고, 축소 출력 pixel footprint 내 4개 위치의 값을 평균한다. 중간 크기는 각 축 `max(1,floor(sourceSize*min(0.25,512/longSide)))`로 정한다. preview/export 모두 긴 변 512px를 넘지 않는다.
+- 수평·수직 11-tap Gaussian을 별도 작은 surface에서 실행한다. 축별 sigma는 `sourceLongSide*0.003*(smallAxis/sourceAxis)`이고 최대 약 1.536이다. 5 pixel 반경에 가중치를 정규화하고 가장자리는 Clamp한다. CPU reference와 최종 합성은 §8의 0.65/0.95 threshold와 0.6 계수를 따른다.
+- intermediate는 일반 Skia 색 이미지다. 각 tap을 `toLinearSrgb`로 바꿔 합산하고 `fromLinearSrgb`로 저장한다. image child는 Nearest로 읽고 최종 업샘플은 **linear light에서 명시 bilinear**로 계산한다. encoded RGB를 그대로 평균하는 blur로 대체하지 않는다. surface의 실제 프로파일/중간 양자화 영향은 실기기 확인 전이다.
+- camera cache에는 LUT raster 자산과 compiled effects만 보관한다. frame texture, bloom surface/image, shader binding, paint는 해당 프레임 thread에서 생성하고 SkiaCamera snapshot/readback이 반환된 뒤 역순 해제한다. 실패 경로도 같은 정리를 거치며 lock은 finally에서 해제한다. export는 별도의 RN context 자원을 소유해 JPEG encode 후 정리한다. 추가 고해상도 전체 크기 버퍼는 만들지 않는다.
+- allocation/compile 실패는 미리보기 원본 fallback+오류/촬영 차단으로 처리하고 명시 재시도 때까지 반복 생성하지 않는다. export 실패는 원본 초안과 snapshot을 유지하며 효과를 빼고 성공 파일로 저장하지 않는다. 기존 SkiaCamera 내부 snapshot 실패를 console에만 남기는 한계는 그대로다.
+
+`reference/spatial.ts`는 합성 sample용 CPU 기준이며 실시간 경로에서 사진 픽셀을 JS로 읽지 않는다. CPU 성질, affine 좌표, snapshot seed, preview/export 전달, 부분 allocation 실패와 자원 해제 테스트 **소스만 작성**했다. SkSL compile·실제 GPU/색감/성능 검증은 전부 NOT_RUN이다. 정적 grain/약한 bloom의 코드 존재가 G1 통과를 뜻하지 않는다. [S31](REFERENCES.md#s31)과 [검사 계획](05_TEST_RELEASE.md)을 따른다.
+
 아래는 앱 내부 도메인 타입의 제안이며 외부 라이브러리 API가 아니다.
 
 ```ts

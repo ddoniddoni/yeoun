@@ -1,6 +1,7 @@
+import filterSeed from '../../../spec/filters.seed.json';
 import type { RenderSettings } from './types';
 
-export const CAMERA_RENDER_VERSION = 'lut-camera-0.1.0';
+export const CAMERA_RENDER_VERSION = 'lut-camera-0.2.0';
 export const CAMERA_FILTERS = [
   { id: 'original', name: '원본', caption: '색감 효과 없이' },
   { id: 'light-afternoon', name: '오후 네 시', caption: '따뜻한 빛, 맑은 그림자' },
@@ -20,18 +21,20 @@ export function copyCameraSettings(input: CameraSettings): CameraSettings {
   if (!Number.isFinite(input.intensity) || input.intensity < 0 || input.intensity > 1) {
     throw new Error('필터 강도는 0~100%여야 해요.');
   }
-  // Spatial effects are a later M1 slice; never silently drop requested effects.
-  if (input.grain !== 0 || input.bloom !== 0) throw new Error('입자와 빛 번짐은 아직 지원하지 않아요.');
+  for (const value of [input.grain, input.bloom]) {
+    if (!Number.isFinite(value) || value < 0 || value > 1) throw new Error('입자와 빛 번짐은 0~100%여야 해요.');
+  }
   return Object.freeze({ filterId: input.filterId, lookVersion: input.lookVersion,
     engineVersion: input.engineVersion, rendererVersion: input.rendererVersion,
-    intensity: input.filterId === 'original' ? 0 : input.intensity, grain: 0, bloom: 0 });
+    intensity: input.filterId === 'original' ? 0 : input.intensity, grain: input.filterId === 'original' ? 0 : input.grain, bloom: input.filterId === 'original' ? 0 : input.bloom });
 }
 
 export function cameraSettings(filterId: CameraFilterId, intensity = 0.8): CameraSettings {
-  return copyCameraSettings({ filterId, intensity, grain: 0, bloom: 0,
+  const defaults = filterSeed.filters.find(filter => filter.id === filterId)?.defaults;
+  return copyCameraSettings({ filterId, intensity, grain: defaults?.grain ?? 0, bloom: defaults?.bloom ?? 0,
     lookVersion: '0.1.0-draft', engineVersion: 'lut-authoring-0.1.0', rendererVersion: CAMERA_RENDER_VERSION });
 }
 
 export function cameraSettingsKey(settings: CameraSettings): string {
-  return `${settings.rendererVersion}/${settings.engineVersion}/${settings.lookVersion}/${settings.filterId}/${settings.intensity}`;
+  return `${settings.rendererVersion}/${settings.engineVersion}/${settings.lookVersion}/${settings.filterId}/${settings.intensity}/${settings.grain}/${settings.bloom}`;
 }

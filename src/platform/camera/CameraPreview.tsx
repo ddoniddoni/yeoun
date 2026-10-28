@@ -7,14 +7,14 @@ import type { CameraSettings } from '../../domain/filters/cameraSettings';
 import { renderCameraLut, type FilterStatus } from '../../rendering/adapters/cameraLut';
 import { useCameraLut } from './useCameraLut';
 const PREVIEW_SIZE = { width: 1280, height: 960 };
-export function CameraPreview({ device, photoOutput, active, settings, filterRequestKey, onFilterStatus, onReady, onStopped, onRunningChange, onError, onInfo }: {
-  device: CameraDevice; photoOutput: CameraPhotoOutput; active: boolean; settings: CameraSettings;
+export function CameraPreview({ device, photoOutput, active, settings, grainSeed, filterRequestKey, onFilterStatus, onReady, onStopped, onRunningChange, onError, onInfo }: {
+  device: CameraDevice; photoOutput: CameraPhotoOutput; active: boolean; settings: CameraSettings; grainSeed: number;
   onFilterStatus(status: FilterStatus): void;
   filterRequestKey: string;
   onReady(): void; onStopped(): void; onError(error: Error): void; onInfo(info: string): void;
   onRunningChange(running: boolean): void;
 }) {
-  const lut = useCameraLut(settings, filterRequestKey, onFilterStatus);
+  const lut = useCameraLut(settings, grainSeed, filterRequestKey, onFilterStatus);
   const reported = useMemo(() => createSynchronizable(false), []);
   const reportStopped = useCallback(() => {
     reported.setBlocking(false);
@@ -62,7 +62,7 @@ export function CameraPreview({ device, photoOutput, active, settings, filterReq
         }
         previewPending.setBlocking(true);
         try {
-          const status = renderCameraLut(lut, render);
+          const status = renderCameraLut(lut, render, { orientation: frame.orientation, isMirrored: frame.isMirrored });
           // SkiaCamera queues its preview image before these acknowledgements.
           if (status) scheduleOnRN(onFilterStatus, status);
           if (!reported.getBlocking()) {

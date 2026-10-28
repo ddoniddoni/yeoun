@@ -6,7 +6,7 @@ import { closePreviewLut, type FilterStatus, type PreviewLutState } from '../../
 import type { LutAssetLoader } from '../../rendering/assets/lutLoader';
 import { createLutAlphaPlanes } from '../../rendering/reference/lutPlanes';
 
-export function useCameraLut(settings: CameraSettings, key: string, onStatus: (status: FilterStatus) => void) {
+export function useCameraLut(settings: CameraSettings, grainSeed: number, key: string, onStatus: (status: FilterStatus) => void) {
   const cell = useMemo(() => createSynchronizable<PreviewLutState>({ closed: false }), []);
   const loader = useRef<LutAssetLoader | null>(null);
   const generation = useRef(0);
@@ -24,7 +24,7 @@ export function useCameraLut(settings: CameraSettings, key: string, onStatus: (s
     cell.lock();
     try {
       cell.setBlocking({ ...cell.getBlocking(), reportedId: undefined,
-        request: { id, key, settings, loading: !bypass } });
+        request: { id, key, settings, grainSeed, loading: !bypass } });
     } finally { cell.unlock(); }
     onStatus({ key, phase: bypass ? 'applying' : 'loading' });
     if (!bypass) {
@@ -38,7 +38,7 @@ export function useCameraLut(settings: CameraSettings, key: string, onStatus: (s
           try {
             const state = cell.getBlocking();
             if (!state.closed && state.request?.id === id) {
-              state.request = { id, key, settings, loading: false, planes, assetKey: loaded.asset.sha256 };
+              state.request = { id, key, settings, grainSeed, loading: false, planes, assetKey: loaded.asset.sha256 };
               cell.setBlocking(state);
             }
           } finally { cell.unlock(); }
@@ -50,7 +50,7 @@ export function useCameraLut(settings: CameraSettings, key: string, onStatus: (s
           try {
             const state = cell.getBlocking();
             if (!state.closed && state.request?.id === id) {
-              state.request = { id, key, settings, loading: false, error: message };
+              state.request = { id, key, settings, grainSeed, loading: false, error: message };
               cell.setBlocking(state);
             }
           } finally { cell.unlock(); }
@@ -59,6 +59,6 @@ export function useCameraLut(settings: CameraSettings, key: string, onStatus: (s
       })();
     }
     return () => { cancelled = true; };
-  }, [cell, settings, key, onStatus]);
+  }, [cell, settings, grainSeed, key, onStatus]);
   return cell;
 }

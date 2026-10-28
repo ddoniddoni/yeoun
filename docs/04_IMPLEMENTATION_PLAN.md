@@ -57,7 +57,7 @@
 - [ ] identity LUT로 좌표, raw sampling, 색 공간과 gamma를 검증한다. (CPU/Skia adapter·합성 비교 코드 작성, 실행 검증 전)
 - [ ] master intensity의 0/1과 중간값을 테스트한다. (shared shader/CPU reference·테스트 소스 작성, 실행 전)
 - [ ] 대표 3종 LUT를 생성하고 실제 preview/export에 연결한다. (PNG 초안 및 연결 코드 작성, 기기 실행 전)
-- [ ] 정적인 grain과 약한 bloom을 순서대로 추가한다.
+- [ ] 정적인 grain과 약한 bloom을 순서대로 추가한다. (공통 shader/preview/export·고정 seed·조절 UI 코드 작성, 실행 검증 NOT_RUN)
 - [ ] 같은 입력, 같은 설정, 같은 seed에서 결과를 비교한다.
 - [ ] 필터 자산 손상과 shader 실패의 fallback UI를 만든다. (원본 표시·재시도/원본 선택 코드 작성, 실행 전)
 
@@ -66,6 +66,8 @@
 **G1:** identity와 LUT sampling 검증 통과, 대표 3종의 두 경로 연결, 강도 0 원본 일치. 초안 색감은 아직 출시 승인 상태가 아니다.
 
 **금지:** LUT 적용과 동일한 EV/채도/curve를 다시 적용하기, 필터마다 별도 카메라 컴포넌트 만들기, preview만 구현한 상태에서 저장 필터 완료 처리.
+
+**2026-10-28 정적 grain/약한 bloom:** 사용자 요청으로 공통 공간 효과 코드와 조절 UI를 작성했다. LUT full strength → 선형 하이라이트 blur/합성 → encoded grain → master mix 한 번의 순서를 사용한다. 긴 변 1600 입자 격자, 촬영 snapshot seed 보존, 1/4 이하·긴 변 512px 제한 중간 이미지, 프레임별 자원 해제를 포함한다. 새 패키지/자산 변경 없이 렌더러 버전을 올렸다. CPU/mock 테스트 소스도 작성했지만 테스트·빌드·실기기/GPU 실행은 NOT_RUN이다. G0/G1 미통과를 유지한다.
 
 ## M2. 촬영 경험과 화면
 

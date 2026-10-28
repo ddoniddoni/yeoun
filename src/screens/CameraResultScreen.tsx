@@ -39,6 +39,10 @@ export function CameraResultScreen({ state, output, settings, foreground, return
           <Text style={styles.filterName}>{filter?.name}</Text>
           {settings.filterId !== 'original' ? <Text style={[styles.mono, { color: accent }]}>{Math.round(settings.intensity * 100)}%</Text> : null}
         </View>
+        {settings.filterId !== 'original' ? <Text style={[styles.mono, { textAlign: 'center' }]}>
+          입자 {Math.round(settings.grain * 100)}% · 빛 번짐 {Math.round(settings.bloom * 100)}%
+          {settings.intensity === 0 ? ' · 강도 0%로 효과 꺼짐' : ''}
+        </Text> : null}
         <View style={[styles.imageFrame, { width: imageWidth, aspectRatio: ratio }]}>
           <Image source={{ uri: output.uri }} style={StyleSheet.absoluteFill} resizeMode="contain"
             accessibilityLabel={`${filter?.name ?? '선택한 필터'}로 촬영한 사진`} />

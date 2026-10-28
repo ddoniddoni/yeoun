@@ -6,6 +6,9 @@ import { copyCameraSettings, type CameraSettings } from '../../domain/filters/ca
 import { draftFile, removeFile } from '../../platform/files/drafts';
 import { centerCrop43, neutralizeOrientation, orientationTransform } from './jpegOrientation';
 import { createBundledDraftLutLoader, loadDraftLutPipeline } from './bundledLutLoader';
+import { assertGrainSeed } from '../../domain/filters/grainSeed';
+import { spatialGeometry } from '../reference/spatialGeometry';
+import { bindSpatialSource, createSpatialResources } from './spatialEffects';
 import type { SkiaLutPipeline } from './lutSkia';
 import { releaseNativeResources, type NativeResource } from './lutResources';
 // All native objects stay on the RN JS runtime's own context. No camera texture
@@ -14,12 +17,13 @@ export function renderJpeg(input: Uint8Array, matrix: readonly number[]) {
   return renderStyledJpeg(input, { kind: 'matrix', matrix });
 }
 
-export function renderLutJpeg(input: Uint8Array, settings: CameraSettings, pipeline?: SkiaLutPipeline) {
-  return renderStyledJpeg(input, { kind: 'lut', settings: copyCameraSettings(settings), pipeline });
+export function renderLutJpeg(input: Uint8Array, settings: CameraSettings, pipeline?: SkiaLutPipeline, grainSeed = 0) {
+  assertGrainSeed(grainSeed);
+  return renderStyledJpeg(input, { kind: 'lut', settings: copyCameraSettings(settings), pipeline, grainSeed });
 }
 
 type JpegStyle = { kind: 'matrix'; matrix: readonly number[] } |
-  { kind: 'lut'; settings: CameraSettings; pipeline?: SkiaLutPipeline };
+  { kind: 'lut'; settings: CameraSettings; pipeline?: SkiaLutPipeline; grainSeed: number };
 
 function renderStyledJpeg(input: Uint8Array, style: JpegStyle) {
   const normalized = neutralizeOrientation(input);
@@ -50,9 +54,16 @@ function renderStyledJpeg(input: Uint8Array, style: JpegStyle) {
       if (!style.pipeline) throw new Error('선택한 필터가 없어 사진 처리를 중단했어요.');
       const source = image.makeShaderOptions(TileMode.Clamp, TileMode.Clamp, FilterMode.Linear, MipmapMode.None);
       drawing.push(source);
-      const binding = style.pipeline.bindSource(source, style.settings.intensity); drawing.push(binding);
+      const hasSpatial = style.settings.grain > 0 || style.settings.bloom > 0;
+      const binding = style.pipeline.bindSource(source, hasSpatial ? 1 : style.settings.intensity); drawing.push(binding);
+      let shader = binding.shader;
+      if (hasSpatial) {
+        const resources = createSpatialResources(); drawing.push(...resources.owned);
+        shader = bindSpatialSource(resources, source, shader, style.settings,
+          spatialGeometry(image.width(), image.height(), [a!, b!, c!, d!, tx!, ty!]), style.grainSeed, drawing);
+      }
       const paint = Skia.Paint(); drawing.push(paint);
-      paint.setShader(binding.shader);
+      paint.setShader(shader);
       canvas.drawRect({ x: 0, y: 0, width: image.width(), height: image.height() }, paint);
     }
     surface.flush();
@@ -77,7 +88,7 @@ export async function exportPhoto(draft: Draft, snapshot: Snapshot): Promise<Out
       try { pipeline = (await loadDraftLutPipeline(loader, settings)).pipeline; }
       finally { loader.clearCache(); }
     }
-    const result = renderLutJpeg(await source.bytes(), settings, pipeline);
+    const result = renderLutJpeg(await source.bytes(), settings, pipeline, snapshot.grainSeed);
     // Release before publishing/writing output so a disposal failure cannot orphan a successful file.
     pipeline?.dispose(); pipeline = undefined;
     file.write(result.bytes);

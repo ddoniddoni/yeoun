@@ -70,6 +70,21 @@ CPU 소스 작성이나 이후 테스트 통과만으로 G01/G02 또는 실제 �
 
 ## 3. GPU와 이미지 일관성
 
+### 입자·빛 번짐 검사 준비 (2026-10-28)
+
+이번 변경도 **모두 NOT_RUN**이다. `tests/unit/spatial.test.ts`는 고정 seed 분포/스케일, 하이라이트 추출, Gaussian 정규화, bloom→grain→master mix, EXIF/미러/crop 좌표와 버퍼 제한을 다룬다. `cameraSettings.test.ts`는 seed defaults와 세 강도/렌더러 버전 검증을 다룬다. `controller.test.ts`는 촬영 후 설정 변경과 처리 재시도에도 같은 seed를 쓰는지 확인하도록 작성했다.
+
+`tests/integration/spatialEffects.test.ts`는 native mock으로 3개 작은 pass의 생성/수명, grain만 켰을 때 bloom surface 없음, 중간 allocation/compile 실패의 부분 자원 정리를 다룬다. `cameraLut.test.ts`와 `renderResources.test.ts`에는 LUT full strength 전달, 같은 spatial 설정/seed, snapshot 이후 정리, 실패 시 원본 fallback/촬영 차단, encode 오류 정리를 추가했다. 이 테스트 소스는 GPU 픽셀 또는 shader compilation 성공 증거가 아니다.
+
+사용자 요청 후 실행할 실제 확인 항목:
+
+1. iOS/Android에서 SkSL 3종 compile과 Worklets frame runtime 호출, 원본/강도 0/입자만/번짐만/두 효과 조합의 실제 draw를 확인한다. uniform 배열 길이, 색 공간, 프레임/사진 방향을 포함한다.
+2. 같은 합성 sRGB 입력에 고정 seed와 0/50/100% 강도를 사용해 full-strength LUT → linear bloom → encoded grain → master mix의 CPU/GPU 결과를 비교한다. CPU double과 GPU float, intermediate 양자화, JPEG 손실을 별도로 기록한다.
+3. 동일 입력/해상도/seed 재처리의 결정성과 preview/export 정규화된 입자 크기·번짐 범위를 확인한다. 저해상도 grain footprint/감쇠와 최대 512px bloom 근사의 오차를 측정하고, 실제 카메라 preview/photo FoV 차이를 분리한다.
+4. 회색 ramp, 검정, 흰색, 밝은 작은 점, 역광과 피부에서 aliasing/무늬/밴딩/경계 잘림을 검수한다. 중간 톤 전체를 흐리게 만드는 효과가 되면 실패다.
+5. 기본값/초기화/강도 0에서 조절값 유지, 필터 전환·전후면·앱 복귀·결과 화면 복귀, 저장 실패/동일 seed 재시도와 갤러리 실제 파일을 확인한다.
+6. 15분 미리보기와 반복 촬영의 RSS/GPU 메모리·FPS·지연을 기록한다. bloom pass의 동기 flush와 프레임마다 3개 작은 surface 할당 비용, exclusive lock이 RN에 주는 지연은 측정 전이다. 버퍼 크기 상한만으로 성능 통과 처리하지 않는다.
+
 | ID | 검사 | 기준 |
 |---|---|---|
 | G01 | identity LUT | 무손실 sRGB 입력에서 max RGB error 2/255 이내를 초기 목표로 함 |

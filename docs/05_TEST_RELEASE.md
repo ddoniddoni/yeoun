@@ -96,6 +96,21 @@ CPU 소스 작성이나 이후 테스트 통과만으로 G01/G02 또는 실제 �
 
 설치된 iOS 구현은 output.supportedFlashModes에 없는 모드를 적용하지 않는다. hasFlash는 물리 장치 지원 정보이고, 세션의 실제 flash mode 지원·발광 성공은 위 기기 검사로 확인해야 한다. 이 코드는 발광 여부 telemetry를 새로 제공하지 않는다. G0/G2 통과로 기록하지 않는다.
 
+### 탭 초점·노출 검사 준비 (2026-10-29)
+
+신규 `tests/unit/metering.test.ts`, `meteringSession.test.ts`, `tests/integration/meteringAdapter.test.ts`와 기존 controller 사례를 작성했다. cover crop/회전/미러, iOS 물리 회전 좌표, 지원 범위/clamp/단위, 초기화/동시 요청/중단/복귀 순서, AF 옵션·target 해제, native readback, 촬영 snapshot 복사를 다룬다. **테스트 소스만 작성했고 전부 NOT_RUN**이다. 실제 카메라/터치/초점 검증과 구분한다.
+
+사용자 실행 요청 후 확인할 항목:
+
+- iOS/Android 전후면의 중앙·네 모서리·가장자리 탭이 실제 피사체에 맞는지 확인한다. raw frame/표시 aspect가 다른 cover crop, iOS physical rotation/mirror, Android orientation 4종, 가로로 든 세로 UI를 포함한다. 센서/stream crop 차이는 합성 좌표만으로 통과시킬 수 없다.
+- 고정 초점 기기의 비활성/안내와 촬영 가능 상태, 중앙 초점의 VoiceOver/TalkBack 조작, 스크롤 취소가 초점 탭을 만들지 않는지 확인한다. 표식은 저장 사진에 없어야 한다.
+- iOS ±0.5 EV와 Android ±1 단계의 native readback/실제 밝기, 기기 경계, 기본 밝기 0, flash auto/on 조합을 확인한다. Android 숫자를 EV로 해석하지 않는다.
+- focus/노출 변경 중 촬영·카메라 전환과 중복 조절 차단, 노출 오류 시 촬영 차단/재연결 복구, 초점 실패 시 정상 노출값 유지와 재시도를 확인한다.
+- 앱 중단/복귀, 카메라 stop/configure, 결과·진단 복귀의 초기화 순서와 오래된 콜백 무시를 확인한다. native promise 지연/timeout, 초기 controller 준비 실패와 재시도, 빠른 재연결을 포함한다.
+- snapshot에 적용된 노출값·단위가 복사되고 export/retry가 이를 두 번 적용하지 않는지 실제 JPEG와 확인한다. 필터 전환/원본 비교는 촬영 노출을 바꾸지 않아야 한다.
+
+실제 기기 초점/노출과 메모리·접근성 확인 전 G0/G2를 통과시키지 않는다. 현재 UI는 native setter/readback 성공만 반영하며 실제 선명도나 센서 정착을 측정하지 않는다.
+
 ## 3. GPU와 이미지 일관성
 
 ### 입자·빛 번짐 검사 준비 (2026-10-28)

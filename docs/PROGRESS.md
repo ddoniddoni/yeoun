@@ -1,6 +1,46 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-28 3×3 격자·촬영 플래시
+## 현재 상태 — 2026-10-29 탭 초점·촬영 노출 보정
+
+- 초점·노출 커밋 `8af4eba`와 자동 Git Flow 규칙 커밋 `236b92b`를 작업 브랜치에 푸시하고 [PR #14](https://github.com/ddoniddoni/yeoun/pull/14)를 생성했다. 명시 파일 `git add`, `git commit`, `git push -u`, `gh pr create`는 exit 0이며 PR에 실행 미검증 범위를 명시했다. 최종 병합 결과는 PR과 develop 이력으로 확인한다.
+- 사용자 요청: **격자·플래시 Git Flow 후 다음 기능 개발**. 기능 커밋 `228678e`를 푸시하고 [PR #13](https://github.com/ddoniddoni/yeoun/pull/13)을 develop에 병합했다. 로컬/추적/실제 원격은 `92baf8c`로 일치했고 깨끗한 develop에서 `feature/camera-focus-exposure`를 만들었다. 후속 사용자 지시로 2026-10-29부터 개발 후 Git Flow 전체 실행이 상시 승인되어 이번 초점·노출 변경에도 적용한다. fetch 후 기준과 원격 develop 차이는 0/0이며 최종 통합 결과는 PR과 develop 이력을 따른다.
+- 새 상시 승인과 기존 검사 보류를 `docs/GIT_WORKFLOW.md`, `CODEX_START.md`에 반영했다. 이후 개발은 별도 Git Flow 요청 없이 커밋·푸시·develop PR 생성/병합·동기화 후 develop에서 마친다. main/릴리스/배포/초기화/이력 재작성은 포함하지 않는다.
+- M2 촬영 보조의 탭/중앙 AF와 노출 보정 코드를 작성했다. 현재 SkiaCamera ref의 native controller를 빌리고 기기 지원/연결 상태를 확인한다. 화면 AF는 cover crop을 역변환한 뒤 Android frame 방향/미러, iOS portrait-only 물리 회전/전면 미러 경로를 센서 좌표로 옮긴다. iPhone 방향 수정의 physical rotation 옵션은 유지했다. AF만 요청하고 AE/AWB 탭 측광은 하지 않는다. 중앙 버튼과 짧은 위치 표식, 미지원 안내를 제공한다.
+- `MeteringSession`은 native 명령을 직렬 처리한다. 초기화 때 기본 초점·노출 0을 기다리고 중복 조절을 버린다. stop/재구성/앱·결과·진단 복귀에는 epoch로 늦은 완료를 무효화하며 다음 초기화는 이전 작업 뒤에 실행한다. frame 준비 콜백도 epoch와 active를 확인한다. 소유한 MeteringPoint는 focus promise 뒤 해제하고 빌린 controller는 해제하지 않는다. 프레임 크기/방향/미러 숫자만 공유하며 픽셀/frame을 React state에 넣지 않는다.
+- 노출은 native setter 성공 후 getter로 읽은 값만 표시한다. iOS는 실제 EV로 ±0.5, **설치 Android 5.2.3 구현은 정수 compensation index라 ±1 단계**를 사용한다. min/max 역시 설치 구현의 단위를 따른다. JS에 step EV가 없어 임의 환산하지 않는다. 공식 문서와 실제 Android getter/setter/range 차이를 systematic-debugging 절차로 소스 추적했고 S34에 남겼다. 라이브러리 패치/업그레이드는 하지 않았다.
+- 변경 중에는 촬영·카메라 전환을 막고 명령이 끝난 값을 촬영 snapshot에 `{ value, unit }`로 복사한다. 노출 오류로 값이 불확실하면 준비 상태를 취소하고 다시 연결해 0으로 복구하도록 한다. 초점 오류는 안내와 재시도를 제공하되 기존 노출값을 유지한다. `sourceExposure`는 기록용이며 filter/export/재시도에서 다시 적용하지 않는다. 필터 전환과 원본 비교 자체로 초점·노출을 초기화하지 않는다.
+- 테스트 소스는 합성 좌표, clamp/단위, 명령 순서/중복/stop·resume, native AF 옵션/target 해제/readback, 촬영 기록 복사를 다룬다. **테스트·lint/typecheck·react-doctor·빌드·앱·기기·GPU 모두 NOT_RUN — 사용자 지시**. 개발 서버나 기기 프로세스도 실행하지 않았다. 실제 iOS/Android 가장자리 초점, raw stream/sensor crop, 노출 효과, native callback 순서, 성능과 접근성은 미검증이다. G0/G1/G2 미통과를 유지한다.
+- 새 패키지·권한·native 소스·필터 자산 변경 없음. 결과 사진 비교/저장 전 재편집, 초점/노출 고정, 설정 지속성, M3 전체는 이번 범위에 포함하지 않았다.
+
+### 변경 파일
+
+- 신규 기능: `src/domain/capture/metering.ts`, `meteringSession.ts`, `src/platform/camera/meteringAdapter.ts`, `src/screens/CameraMeteringControls.tsx`.
+- 수정 기능: `src/domain/capture/controller.ts`, `src/platform/camera/CameraPreview.tsx`, `src/screens/M0CameraScreen.tsx`.
+- 테스트 소스: 신규 `tests/unit/metering.test.ts`, `meteringSession.test.ts`, `tests/integration/meteringAdapter.test.ts`; 기존 `tests/integration/controller.test.ts`.
+- 문서: `README.md`, `docs/01_PRODUCT_DESIGN.md`, `03_TECHNICAL_SPEC.md`, `04_IMPLEMENTATION_PLAN.md`, `05_TEST_RELEASE.md`, `REFERENCES.md`, `STITCH_DESIGN.md`, `PROGRESS.md`.
+
+### 실제 명령과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| `git fetch origin`, `git rev-list --left-right --count origin/develop...HEAD` | exit 0, 격자·플래시 기준 차이 0/0 |
+| 명시 파일 `git add`, `git commit`, `git push -u` | exit 0, 격자·플래시 커밋 `228678e` |
+| `gh pr create/view/merge --merge --match-head-commit ...` | exit 0, PR #13 MERGED |
+| `git fetch`, `git switch develop`, `git merge --ff-only origin/develop`, `git push origin develop` | exit 0, `92baf8c`, Everything up-to-date |
+| `git status`, `git rev-parse HEAD origin/develop`, `git ls-remote` | 깨끗한 develop과 실제 원격 커밋 일치 |
+| `git switch -c feature/camera-focus-exposure` | exit 0 |
+| `cat`, `sed`, `rg`, `git diff` | 계획·기존 구현·설치 native/types 읽음. 추정 MeteringPoint 경로가 없어 rg로 실제 경로를 찾음. 없는 step API 검색의 no-match exit 1은 검사 실패가 아님 |
+| 공식 VisionCamera/Apple 문서 읽기 | 설치 5.2.3과 대조, S34 기록 |
+| `apply_patch` | 코드·테스트 소스·문서 작성 |
+| 테스트·lint/typecheck·react-doctor·빌드·앱·기기 검사 | **NOT_RUN — 사용자 지시** |
+
+### 다음 작업
+
+현재 M2를 포함해 M2~M6 5개 큰 단계와 M0/M1 기기 검증이 남아 있다. 다음 작은 기능 후보는 **촬영 결과의 원본 비교**다. 실제 보관한 원본을 같은 방향/미러/crop으로 보여주며 저장 파일을 바꾸지 않는 범위부터 진행한다. 비교용 파일 수명·취소/오류를 먼저 설계하고 실제 검증은 사용자 요청 후에만 실행한다.
+
+다음 작업 프롬프트: “PROGRESS와 결과 화면/원본 초안 계약을 읽고 촬영 결과의 원본 비교를 구현해. 같은 원본·방향·crop을 사용하고 메모리·임시 파일 수명·실패 처리 범위를 지켜. 테스트·빌드·앱 실행은 하지 말고, 개발 후 docs/GIT_WORKFLOW.md에 따라 Git Flow까지 완료해.”
+
+## 이전 기록 — 2026-10-28 3×3 격자·촬영 플래시
 
 - 사용자 요청: 다음 계획 진행. PR #12가 병합된 `develop` (`a87364c`)의 깨끗한 작업 트리에서 원격 fetch/fast-forward 후 `feature/camera-grid-flash`를 만들었다. 2026-10-29 후속 요청으로 이번 변경의 Git Flow(커밋·푸시·develop PR 생성/병합·동기화) 후 다음 기능 개발이 승인됐다. fetch 후 기준과 원격 develop 차이는 0/0이며 검사는 계속 NOT_RUN이다. 통합 결과는 PR과 develop 이력을 따른다.
 - M2의 다음 작은 기능으로 격자와 물리 플래시 선택 코드를 작성했다. `CameraAssistControls`에 기본 켬인 격자 switch, 플래시 끔/자동/켬 radio와 미지원/모드 안내를 추가했다. 기존 디자인 토큰과 48px 이상 터치 영역을 사용하고 작은 화면에서는 줄바꿈한다. `CameraGrid`는 frame View의 1/3·2/3 선 4개이며 터치·접근성 탐색을 받지 않는다. 렌더러/export에는 격자를 전달하지 않는다.

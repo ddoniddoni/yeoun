@@ -6,7 +6,8 @@ import { CaptureController, type CaptureState } from '../domain/capture/controll
 import { selectedFlashMode, type FlashSelection } from '../domain/capture/flash';
 import { cameraSettings, cameraSettingsKey, copyCameraSettings, type CameraFilterId } from '../domain/filters/cameraSettings';
 import { createGrainSeed } from '../domain/filters/grainSeed';
-import { CameraPreview } from '../platform/camera/CameraPreview';
+import { CameraPreview, type CameraPreviewHandle } from '../platform/camera/CameraPreview';
+import type { MeteringState } from '../domain/capture/meteringSession';
 import { capturePhoto } from '../platform/camera/capturePhoto';
 import { removeFile } from '../platform/files/drafts';
 import { saveToGallery } from '../platform/media/gallery';
@@ -17,6 +18,7 @@ import { CameraDiagnosticsScreen } from './CameraDiagnosticsScreen';
 import { CameraAction, FrameCorners, ShutterButton } from './CameraControls';
 import { CameraResultScreen } from './CameraResultScreen';
 import { CameraAssistControls, CameraGrid } from './CameraAssistControls';
+import { CameraMeteringControls, FocusTarget } from './CameraMeteringControls';
 import { OriginalComparisonControls } from './OriginalComparisonControls';
 import { usePreviewComparison } from './usePreviewComparison';
 import { cameraTheme as theme, filterPresentation } from './cameraTheme';
@@ -53,6 +55,10 @@ export function M0CameraScreen() {
   const [cameraStopped, setCameraStopped] = useState(false);
   const [info, setInfo] = useState('실제 프레임 관측 대기');
   const [state, setState] = useState<CaptureState>({ phase: 'idle' });
+  const preview = useRef<CameraPreviewHandle>(null);
+  const [meteringState, setMeteringState] = useState<MeteringState>({ deviceId: '', ready: false, busy: false });
+  const metering: MeteringState = meteringState.deviceId === device?.id ? meteringState
+    : { deviceId: device?.id ?? '', ready: false, busy: false };
   const comparisonContext = `${cameraSettingsKey(settings)}/${filterRevision}/${grainSeed}/${device?.id ?? 'none'}/${foreground}`;
   const markReady = useCallback(() => setReady(true), []);
   const markStopped = useCallback(() => setReady(false), []);
@@ -87,7 +93,8 @@ export function M0CameraScreen() {
   const currentFilterStatus = filterStatus?.key === filterRequestKey ? filterStatus : undefined;
   const filterReady = currentFilterStatus?.phase === 'ready';
   const shutterDisabled = !permission.hasPermission || !device || !ready || !filterReady ||
-    !foreground || !!cameraError || busy || !canCapture || overlayOpen || returning || comparison.active;
+    !foreground || !!cameraError || busy || !canCapture || overlayOpen || returning || comparison.active || !metering.ready || metering.busy;
+  const meteringDisabled = assistDisabled || comparison.active;
   const accent = filterPresentation[settings.filterId].color;
   const selectFilter = (id: CameraFilterId) => {
     setSettings(cameraSettings(id)); setFilterRevision(value => value + 1);
@@ -133,12 +140,18 @@ export function M0CameraScreen() {
           <Text style={styles.welcome}>카메라를 찾지 못했어요</Text>
           <Text style={styles.text}>아래 전환 버튼으로 다른 카메라를 선택해 주세요.</Text>
         </View> : <View style={[styles.viewfinder, { width: previewWidth }]}>
-          <CameraPreview key={device.id} device={device} photoOutput={photoOutput}
+          <CameraPreview ref={preview} key={device.id} device={device} photoOutput={photoOutput}
+            controlsEnabled={!meteringDisabled} onMetering={setMeteringState}
             active={foreground && !cameraError && !overlayOpen} settings={comparison.previewSettings} grainSeed={grainSeed} filterRequestKey={filterRequestKey}
             onFilterStatus={setFilterStatus} onReady={markReady} onStopped={markStopped}
             onRunningChange={onRunningChange} onError={onCameraError} onInfo={setInfo} />
           {grid ? <CameraGrid /> : null}
           <FrameCorners />
+          <Pressable accessible={false} importantForAccessibility="no" style={StyleSheet.absoluteFill}
+            disabled={meteringDisabled || !metering.ready || metering.busy || !metering.focusSupported}
+            onPress={event => { void preview.current?.focus({ x: event.nativeEvent.locationX / previewWidth,
+              y: event.nativeEvent.locationY / (previewWidth * 4 / 3) }); }} />
+          <FocusTarget state={metering} />
         </View>}
       </View>
       {cameraError ? <View style={styles.notice}>
@@ -146,6 +159,10 @@ export function M0CameraScreen() {
         <CameraAction label="카메라 다시 연결" onPress={() => { setReady(false); setCameraError(undefined); setFilterRevision(value => value + 1); }} />
       </View> : null}
       <View style={styles.deck}>
+        {permission.hasPermission && device ? <CameraMeteringControls state={metering} disabled={meteringDisabled}
+          onFocusCenter={() => { void preview.current?.focus({ x: 0.5, y: 0.5 }); }}
+          onExposure={value => { void preview.current?.expose(value); }}
+          onReconnect={() => { void preview.current?.reconnectMetering(); }} /> : null}
         <FilterControls settings={settings} disabled={busy || !canCapture || returning}
           onSelect={selectFilter} onIntensity={intensity => {
             setSettings(copyCameraSettings({ ...settings, intensity })); setFilterRevision(value => value + 1);
@@ -167,15 +184,16 @@ export function M0CameraScreen() {
           <View style={styles.sideControl}><Text style={styles.smallLabel}>색감 초안</Text>
             <Text style={styles.info}>대표 3종</Text></View>
           <ShutterButton disabled={shutterDisabled} busy={busy} onPress={() => {
-            if (!shutterDisabled) void controller.capture(settings, position, grainSeed, flashMode).then(() => {
+            const exposure = preview.current?.captureExposure();
+            if (!shutterDisabled && exposure) void controller.capture(settings, position, grainSeed, flashMode, exposure).then(() => {
               if (controller.state.phase === 'cancelled') setGrainSeed(createGrainSeed());
             });
           }} />
           <Pressable accessibilityRole="button" accessibilityLabel={position === 'back' ? '전면 카메라로 전환' : '후면 카메라로 전환'}
-            disabled={busy || !canCapture || returning} accessibilityState={{ disabled: busy || !canCapture || returning }}
+            disabled={busy || metering.busy || !canCapture || returning} accessibilityState={{ disabled: busy || metering.busy || !canCapture || returning }}
             onPress={() => { setReady(false); setCameraError(undefined); setFlashSelection(undefined); setPosition(value => value === 'back' ? 'front' : 'back'); }}
             style={({ pressed }) => [styles.sideControl, styles.switchButton, pressed && styles.pressed,
-              (busy || !canCapture || returning) && styles.disabled]}>
+              (busy || metering.busy || !canCapture || returning) && styles.disabled]}>
             <Text style={styles.switchIcon}>↻</Text><Text style={styles.smallLabel}>전환</Text>
           </Pressable>
         </View>

@@ -227,6 +227,7 @@ type CaptureSnapshot = Readonly<{
   mirrorOutput: boolean;
   normalizedCrop: { x: number; y: number; width: number; height: number };
   sourceExposureBiasEv?: number; // 기록용. export에서 재적용하지 않음
+  sourceExposure?: { value: number; unit: 'ev' | 'step' }; // 설치 구현의 실제 단위를 보존한 촬영 기록
   saveUnfilteredCopy: boolean;
 }>;
 ```
@@ -236,6 +237,12 @@ type CaptureSnapshot = Readonly<{
 2026-10-28 현재 카메라 전용 `Snapshot`에는 필수 `flashMode`를 추가했다. `CaptureController.capture`의 생략 기본값은 off이며 허용 모드를 검증한 뒤 불변 snapshot으로 고정한다. UI 선택은 기기 ID에 묶고 `hasFlash`가 false이거나 다른 기기의 선택이면 off를 사용한다. adapter는 설치 VisionCamera 5.2.3의 `capturePhoto({ flashMode, enableShutterSound: true }, {})`에 그대로 전달한다. 앱 차원의 자동 off 재촬영은 없고, render/save 재시도는 기존 원본/출력을 사용한다. 플래시는 필터 RenderSettings/레시피/export 효과가 아니며 격자도 미리보기 View에만 존재한다. iOS native의 supportedFlashModes 조건부 적용 등 실제 발광 보장의 한계는 S33과 기기 확인 항목을 따른다.
 
 고해상도 capture/export 작업은 한 번에 하나만 실행한다. 처리 중 추가 촬영을 무제한 대기열에 넣지 않는다. 필터 조절이나 새 비교 요청에는 request ID를 부여해 오래된 결과가 최신 화면을 덮지 않게 한다.
+
+2026-10-29 초점·노출은 `MeteringSession`에서 별도 직렬 처리한다. 시작/복귀는 native resetFocus와 노출 0 적용을 기다리고, epoch가 바뀐 요청은 완료 UI를 버린다. 재시작 초기화는 이전 요청 뒤에 실행해 늦은 노출 적용이 새 기본값을 덮지 않게 한다. controller는 SkiaCamera ref에서 빌리며 직접 dispose하지 않는다. 새 MeteringPoint만 focus promise 완료/실패 후 해제한다. 프레임 width/height/orientation/mirror만 synchronizable에 보관하고 픽셀·frame은 보관하지 않는다.
+
+초점 좌표는 세로 3:4 view의 center-cover를 되돌린 뒤 Android에서는 실제 frame 방향/미러를 역변환한다. iOS에서는 기존 physical buffer rotation을 유지하며 up/비미러 metadata인 세로 프레임에 한해 전면의 물리 미러를 되돌리고 AVCaptureDevice의 landscape-right 좌표로 옮긴다. 일반 SkiaCamera.focusTo의 단순 view 정규화는 cover crop과 이 iOS 경로를 충분히 표현하지 않아 직접 normalized MeteringPoint를 만든다. 실제 센서/stream crop 차이와 전후면 가장자리 초점은 기기 확인 전이다.
+
+설치 VisionCamera 5.2.3 Android는 노출 getter/setter/range가 CameraX 정수 compensation index이며 step EV를 JS에 노출하지 않는다. EV로 오표기하거나 추정 환산하지 않고 `unit: 'step'`으로 기록한다. iOS는 실제 exposure bias EV다. 현재 `Snapshot.sourceExposure`는 finite 값과 단위를 복사·고정하며 기존 `sourceExposureBiasEv` 목표 필드에 Android 단계를 넣지 않는다. 필터 엔진과 재처리에 이 값을 다시 적용하지 않는다. G0/G2 및 native callback/worklet 동작은 NOT_RUN이다.
 
 기술적으로 중간 취소가 불가능한 native 작업은 끝까지 자원을 정리한 뒤 결과만 폐기한다. 취소 버튼을 눌렀다고 GPU 작업이 실제로 중단되었다고 가정하지 않는다.
 

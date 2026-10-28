@@ -138,3 +138,17 @@ test('native flash failure retains no draft and never retries automatically with
   await controller.retryRender();
   expect(ports.capture).toHaveBeenCalledTimes(1);
 });
+
+test('native exposure reading is copied with its unit and preserved on render retry', async () => {
+  const { controller, ports } = setup();
+  const exposure = { value: 2, unit: 'step' as const };
+  ports.render.mockRejectedValueOnce(new Error('GPU'));
+  const capture = controller.capture(cameraSettings('original'), 'back', 91, 'off', exposure);
+  exposure.value = -2;
+  await capture; await controller.retryRender();
+  const snapshot = ports.capture.mock.calls[0]![0];
+  expect(snapshot.sourceExposure).toEqual({ value: 2, unit: 'step' });
+  expect(Object.isFrozen(snapshot.sourceExposure)).toBe(true);
+  expect(ports.render.mock.calls[1]![1]).toBe(snapshot);
+  expect(ports.capture).toHaveBeenCalledTimes(1);
+});

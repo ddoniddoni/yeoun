@@ -1,9 +1,11 @@
 import { assertGrainSeed, createGrainSeed } from '../filters/grainSeed';
 import { copyCameraSettings, type CameraSettings } from '../filters/cameraSettings';
 import { assertFlashMode, type PhotoFlashMode } from './flash';
+import { copyExposure, type ExposureReading } from './metering';
 export type Snapshot = Readonly<{
   id: string; settings: CameraSettings; position: 'front' | 'back'; capturedAt: string; grainSeed: number;
   flashMode: PhotoFlashMode;
+  sourceExposure?: ExposureReading;
 }>;
 export type Draft = Readonly<{ sourceUri: string; width: number; height: number; orientation: string; mirrored: boolean }>;
 export type Output = Readonly<{ uri: string; width: number; height: number; bytes: number }>;
@@ -37,7 +39,7 @@ export class CaptureController {
     if (this.busy) return;
     await this.clearFiles(); this.emit({ phase: 'idle' });
   }
-  async capture(settings: CameraSettings, position: 'front' | 'back', grainSeed = createGrainSeed(), flashMode: PhotoFlashMode = 'off'): Promise<void> {
+  async capture(settings: CameraSettings, position: 'front' | 'back', grainSeed = createGrainSeed(), flashMode: PhotoFlashMode = 'off', sourceExposure?: ExposureReading): Promise<void> {
     if (this.busy || this.closed || this.draft) return;
     this.busy = true;
     const epoch = this.epoch;
@@ -45,7 +47,8 @@ export class CaptureController {
       assertGrainSeed(grainSeed);
       assertFlashMode(flashMode);
       this.snapshot = Object.freeze({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        capturedAt: new Date().toISOString(), position, grainSeed, flashMode, settings: copyCameraSettings(settings) });
+        capturedAt: new Date().toISOString(), position, grainSeed, flashMode,
+        sourceExposure: sourceExposure ? copyExposure(sourceExposure) : undefined, settings: copyCameraSettings(settings) });
       this.emit({ phase: 'capturing' });
       this.draft = await this.ports.capture(this.snapshot);
       if (epoch !== this.epoch) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }

@@ -296,6 +296,16 @@ SkSL 컴파일, uniform layout, CPU/GPU 수치 일치, intermediate 양자화, �
 
 지원 판단은 hasTorch가 아닌 hasFlash이며 촬영별 `flashMode`는 off/on/auto다. Android는 촬영 직전 ImageCapture.flashMode를 설정하고, iOS는 output.supportedFlashModes에 포함된 모드만 AVCapturePhotoSettings에 적용한다. 따라서 UI의 선택 모드나 hasFlash만으로 실제 발광을 단정하지 않는다. 셀카 화면 플래시와 torch API는 사용하지 않는다. 촬영/저장 재시도 처리와 실제 발광·JPEG 확인의 미검증 범위는 PROGRESS 및 검증 명세에 기록했다. 새 의존성이나 native 소스 수정은 없다.
 
+<a id="s34"></a>
+
+## S34. 탭 초점 좌표와 플랫폼별 촬영 노출 단위
+
+2026-10-29 공식 [SkiaCameraRef](https://visioncamera.margelo.com/api/react-native-vision-camera-skia/interfaces/SkiaCameraRef), [CameraController](https://visioncamera.margelo.com/api/react-native-vision-camera/hybrid-objects/CameraController), [FocusOptions](https://visioncamera.margelo.com/api/react-native-vision-camera/interfaces/FocusOptions), [Apple focusPointOfInterest](https://developer.apple.com/documentation/avfoundation/avcapturedevice/focuspointofinterest)을 읽었다. 설치 core/Skia 5.2.3의 `SkiaCamera.tsx`, `transformPoint.ts`, `render.ts`, `CameraController.nitro.ts`, `CameraFactory.nitro.ts`, `FocusOptions.ts`, `MeteringPoint.nitro.ts`, iOS/Android controller·device·factory 소스와 Nitro `HybridObject.ts`에 대조했다.
+
+설치 SkiaCamera는 Image fit=cover로 표시하지만 focusTo 변환은 view 폭/높이 정규화와 frame 회전·미러만 사용한다. 앱은 cover crop을 먼저 역변환하고, iOS에서는 기존 물리 회전/미러가 적용된 up 프레임과 portrait-only UI를 AVCaptureDevice의 고정 landscape-right 좌표로 옮긴다. Android의 normalized point factory는 SurfaceOrientedMeteringPointFactory(1,1)이며 frame 방향/미러 역변환 좌표를 전달한다. AF만 명시해 탭이 자동으로 AE/AWB를 바꾸지 않도록 하고 native focus promise 뒤 owned MeteringPoint를 해제한다. 실제 sensor/stream crop과 셀카 좌표 일치는 NOT_RUN이다.
+
+**문서와 설치 구현의 단위 차이:** 일반 API 설명은 exposureBias를 EV로 기술하지만 설치 Android `HybridCameraController.kt`는 exposureCompensationIndex를 읽고 setExposureCompensationIndex(exposure.toInt())를 호출한다. `HybridCameraDevice.kt`의 min/max도 정수 index 범위다. JS API에 exposureCompensationStep 노출이 없어 임의 환산하지 않고 1단계 버튼/단위 태그를 사용한다. iOS는 exposureTargetBias/setExposureTargetBias를 사용하므로 0.5 EV 조작을 제공한다. 라이브러리를 패치하거나 새 의존성을 설치하지 않았다. 기기 노출 효과, callback 순서, 네이티브 수명·정적/자동 검사는 NOT_RUN이다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

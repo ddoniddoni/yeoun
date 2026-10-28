@@ -288,6 +288,14 @@ SkSL 컴파일, uniform layout, CPU/GPU 수치 일치, intermediate 양자화, �
 
 2026-10-28 [React Native 0.83 Pressable](https://reactnative.dev/docs/0.83/pressable), [접근성](https://reactnative.dev/docs/0.83/accessibility)을 읽고 설치된 RN 0.83.10의 `Pressable.d.ts`와 `ViewAccessibility.d.ts`에 대조했다. 누르기 시작/해제는 `onPressIn`/`onPressOut`을 사용하며 접근성 사용자는 별도 `accessibilityRole="switch"`, `accessibilityState.checked`와 `onPress`로 유지 상태를 바꾼다. 버튼 동작과 스위치 동작을 분리해 길게 누르기에 의존하지 않는다. 실제 VoiceOver/TalkBack, 드래그·스크롤 취소 동작은 NOT_RUN이다. 새 패키지·네이티브 카메라 API는 추가하지 않았다.
 
+<a id="s33"></a>
+
+## S33. 물리 플래시 지원과 촬영별 모드
+
+2026-10-28 공식 [CameraDevice.hasFlash](https://visioncamera.margelo.com/api/react-native-vision-camera/hybrid-objects/CameraDevice#hasflash), [CapturePhotoSettings.flashMode](https://visioncamera.margelo.com/api/react-native-vision-camera/interfaces/CapturePhotoSettings#flashmode)를 읽고 설치된 VisionCamera 5.2.3의 `CameraDevice.nitro.ts`, `CameraPhotoOutput.nitro.ts`, iOS `AV+CapturePhotoSettings.swift`와 Android `HybridPhotoOutput.kt`에 대조했다. 최초 추정한 interfaces/CameraDevice 주소는 접근되지 않아 공식 페이지의 HybridObjects 링크를 사용했다.
+
+지원 판단은 hasTorch가 아닌 hasFlash이며 촬영별 `flashMode`는 off/on/auto다. Android는 촬영 직전 ImageCapture.flashMode를 설정하고, iOS는 output.supportedFlashModes에 포함된 모드만 AVCapturePhotoSettings에 적용한다. 따라서 UI의 선택 모드나 hasFlash만으로 실제 발광을 단정하지 않는다. 셀카 화면 플래시와 torch API는 사용하지 않는다. 촬영/저장 재시도 처리와 실제 발광·JPEG 확인의 미검증 범위는 PROGRESS 및 검증 명세에 기록했다. 새 의존성이나 native 소스 수정은 없다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

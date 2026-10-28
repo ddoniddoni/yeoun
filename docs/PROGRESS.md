@@ -1,6 +1,39 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-28 카메라 원본 비교
+## 현재 상태 — 2026-10-28 3×3 격자·촬영 플래시
+
+- 사용자 요청: 다음 계획 진행. PR #12가 병합된 `develop` (`a87364c`)의 깨끗한 작업 트리에서 원격 fetch/fast-forward 후 `feature/camera-grid-flash`를 만들었다. 2026-10-29 후속 요청으로 이번 변경의 Git Flow(커밋·푸시·develop PR 생성/병합·동기화) 후 다음 기능 개발이 승인됐다. fetch 후 기준과 원격 develop 차이는 0/0이며 검사는 계속 NOT_RUN이다. 통합 결과는 PR과 develop 이력을 따른다.
+- M2의 다음 작은 기능으로 격자와 물리 플래시 선택 코드를 작성했다. `CameraAssistControls`에 기본 켬인 격자 switch, 플래시 끔/자동/켬 radio와 미지원/모드 안내를 추가했다. 기존 디자인 토큰과 48px 이상 터치 영역을 사용하고 작은 화면에서는 줄바꿈한다. `CameraGrid`는 frame View의 1/3·2/3 선 4개이며 터치·접근성 탐색을 받지 않는다. 렌더러/export에는 격자를 전달하지 않는다.
+- `flash.ts`는 허용 모드를 검증하고 선택을 device ID에 묶는다. 선택 기기에 물리 플래시가 없거나 다른 기기의 선택이면 즉시 off로 해석한다. 카메라 전환/기기 변경에서는 선택을 초기화한다. 기본 flash off, grid on이며 앱 재시작 후 설정 지속성은 M3에 남긴다. 비교·필터 전환은 플래시 선택을 바꾸지 않는다.
+- `Snapshot.flashMode`를 촬영 시작 때 불변으로 복사하고 `capturePhoto` adapter가 VisionCamera 5.2.3의 촬영별 flashMode로 전달한다. 기존 인자의 기본값은 off다. 촬영·처리·저장/복귀 중, 앱 비활성/카메라 준비 전에는 보조 조작을 잠근다. 기존 단일 작업·촬영 중복 방지·오류/초안 정책을 유지한다. native 오류 후 앱이 off로 자동 재촬영하지 않고, render/save 재시도는 보관한 원본/출력만 사용한다.
+- 물리 플래시와 화면 플래시/torch를 구분한다. hasFlash=false에서 화면 발광을 대신 제공하지 않는다. 공식 API와 설치 native 소스를 읽었으며 **iOS가 output.supportedFlashModes에 없는 모드를 적용하지 않는 한계**를 S33에 기록했다. UI 선택은 실제 발광 증거가 아니고, auto 발광 여부·on 지원·JPEG 밝기/색감은 기기 확인 전이다.
+- unit/mock 테스트 소스로 지원/전환 상태, snapshot 보존과 재시도, native 옵션 전달 및 Photo 해제, capture/write 실패를 작성했다. **테스트·lint/typecheck·react-doctor·빌드·앱·기기·GPU 모두 NOT_RUN — 사용자 지시**. 개발 서버와 기기 프로세스를 시작하지 않았다. G0/G1/G2 미통과를 유지한다.
+- 새 의존성·권한·필터 자산·native 소스 수정 없음. 탭 초점·노출 보정, 결과 사진 비교/재편집, 설정 DB 지속성은 이번 범위에 포함하지 않았다.
+
+### 변경 파일
+
+- 신규: `src/domain/capture/flash.ts`, `src/screens/CameraAssistControls.tsx`, `tests/unit/flash.test.ts`, `tests/integration/capturePhoto.test.ts`.
+- 수정: `src/domain/capture/controller.ts`, `src/platform/camera/capturePhoto.ts`, `src/screens/M0CameraScreen.tsx`, `tests/integration/controller.test.ts`.
+- 문서: `README.md`, `docs/01_PRODUCT_DESIGN.md`, `03_TECHNICAL_SPEC.md`, `04_IMPLEMENTATION_PLAN.md`, `05_TEST_RELEASE.md`, `REFERENCES.md`, `STITCH_DESIGN.md`, `PROGRESS.md`.
+
+### 실제 명령과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| `git status`, `git diff`, `cat`, `sed`, `rg` | 깨끗한 develop과 기존 코드·계획, 설치 VisionCamera 5.2.3 타입/iOS·Android flash 경로 및 RN 접근성 타입 읽음 |
+| `git fetch origin`, `git merge --ff-only origin/develop` | exit 0, Already up to date |
+| `git switch -c feature/camera-grid-flash` | exit 0 |
+| VisionCamera 공식 API 문서 읽기 | hasFlash/flashMode 계약을 설치 소스와 대조, S33 기록. 최초 추정 CameraDevice URL 접근 실패 뒤 공식 링크로 읽음 |
+| `apply_patch` | 기능·테스트 소스·문서 작성 |
+| 테스트·lint/typecheck·react-doctor·빌드·앱·기기 검사 | **NOT_RUN — 사용자 지시** |
+
+### 다음 작업
+
+큰 단계는 현재 M2를 포함해 M2~M6의 5개이며 M0/M1 실기기 검증도 별도로 남아 있다. 다음 기능 후보는 **탭 초점·노출 보정**이다. 설치 v5 API의 지원 범위, preview 좌표/crop/미러 변환과 실제 controller 수명을 먼저 읽고 작은 수직 기능으로 진행한다. 격자·플래시 수동 확인 목록은 `docs/05_TEST_RELEASE.md`에 남겼으며 사용자 요청 전 실행하지 않는다.
+
+다음 작업 프롬프트: “PROGRESS와 M2를 읽고 탭 초점·노출 보정의 지원 여부와 설치 VisionCamera 5.2.3 API를 확인해서 작은 기능부터 구현해. 프리뷰 방향·crop·미러 계약을 지키고 테스트·빌드·앱 실행과 Git commit/push는 하지 마.”
+
+## 이전 기록 — 2026-10-28 카메라 원본 비교
 
 - 기능 커밋 `8bab3bb`을 원격 작업 브랜치에 푸시하고 [PR #12](https://github.com/ddoniddoni/yeoun/pull/12)을 생성했다. 명시 파일 `git add`, `git commit`, `git push -u`, `gh pr create`는 exit 0이다. PR 본문에 검사 미실행과 실제 기기·접근성 미검증 범위를 남겼으며 최종 병합 결과는 PR과 develop 이력을 따른다.
 - 사용자 요청: 다음 계획 진행과 남은 계획 수 설명. PR #11은 `develop`에 병합됐고 `4e9eccf`의 깨끗한 작업 트리에서 시작했다. 원격 fetch/fast-forward 확인 후 `feature/camera-original-comparison`을 만들었다. 후속 Git Flow 요청으로 커밋·푸시·develop 대상 PR 생성/병합·동기화가 승인됐다. fetch 후 기준과 원격 develop 차이는 0/0이며 검사 실행은 계속 NOT_RUN이다. 최종 통합 상태는 PR과 Git 이력으로 확인한다.

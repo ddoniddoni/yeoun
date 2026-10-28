@@ -82,6 +82,20 @@ CPU 소스 작성이나 이후 테스트 통과만으로 G01/G02 또는 실제 �
 
 결과 사진의 원본 비교는 이번 범위가 아니다. 기존 SkiaCamera의 첫 draw 통지는 화면 표시/GPU 검증 완료와 구분한다.
 
+### 격자·플래시 검사 준비 (2026-10-28)
+
+`tests/unit/flash.test.ts`는 기본 off, 다른/미지원/없는 기기로 전환 시 off, 허용 모드 검증을 다룬다. `tests/integration/controller.test.ts`에는 snapshot 모드 고정, render 재시도 시 재촬영 없음, native 플래시 오류 시 실패 처리를 추가했다. 신규 `tests/integration/capturePhoto.test.ts`는 off/auto/on 전달, 고해상도 descriptor·native photo 해제, capture/write 실패를 mock으로 다룬다. **모두 소스 작성만 했고 NOT_RUN**이다.
+
+사용자 요청 후 실제 iOS/Android에서 다음을 확인한다.
+
+- 격자 기본 켬/끄기, 전후면·원본 비교·결과 복귀에서 3×3 배치와 터치 비차단, 갤러리 JPEG에 안내선 없음.
+- 물리 플래시 지원 기기의 off/on, 어두운/밝은 환경의 auto 발광 여부와 실제 JPEG 노출·필터 색감. UI 선택은 발광 성공 증거가 아니다.
+- hasFlash=false 기기의 미지원 안내/조작 비활성/항상 off, 기기 전환 후 off 초기화, 셀카 화면 발광과 torch가 켜지지 않음.
+- 촬영/처리/저장/앱 비활성 동안 조작 잠금, 빠른 중복 촬영 요청 방지, 실패 시 자동 off 재촬영 없음, render/save 재시도 시 재발광 없음.
+- VoiceOver/TalkBack의 격자 switch·플래시 radio 선택/비활성 안내와 작은 화면·확대 글자의 줄바꿈/스크롤.
+
+설치된 iOS 구현은 output.supportedFlashModes에 없는 모드를 적용하지 않는다. hasFlash는 물리 장치 지원 정보이고, 세션의 실제 flash mode 지원·발광 성공은 위 기기 검사로 확인해야 한다. 이 코드는 발광 여부 telemetry를 새로 제공하지 않는다. G0/G2 통과로 기록하지 않는다.
+
 ## 3. GPU와 이미지 일관성
 
 ### 입자·빛 번짐 검사 준비 (2026-10-28)

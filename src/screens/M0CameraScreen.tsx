@@ -267,9 +267,18 @@ export function M0CameraScreen() {
           }} onDateStamp={dateStamp => {
             setSettings(copyCameraSettings({ ...settings, dateStamp })); setFilterRevision(value => value + 1);
           }} onReset={() => selectFilter(settings.filterId)} />
-        {settings.filterId === 'retro-digital' ? <Text style={styles.info}>
-          실내 스냅은 촬영 설정에서 플래시를 켜 보세요. 지원하는 카메라에서 촬영할 때 적용돼요.
-        </Text> : null}
+        {settings.filterId === 'retro-digital' || settings.filterId === 'retro-film' ? <>
+          <Text style={styles.info}>{device?.hasFlash
+            ? '직광 플래시 스냅 · 플래시는 셔터를 누를 때 터져요. 밝아진 피사체와 배경의 차이는 촬영 결과에서 확인해 주세요.'
+            : '직광 플래시 스냅은 플래시를 지원하는 후면 카메라에서 사용할 수 있어요.'}</Text>
+          {device?.hasFlash ? <CameraAction
+            label={flashMode === 'on' ? '플래시 켜짐 · 끄기' : flashMode === 'auto' ? '플래시 자동 · 항상 켜기' : '스냅 플래시 켜기'}
+            disabled={assistDisabled} primary={flashMode === 'on'} onPress={() => {
+              if (!assistDisabled && device.hasFlash) {
+                setFlashSelection({ deviceId: device.id, mode: flashMode === 'on' ? 'off' : 'on' });
+              }
+            }} /> : null}
+        </> : null}
         {hasStyle ? <OriginalComparisonControls active={comparison.active} pinned={comparison.pinned}
           disabled={!comparisonAvailable} ready={filterReady} onHold={comparison.hold}
           onRelease={comparison.release} onToggle={comparison.toggle} /> : null}

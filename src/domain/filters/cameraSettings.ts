@@ -8,7 +8,7 @@ export const CAMERA_FILTERS = [
   { id: 'light-afternoon', name: '오후 네 시', caption: '따뜻한 빛, 맑은 그림자' },
   { id: 'time-summer', name: '여름방학', caption: '햇살과 바다를 닮은 필름색' },
   { id: 'scene-dawn', name: '푸른 새벽', caption: '차분한 푸른빛과 깊은 명암' },
-  { id: 'retro-film', name: '필름 35', caption: '크림빛 하이라이트, 바랜 검정과 차분한 청록' },
+  { id: 'retro-film', name: '일회용 필름', caption: '진한 색, 짙은 그림자와 거친 입자' },
   { id: 'retro-digital', name: '디카 2005', caption: '깊은 명암, 차가운 흰빛의 2000년대 스냅' },
   { id: 'retro-rose', name: '로즈 데이', caption: '분홍빛 하이라이트와 청록빛 거리' },
   { id: 'retro-travel', name: '맑은 여행', caption: '맑은 하늘색, 가벼운 햇빛과 부드러운 명암' },

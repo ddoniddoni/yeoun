@@ -74,7 +74,7 @@ export function M0CameraScreen() {
       setForeground(next === 'active');
       if (next !== 'active') {
         setReady(false);
-        if (controller.state.phase === 'capturing' || controller.state.phase === 'rendering' || controller.state.preparingOriginal) controller.interrupt();
+        if (controller.state.phase === 'capturing' || controller.state.phase === 'rendering' || controller.state.preparingOriginal || controller.state.editing) controller.interrupt();
       }
     });
     return () => { sub.remove(); controller.close(); };
@@ -105,7 +105,7 @@ export function M0CameraScreen() {
     if (permission.hasPermission && device && foreground && !cameraError) setCameraStopped(false);
   }, [permission.hasPermission, device, foreground, cameraError]);
   const discardAndReturn = async () => {
-    if (discardPending.current || controller.state.preparingOriginal || ['capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
+    if (discardPending.current || controller.state.preparingOriginal || controller.state.editing || ['capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
     discardPending.current = true; setReturning(true); setReturnError(undefined);
     setReady(false); setFilterRevision(value => value + 1);
     if (permission.hasPermission && device && foreground && !cameraError) setCameraStopped(false);
@@ -272,10 +272,11 @@ export function M0CameraScreen() {
           onRelease={comparison.release} onToggle={comparison.toggle} /> : null}
       </>}
     </CameraSheet> : null}
-    {state.output ? <CameraResultScreen state={state} output={state.output} settings={settings} foreground={foreground}
+    {state.output ? <CameraResultScreen state={state} output={state.output} settings={state.outputSettings ?? settings} foreground={foreground}
       returning={returning} returnError={returnError} onReturn={() => { void discardAndReturn(); }}
       onSave={() => { if (!discardPending.current) void controller.save(); }}
       onPrepareOriginal={() => { if (!discardPending.current && foreground) void controller.prepareOriginal(); }}
+      onEdit={nextSettings => discardPending.current || !foreground ? Promise.resolve(false) : controller.edit(nextSettings)}
       onSettings={() => { void Linking.openSettings().catch(error => setReturnError(String(error))); }} /> : null}
     {__DEV__ && diagnosticsOpen ? <CameraDiagnosticsScreen frameInfo={info} settings={settings} grainSeed={grainSeed}
       filterPhase={currentFilterStatus?.phase ?? '미리보기 대기'} cameraError={cameraError}

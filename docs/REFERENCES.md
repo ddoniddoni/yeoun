@@ -334,6 +334,10 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 
 [React Native 0.83 Image 공식 문서](https://reactnative.dev/docs/0.83/image)의 onLoad/onError, contain, Android resizeMethod와 fadeDuration을 확인했다. 설치 `react-native@0.83.10/Libraries/Image/Image.d.ts`와 Skia 2.4.19의 `src/skia/types/Canvas.ts`에서 scale/drawImageOptions 시그니처를 확인했다. 비교용 이미지 로드 성공 여부를 따로 추적하고 고정된 프레임 안에서 전환한다. Android resize와 fadeDuration을 지정하며 iOS에 같은 구현을 주장하지 않는다. Skia surfaces 문서 조회는 도구에서 실패했고 이 부분은 설치 타입과 기존 offscreen 경로를 근거로 작성했다. 실제 렌더링·성능·접근성은 NOT_RUN이다.
 
+## S39. 결과 편집 패널 — 2026-10-30
+
+기존 React Native 0.83.10 필터 조절 컴포넌트와 FileSystem/Skia export 경로를 재사용한다. [RN 0.83 ScrollView 공식 문서](https://reactnative.dev/docs/0.83/scrollview#scrollto) 및 설치 `Libraries/Components/ScrollView/ScrollView.d.ts`의 options 형태 `scrollTo`를 확인하여 편집 적용/취소 후 사진 위치로 돌아가도록 했다. 상태 분리, revision 파일 교체와 촬영 metadata 보존은 프로젝트 설계이며 실제 UI/GPU/디스크 성능은 NOT_RUN이다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

@@ -1,6 +1,19 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-30 촬영 결과 원본 비교
+## 현재 상태 — 2026-10-30 저장 전 필터 재편집
+
+- 요청: 원본 비교 다음 기능 개발. 깨끗한 develop `b55ab03`(PR #19 병합)에서 fetch/fast-forward 후 `feature/result-filter-editing`을 생성했다. 실기기 확인/테스트 실행 보류 지시를 유지했다.
+- UI: 결과 화면에서 현재 설정을 복사해 필터·강도·질감·날짜를 고른 뒤 명시적으로 적용한다. 조절 중에는 마지막 결과를 표시하고 저장/비교를 잠근다. 성공/취소 시 사진 위치로 돌아가며 실패 시 선택을 유지해 재시도할 수 있다. 원래 카메라 설정과 이미 갤러리에 저장한 사진은 변경하지 않는다.
+- 도메인/파일: 항상 source에서 재렌더하며 snapshot의 촬영 날짜·입자 seed·방향·노출은 유지한다. 새로운 `filtered-N.jpg`가 검증된 뒤 output과 outputSettings를 함께 교체하고 이전 output을 정리한다. 렌더 오류/교체 전 중단은 직전 결과를 보존한다. 원본 비교는 현재 적용 설정을 따르고 비교 파일을 재사용한다.
+- 수명: edit도 단일 busy/epoch로 중복·저장·버리기·비교 준비와 직렬화한다. close 시 후보/현재 결과의 소유권을 구분해 정리한다. 이미 저장한 결과는 edit를 거부하며 같은 설정은 렌더하지 않는다. 갤러리 저장은 마지막으로 적용한 output만 사용한다.
+- 변경 파일: `src/domain/capture/controller.ts`, `src/platform/files/drafts.ts`, `src/rendering/adapters/exportPhoto.ts`, `src/screens/{CameraResultScreen,M0CameraScreen,ResultPhotoComparison,ResultFilterEditor}.tsx`, `tests/integration/{controller,renderResources}.test.ts`, README 및 제품/기술/계획/검수/REFERENCES/PROGRESS 문서.
+- 테스트 소스: source/불변 snapshot 재사용·최종 저장 대상, 실패/재시도 revision, 중복 작업, background/close와 교체 후 close 정리, 원본 촬영 뒤 필터 적용과 비교, 저장 후 편집 거부, 같은/잘못된 설정, 별도 파일명·고해상도 유지·디스크 검증 실패의 후보 정리. 작성만 했으며 실행하지 않았다.
+- 실제 명령: `git status`, `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/result-filter-editing` exit 0. 기존 소스/설치 타입/공식 ScrollView 문서를 읽고 소유권·호출부를 검토했다. `git diff --check` exit 0. 앱·Metro·실기기 프로세스 시작 없음.
+- **NOT_RUN — 사용자 지시:** lint, typecheck, Jest, react-doctor, 자산 검사, JS/native build, iOS/Android 실행. 새 패키지·lockfile·권한·native·LUT/효과 수치 변경 없음. 소스 검토와 테스트 소스 추가를 실행 통과로 보고하지 않는다.
+- 남은 위험: 동기 고해상도 렌더 지연/발열, 후보 생성 시 디스크 공간, 실패/중단 시 실제 파일 정리와 Image 캐시, 원본 비교/색 공간/전후면/갤러리 일치, 작은 화면·큰 글자·스크롤/접근성. G0/G1/G2 미검증은 유지한다.
+- 다음 개발: 한 장 세 분위기 비교, 이후 개인 레시피. 사용자 요청 전에는 실기기 확인을 재개하지 않는다. 상시 승인된 Git Flow로 작업 commit/push/develop PR·merge·동기화 후 develop에서 마친다. 최종 통합 상태는 PR/Git 이력을 따른다.
+
+## 이전 기록 — 2026-10-30 촬영 결과 원본 비교
 
 - 요청: “실기기확인 말고 다른것부터”. 레트로 확장의 실기기 확인을 보류하고 결과 원본 비교 개발을 진행했다. PR #18이 반영된 깨끗한 develop `c147762`에서 fetch/fast-forward 후 `feature/result-original-comparison`을 생성했다.
 - 구현: 결과 화면에서 요청 시 원본 비교 준비, 누르는 동안 비교/유지 스위치, 원본·필터 배지와 고정 프레임. 원본/강도 0에는 비교 조작이 없다. 이미지 로드 성공 전 전환을 막고 준비 실패/표시 실패를 각각 재시도한다. 원본 표시 중에도 저장은 촬영 당시 고해상도 필터 결과다.

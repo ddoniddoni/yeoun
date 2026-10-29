@@ -31,7 +31,7 @@ export function ResultPhotoComparison({ output, state, width, enabled, locked, f
     <View accessible accessibilityRole="image"
       accessibilityLabel={active ? '촬영 원본 비교 사진' : `${filterName}로 촬영한 사진`}
       style={[styles.frame, { width, aspectRatio: output.width / output.height }]}>
-      {state.original ? <Image key={imageKey} source={{ uri: state.original.uri }}
+      {enabled && state.original ? <Image key={imageKey} source={{ uri: state.original.uri }}
         style={[StyleSheet.absoluteFill, !active && styles.hidden]} resizeMode="contain" resizeMethod="resize" fadeDuration={0} accessible={false}
         onLoad={() => setImageStatus({ key: imageKey, loaded: true })}
         onError={() => setImageStatus({ key: imageKey, loaded: false })} /> : null}

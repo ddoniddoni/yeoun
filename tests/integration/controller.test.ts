@@ -10,6 +10,105 @@ function setup() {
   return { controller, ports, states };
 }
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(r => { resolve = r; }); return { promise, resolve }; }
+const edited: Output = { ...output, uri: 'file:///filtered-1.jpg', bytes: 2222 };
+test('editing rerenders the source and preserves capture metadata; save uses the accepted revision', async () => {
+  const { controller, ports } = setup(); const captured = cameraSettings('retro-film');
+  await controller.capture(captured, 'front', 91, 'auto', { value: 1, unit: 'ev' });
+  await controller.prepareOriginal();
+  const snapshot = ports.capture.mock.calls[0]![0];
+  ports.render.mockResolvedValueOnce(edited);
+  const settings = { ...cameraSettings('retro-digital', 0.4), dateStamp: true, dust: 0.3 };
+  const apply = controller.edit(settings); settings.intensity = 1;
+  expect(controller.state.output).toBe(output);
+  expect(await apply).toBe(true);
+  const [source, renderSnapshot, revision] = ports.render.mock.calls[1]!;
+  expect(source).toBe(draft); expect(revision).toBe(1);
+  expect(renderSnapshot).toMatchObject({ ...snapshot, settings: { ...settings, intensity: 0.4 } });
+  expect(Object.isFrozen(renderSnapshot)).toBe(true); expect(Object.isFrozen(renderSnapshot.settings)).toBe(true);
+  expect(snapshot.settings).toEqual(captured);
+  expect(controller.state).toMatchObject({ phase: 'file-ready', output: edited, original, editing: false,
+    outputSettings: { filterId: 'retro-digital', intensity: 0.4 } });
+  expect(ports.remove.mock.calls).toEqual([[output.uri]]);
+  await controller.save(); expect(ports.save).toHaveBeenCalledWith(edited);
+  await controller.discard();
+  expect(ports.remove.mock.calls).toEqual([[output.uri], [draft.sourceUri], [edited.uri], [original.uri]]);
+  expect(ports.capture).toHaveBeenCalledTimes(1);
+});
+test('failed edit preserves save failure and accepted settings; retry uses a fresh revision', async () => {
+  const { controller, ports } = setup(); const captured = cameraSettings('light-afternoon');
+  await controller.capture(captured, 'back');
+  ports.save.mockRejectedValueOnce(new Error('denied')); await controller.save();
+  ports.render.mockRejectedValueOnce(new Error('GPU'));
+  expect(await controller.edit(cameraSettings('time-summer'))).toBe(false);
+  expect(controller.state).toMatchObject({ phase: 'failed', output, outputSettings: captured, editing: false });
+  expect(controller.state.editError).toBeDefined(); expect(controller.state.message).toContain('denied');
+  expect(ports.remove).not.toHaveBeenCalled();
+  ports.render.mockResolvedValueOnce({ ...edited, uri: 'file:///filtered-2.jpg' });
+  expect(await controller.edit(cameraSettings('time-summer'))).toBe(true);
+  expect(ports.render.mock.calls[2]![2]).toBe(2);
+  expect(controller.state).toMatchObject({ phase: 'file-ready', outputSettings: cameraSettings('time-summer') });
+  expect(controller.state.message).toBeUndefined(); expect(controller.state.editError).toBeUndefined();
+});
+test('editing serializes repeated apply, original preparation, save and discard', async () => {
+  const { controller, ports } = setup(); await controller.capture(cameraSettings('scene-dawn'), 'back');
+  const pending = deferred<Output>(); ports.render.mockReturnValueOnce(pending.promise);
+  const apply = controller.edit(cameraSettings('retro-rose'));
+  expect(await controller.edit(cameraSettings('retro-travel'))).toBe(false);
+  await controller.prepareOriginal(); await controller.save(); await controller.discard();
+  expect(controller.state).toMatchObject({ output, editing: true });
+  expect(ports.renderOriginal).not.toHaveBeenCalled(); expect(ports.save).not.toHaveBeenCalled(); expect(ports.remove).not.toHaveBeenCalled();
+  pending.resolve(edited); expect(await apply).toBe(true);
+  await controller.save(); expect(ports.save).toHaveBeenCalledWith(edited);
+});
+test('background drops only a late edit, leaving the accepted photo saveable', async () => {
+  const { controller, ports } = setup(); const settings = cameraSettings('scene-dawn');
+  await controller.capture(settings, 'back'); await controller.prepareOriginal();
+  const pending = deferred<Output>(); ports.render.mockReturnValueOnce(pending.promise);
+  const apply = controller.edit(cameraSettings('retro-rose')); controller.interrupt();
+  pending.resolve(edited); expect(await apply).toBe(false);
+  expect(controller.state).toMatchObject({ phase: 'file-ready', output, original, outputSettings: settings, editing: false });
+  expect(ports.remove.mock.calls).toEqual([[edited.uri]]);
+  await controller.save(); expect(ports.save).toHaveBeenCalledWith(output);
+});
+test('closing during an edit waits for the late output then releases all files without publishing', async () => {
+  const { controller, ports, states } = setup(); await controller.capture(cameraSettings('scene-dawn'), 'back');
+  await controller.prepareOriginal();
+  const pending = deferred<Output>(); ports.render.mockReturnValueOnce(pending.promise);
+  const apply = controller.edit(cameraSettings('retro-film')); const count = states.length;
+  controller.close(); pending.resolve(edited); expect(await apply).toBe(false);
+  expect(states).toHaveLength(count);
+  expect(ports.remove.mock.calls).toEqual([[edited.uri], [draft.sourceUri], [output.uri], [original.uri]]);
+});
+test('close after accepting an edit still owns and removes the new output', async () => {
+  const { controller, ports, states } = setup(); await controller.capture(cameraSettings('scene-dawn'), 'back');
+  const cleanup = deferred<void>(); ports.remove.mockReturnValueOnce(cleanup.promise);
+  ports.render.mockResolvedValueOnce(edited);
+  const apply = controller.edit(cameraSettings('retro-film')); await Promise.resolve();
+  expect(controller.state).toMatchObject({ output: edited, editing: true });
+  const count = states.length; controller.close(); cleanup.resolve(); await apply;
+  expect(states).toHaveLength(count);
+  expect(ports.remove.mock.calls).toEqual([[output.uri], [draft.sourceUri], [edited.uri]]);
+});
+test('original captures can become filtered; subsequent original edits keep comparison cached but do not regenerate it', async () => {
+  const { controller, ports } = setup(); await controller.capture(cameraSettings('original'), 'back');
+  ports.render.mockResolvedValueOnce(edited); await controller.edit(cameraSettings('retro-film'));
+  await controller.prepareOriginal(); expect(ports.renderOriginal).toHaveBeenCalledTimes(1);
+  const next = { ...edited, uri: 'file:///filtered-2.jpg' };
+  ports.render.mockResolvedValueOnce(next); await controller.edit(cameraSettings('original'));
+  await controller.prepareOriginal(); expect(ports.renderOriginal).toHaveBeenCalledTimes(1);
+  expect(controller.state).toMatchObject({ output: next, outputSettings: cameraSettings('original'), original });
+  expect(ports.remove.mock.calls).toEqual([[output.uri], [edited.uri]]);
+});
+test('unchanged and invalid settings do not render; saved results cannot be edited', async () => {
+  const { controller, ports } = setup(); const settings = cameraSettings('retro-film');
+  expect(await controller.edit(settings)).toBe(false);
+  await controller.capture(settings, 'back');
+  expect(await controller.edit(settings)).toBe(true);
+  expect(await controller.edit({ ...settings, intensity: NaN })).toBe(false);
+  expect(controller.state).toMatchObject({ output, outputSettings: settings, editing: false });
+  await controller.save(); expect(await controller.edit(cameraSettings('retro-digital'))).toBe(false);
+  expect(controller.state.phase).toBe('saved'); expect(ports.render).toHaveBeenCalledTimes(1);
+});
 test('comparison is lazy, cached, and never becomes the gallery output', async () => {
   const { controller, ports } = setup();
   await controller.capture({ ...cameraSettings('retro-film'), dateStamp: true, dust: 0.5 }, 'front');

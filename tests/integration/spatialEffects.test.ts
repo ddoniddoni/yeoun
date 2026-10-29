@@ -74,7 +74,10 @@ test('partial shader compilation releases previous effects', () => {
 
 test('halation reuses the same three bounded bloom passes even when bloom is off', () => {
   const r = setup(); const compiled = createSpatialResources(); const drawing: { dispose(): void }[] = [];
-  bindSpatialSource(compiled, r.source, r.looked, { ...cameraSettings('retro-film'), bloom: 0 }, geometry, 7, drawing);
+  bindSpatialSource(compiled, r.source, r.looked, { ...cameraSettings('retro-film'), bloom: 0 }, geometry, 7, drawing, 261030);
+  const uniforms = jest.mocked(compiled.composite.makeShaderWithChildren).mock.calls[0]![0];
+  expect(uniforms.slice(14, 16)).toEqual([800, 0.075]);
+  expect(uniforms.slice(-2)).toEqual([1, 261030]);
   expect(skia.Surface.MakeOffscreen).toHaveBeenCalledTimes(3);
   releaseNativeResources([...compiled.owned, ...drawing]);
   for (const resource of r.allocated) expect(resource.dispose).toHaveBeenCalledTimes(1);
@@ -89,7 +92,7 @@ test('soft focus and overlay effects allocate no extra surface and forward the c
   bindSpatialSource(compiled, r.source, r.looked, settings, geometry, 7, drawing, 261029);
   expect(skia.Surface.MakeOffscreen).not.toHaveBeenCalled();
   expect(compiled.composite.makeShaderWithChildren).toHaveBeenCalledWith([
-    ...geometry.forward, 3024, 4032, 384 / 3024, 512 / 4032, 0.9, 0, 0, 7,
+    ...geometry.forward, 3024, 4032, 384 / 3024, 512 / 4032, 0.9, 0, 0, 7, 1600, 0.04,
     0.04, 0, 0, 0.72, 0, 0.4, 0.3, 1, 261029,
   ], [r.source, r.looked, r.looked]);
   releaseNativeResources([...compiled.owned, ...drawing]);

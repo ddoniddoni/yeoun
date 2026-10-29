@@ -752,49 +752,49 @@
       "id": "retro-film",
       "collection": "retro",
       "name": "플래시 필름",
-      "caption": "녹회색 그림자, 부드러운 살구빛과 필름 입자",
-      "lookVersion": "0.4.0-draft",
+      "caption": "바랜 녹회색, 살구빛과 거친 입자 · 날짜 도장",
+      "lookVersion": "0.5.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.08,
-        "saturation": 0.86,
+        "exposureEv": 0.02,
+        "saturation": 0.82,
         "toneCurve": [
           [
             0,
-            0.065
+            0.1
           ],
           [
             0.18,
-            0.18
+            0.2
           ],
           [
             0.4,
-            0.425
+            0.39
           ],
           [
             0.6,
-            0.65
+            0.63
           ],
           [
             0.82,
-            0.845
+            0.84
           ],
           [
             1,
-            0.96
+            0.94
           ]
         ],
         "shadowTintRgb": [
-          -0.008,
-          0.012,
-          0.008
+          -0.01,
+          0.018,
+          0.014
         ],
         "highlightTintRgb": [
-          0.018,
-          0.004,
-          -0.004
+          0.022,
+          0.008,
+          0.004
         ],
         "hueBands": [
           {
@@ -813,26 +813,26 @@
             "centerDeg": 28,
             "halfWidthDeg": 35,
             "shiftDeg": -3,
-            "saturationMultiplier": 0.96
+            "saturationMultiplier": 1.03
           }
         ]
       },
       "defaults": {
-        "intensity": 0.9,
-        "grain": 0.5,
-        "bloom": 0.12,
-        "vignette": 0.12,
+        "intensity": 1,
+        "grain": 0.7,
+        "bloom": 0.1,
+        "vignette": 0.2,
         "halation": 0.04,
         "sharpness": 0,
         "digitalNoise": 0,
         "lightLeak": 0,
         "dust": 0,
-        "dateStamp": false,
-        "softness": 0.22
+        "dateStamp": true,
+        "softness": 0.38
       },
       "notes": [
         "사용자가 직접 첨부한 인물 사진의 녹회색 그림자·떠 있는 검정·살구빛 피부·입자를 기준으로 한 자체 색감. 이전의 고채도 일회용 방향을 대체한다.",
-        "0.4.0-draft: 저채도 LUT와 약한 소프트 포커스. 밝은 인물/어두운 배경의 분리는 촬영 조명에 의존하며 얼굴 인식·미백·기하 보정은 하지 않는다."
+        "0.5.0-draft: 필름 질감 미승인 피드백으로 녹회색 검정과 상대 입자 크기/진폭을 강화. 필름만 800 기준 입자와 진폭 0.075를 사용하고 오늘 날짜를 기본 표시한다. 저장/재편집 날짜는 촬영 시점을 유지한다."
       ]
     },
     {

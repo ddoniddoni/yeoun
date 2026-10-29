@@ -358,3 +358,9 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 - 디카: https://www.instagram.com/p/DZE-NceGYVO/?img_index=3 — 일반 fetch 실패 후 ego-browser에서 직접 시각 확인. 이미지 내 BERRYFILM SE BLUR 75% 표기와 뽀얀 톤/회갈색 배경/부드러운 윤곽을 참고했다. 자체 필터 값과 75%의 수치 대응을 주장하지 않는다.
 - Skia 공식 https://skia.org/docs/user/sksl/ — child shader `.eval`, local/image pixel coordinates, linear sRGB 변환을 확인. React Native Skia의 설치 2.4.19 `RuntimeEffect.d.ts`에서 scalar uniform 배열/child shader API를 확인했다. 조회한 RN Skia shaders/overview URL은 404여서 근거로 사용하지 않았다.
 - 적용 수치는 자체 설계다. 외부 이미지를 bundle/commit하거나 사용자 사진을 업로드하지 않았다. 테스트/native build는 NOT_RUN이며 실제 관측과 미검증 상태는 PROGRESS에 구분한다.
+
+## S43. 필름 후속 피드백과 날짜 — 2026-10-30
+
+- 사용자 피드백: 디카는 ‘디카처럼 된듯’, 필름은 아직 필름 느낌이 아니며 오늘 날짜를 넣어 달라는 요청. 실제 이미지 기준은 S42 유지.
+- 소스 근거: 기존 grain의1600 기준/0.04 진폭·작은 출력 감쇠와 단색 평균을 확인해 필름 전용 크기/진폭을 도입했다. 최종 개선은 검수 대기인 가설/표현 선택이다.
+- 날짜는 기존 `localStampDate`, `useCameraLut`의60초/active 갱신, `CaptureController`의 촬영 전 Date snapshot, 재편집 snapshot 재사용 경로를 유지하고 필름 기본값만 true로 전환했다. 디카 수치/날짜 기본값은 유지한다.

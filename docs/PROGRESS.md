@@ -1,6 +1,19 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-30 실제 이미지 기준 필름·소프트 디카
+## 현재 상태 — 2026-10-30 필름 입자·오늘 날짜 기본 표시
+
+- 피드백: 디카는 ‘디카처럼 된듯’이라는 잠정 긍정(저장/성능 승인 아님). 필름은 아직 느낌이 다르며 오늘 날짜를 넣어 달라고 요청했다. 깨끗한 develop `bd5cba8`에서 fetch/FF 후 `fix/film-texture-date-stamp` 생성. 자동 검사 보류/개발 후 Git Flow 상시 승인 유지.
+- 소스 관찰: 기존 grain은 모든 look에1600 기준 격자/0.04 진폭과 작은 출력 감쇠·4 sample 평균을 적용했다. 강도만 바꿔도 작은 화면에서 입자가 미세할 수 있다는 가설로, 필름만 상대 격자800/진폭0.075를 적용하는 `grainStyle`을 추가했다. 동일 구도의 입자 간격2배이며 기본 grain0.70. 같은 hash/고정 seed/밝기 envelope/평균 방식을 유지하고 surface나 LUT sample을 추가하지 않는다. 이 변경을 시각 개선 확인으로 주장하지 않는다.
+- 필름 look0.5: exposure0.02/saturation0.82/black0.10/white0.94, 녹회색 그림자 보강, 전체강도1.0, softness0.38/Bloom0.10/vignette0.20/halation0.04. 디카 look0.3의 seed/default/LUT 및1600/0.04 입자 값은 유지했다. 나머지 look/identity0.1. renderer0.5/spatial0.4로 구분하고 이전 runtime 설정을 암묵 변환하지 않는다.
+- 날짜: 필름 dateStamp 기본true. 카메라 필름 선택/초기화에서 켜지고 질감 패널에서 끌 수 있다. 조절 패널에 켜짐 안내, 기존 ‘모두 기본 꺼짐’ 문구 수정. 기존 오른쪽 아래 주황색 YY.MM.DD glyph를 재사용한다. 미리보기 기기 현지 날짜(옵션 활성/active/60초 갱신), 촬영 직전 Date snapshot, 다음날 재편집/재시도에도 촬영 날짜 유지. 날짜 하드코딩 없음. 원본/강도0 우회와 타 필터 날짜 기본false 유지.
+- 자산: `npm run generate:luts` exit0, hash `8ab15d20f26ae3f74dafb8ff99b0bac1f4b15acd8cf625748fe04092bd2c9016`에 identity+7 PNG/.lut/manifest 생성, literal registry와 test import 갱신. 기존 hash 보존. 생성 중 MODULE_TYPELESS_PACKAGE_JSON 경고. 생성은 자산/GPU 검수 통과가 아니다.
+- 변경: seed/schema, filters cameraSettings/types 및 신규 grainStyle, spatial shader/adapter/CPU reference, assets bundledLuts/lutManifest, FilterControls, 위 새 자산, unit spatial/retroControls/cameraSettings/lutManifest와 integration controller/spatialEffects/lutLoader/bundledLutLoader 테스트 소스, 제품/엔진/검수/REFERENCES/RETRO_LOOK_DIRECTION/PROGRESS.
+- 소스 검토/테스트 소스: 새 uniform 순서와 CPU 동일 style, 필름 상대 크기/해상도 비례·디카 기존 응답, 기본 날짜·촬영 다음날 재편집 날짜 보존, 구 look/renderer 거부 사례를 작성/수정했다. UI는 generic 설정 복사/선택 경로를 재사용한다. 날짜 켜진 필름을 binder에 직접 넘기는 기존 테스트에는 유효 날짜를 명시했다. 실행은 하지 않았다.
+- 실행: Metro 중지 후 변경, `EXPO_NO_TELEMETRY=1 EXPO_NO_DEPENDENCY_VALIDATION=1 npm start -- --lan --port 8081`, Xcode 경로 지정 devicectl `--terminate-existing --console --payload-url` launch 성공. **JS bundle519ms/1391 modules**, 후면 실제 **1178×1572/up/yuv-420-8-bit-full/mirror false** 프레임 관측. 시작 후 frame-was-late6건과 기존 UIKit callback/appearance/NO_COLOR 경고. 이 관측은 기본 시작 필터이며 새 필름/날짜 선택·저장/성능 합격 증거가 아니다. 앱/Metro는 사용자가 비교할 수 있게 유지한다.
+- `git diff --check` exit0. **NOT_RUN:** lint/typecheck/Jest/react-doctor/별도 자산 검사/native build/Android. 새 패키지/native/권한 없음. 필름 실제 질감·날짜 위치/방향·미리보기/고해상도 저장 일치·전후면·성능은 사용자 확인 대기. G0/G1/G2 미통과 유지.
+- 다음: 새 필름과 날짜를 아이폰에서 비교. 디카를 다시 튜닝하거나 다음 기능으로 확장하지 않는다. Git Flow: 명시 파일 stage/staged diff 공백 검사, commit `109c190`·작업 브랜치 push와 [PR #24](https://github.com/ddoniddoni/yeoun/pull/24) 생성 성공. 이 기록을 포함해 develop 병합·동기화하며 최종 상태는 PR/Git 이력을 따른다.
+
+## 이전 기록 — 2026-10-30 실제 이미지 기준 필름·소프트 디카
 
 - 사용자 제공 레퍼런스: 직접 첨부한 녹회색 배경/살구빛 피부의 필름 인물 사진, Instagram `DZE-NceGYVO/?img_index=3`의 BERRYFILM SE BLUR 75% 표기 이미지. 링크는 일반 fetch가 실패했으나 이전 대화에서 ego-browser로 세 번째 사진을 실제 관찰했다. 사용자가 이 기준으로 구현을 승인했다. 앞선 고채도 일회용/직광 디카 방향을 대체한다.
 - 준비: 깨끗한 develop `3d8e20a`(PR #22 병합)에서 fetch/FF 후 `fix/reference-film-soft-digicam` 생성. 진행 중 Metro를 중지해 서로 다른 renderer/설정이 HMR로 섞이지 않게 했다. 검사 보류/자동 Git Flow 지시 유지.

@@ -1,6 +1,7 @@
 import { FilterMode, MipmapMode, Skia, TileMode, type SkRuntimeEffect, type SkShader } from '@shopify/react-native-skia';
 import type { CameraSettings } from '../../domain/filters/cameraSettings';
 import { assertGrainSeed } from '../../domain/filters/grainSeed';
+import { grainStyle } from '../../domain/filters/grainStyle';
 import { assertStampDate } from '../../domain/filters/retroControls';
 import { bloomGeometry, type SpatialGeometry } from '../reference/spatialGeometry';
 import { BLUR_SKSL, BRIGHT_SKSL, SPATIAL_SKSL } from '../shaders/spatial';
@@ -61,9 +62,10 @@ export function bindSpatialSource(resources: SpatialResources, source: SkShader,
     const vertical = resources.blur.makeShaderWithChildren([0, 1, small.sigmaY], [horizontalImage]); owned.push(vertical);
     blurred = renderSmall(vertical, small.width, small.height, owned);
   }
+  const grain = grainStyle(settings.filterId);
   const final = resources.composite.makeShaderWithChildren([
     ...geometry.forward, geometry.width, geometry.height, small.scaleX, small.scaleY,
-    settings.intensity, settings.grain, settings.bloom, seed,
+    settings.intensity, settings.grain, settings.bloom, seed, grain.resolution, grain.amplitude,
     settings.vignette, settings.halation, settings.sharpness, settings.softness, settings.digitalNoise,
     settings.lightLeak, settings.dust, settings.dateStamp ? 1 : 0, stampDate,
   ], [source, looked, blurred]);

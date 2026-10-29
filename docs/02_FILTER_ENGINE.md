@@ -1,5 +1,9 @@
 # 02. 필터와 렌더링 계약
 
+## 2026-10-30 필름 입자 개정 (현재 계약)
+
+필름 look 0.5.0-draft, 디카 0.3.0-draft, 기타/identity 0.1.0-draft. renderer `lut-camera-0.5.0` / spatial `grain-bloom-retro-0.4.0`. 아래 이전 버전보다 우선한다. `grainStyle(filterId)`는 필름에만 resolution800/amplitude0.075를 반환하고 그 외는 기존1600/0.04다. binder는 seed 다음에 두 scalar를 추가한다. 기존 hash·4 sample 평균·밝기 envelope·crop 정규화·강도 마지막1회를 유지한다. 프리뷰/출력 CPU reference가 같은 style을 사용하며 추가 surface/LUT 평가 없음. 필름만 날짜 기본true; 날짜 glyph·위치·색·촬영 snapshot 규칙은 기존 그대로다. 디카 LUT/기본값/입자 수식은 유지하며 실제 동등성/필름 색감/저장은 미검증이다.
+
 ## 2026-10-30 실제 이미지 기준 개정 (현재 계약)
 
 필름은 `0.4.0-draft`, 디카는 `0.3.0-draft`, 나머지/identity는 `0.1.0-draft`. renderer는 `lut-camera-0.4.0`, spatial은 `grain-bloom-retro-0.3.0`이며 아래 2026-10-29의 버전보다 우선한다. LUT authoring/atlas와 master intensity 1회 계약은 유지한다. 구 renderer와 ID-version 불일치는 거부한다.

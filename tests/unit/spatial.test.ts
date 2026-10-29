@@ -1,6 +1,21 @@
 import { composeSpatial, extractBright, gaussianWeights, grainHash, sampleGrain } from '../../src/rendering/reference/spatial';
 import { bloomGeometry, previewGeometry, spatialGeometry } from '../../src/rendering/reference/spatialGeometry';
 import { orientationTransform } from '../../src/rendering/adapters/jpegOrientation';
+import { grainStyle } from '../../src/domain/filters/grainStyle';
+
+test('film grain is coarser at the same framing while digital keeps the original grain response', () => {
+  expect(grainStyle('retro-film')).toEqual({ resolution: 800, amplitude: 0.075 });
+  expect(grainStyle('retro-digital')).toEqual({ resolution: 1600, amplitude: 0.04 });
+  expect(sampleGrain(123, 345, 1200, 1600, 12, 'retro-film'))
+    .toBe(sampleGrain(246, 690, 2400, 3200, 12, 'retro-film'));
+  expect(sampleGrain(123, 345, 1200, 1600, 12, 'retro-digital'))
+    .toBe(sampleGrain(123, 345, 1200, 1600, 12));
+  const rgb = [0.5, 0.5, 0.5] as const;
+  const full = { intensity: 1, grain: 1, bloom: 0 };
+  expect(composeSpatial(rgb, rgb, [0, 0, 0], { ...full, filterId: 'retro-film' }, 1)[0]).toBeCloseTo(0.575);
+  expect(composeSpatial(rgb, rgb, [0, 0, 0], { ...full, filterId: 'retro-digital' }, 1))
+    .toEqual(composeSpatial(rgb, rgb, [0, 0, 0], full, 1));
+});
 
 test('grain seed permutation is bounded and zero mean, without temporal input', () => {
   const values = Array.from({ length: 4093 }, (_, seed) => grainHash(321, 527, seed));

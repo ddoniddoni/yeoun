@@ -2,7 +2,7 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/12659a3220a3de0677a130ade4e098feda55ddbe7824ffcf37d69061f174ac2d/filter-manifest.json';
+import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/8ab15d20f26ae3f74dafb8ff99b0bac1f4b15acd8cf625748fe04092bd2c9016/filter-manifest.json';
 import { decodeLutPng } from '../../scripts/lib/lutAssets';
 import { createLutAssetLoader, type LutSelection } from '../../src/rendering/assets/lutLoader';
 import { assertLutPngContainer } from '../../src/rendering/assets/lutPng';

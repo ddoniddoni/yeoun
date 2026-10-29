@@ -1,5 +1,9 @@
 # 02. 필터와 렌더링 계약
 
+## 2026-10-30 두 레트로 look 개정
+
+`retro-film`/`retro-digital`은 `0.2.0-draft`, 다른 look/identity는 `0.1.0-draft`다. 렌더 엔진/효과 순서/atlas 형식은 그대로다. schema·도메인 타입은 두 초안 버전을 표현하고 실제 runtime은 선택 ID별 seed version과 고정 manifest expectation을 모두 확인한다. 기본 강도는 seed를 따르되 명시적 0은 유지한다. 기존 LUT 폴더를 덮어쓰지 않고 새 seed hash 아래에 자산을 생성했다. 색감 목표와 변환 수치는 [별도 기록](RETRO_LOOK_DIRECTION.md)에 있으며 정밀 필름/CCD 재현을 주장하지 않는다.
+
 ## 2026-10-29 레트로 확장 계약 (이 절이 아래 v0 설명보다 우선)
 
 사용자 승인으로 기존 9종 seed에 `retro-film`, `retro-digital`, `retro-rose`, `retro-travel` 4종을 추가했다. 제작 컬렉션은 기존 3개에 `retro`가 추가되고, 앱 표시에서는 필름/디카/도시로 나눈다. 기존 필터 수치는 유지한다. 생성 대상은 identity + 기존 대표 3종 + 새 4종이며, 나머지 기존 6종은 생성하지 않는다. 새 seed hash 디렉터리에 8개 PNG/.lut와 manifest를 생성하고 이전 파일은 덮어쓰지 않는다. 앱의 expected ID/version 집합과 manifest가 정확히 일치해야 로딩한다.

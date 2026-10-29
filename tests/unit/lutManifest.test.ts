@@ -1,8 +1,16 @@
-import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/a8f45d69531b3554902333ecf99621a7cab1809e2c36767eb9dbd2f4b3da96f6/filter-manifest.json';
+import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/8bb861ae2c9cf38ec130ba840f49b953634e8d9e932e616a58975ab54acf0482/filter-manifest.json';
 import { parseLutManifest } from '../../src/rendering/assets/lutManifest';
 
 const expected = { sourceSeedSha256: manifest.sourceSeedSha256,
   lookVersions: new Map(manifest.assets.map(asset => [asset.filterId, asset.lookVersion])) };
+
+test('mixed look revisions remain pinned per filter instead of accepting any supported version', () => {
+  const parsed = parseLutManifest(manifest, expected);
+  expect(parsed.assets.find(asset => asset.filterId === 'retro-film')?.lookVersion).toBe('0.2.0-draft');
+  const stale = { ...manifest, assets: manifest.assets.map(asset => asset.filterId === 'retro-film'
+    ? { ...asset, lookVersion: '0.1.0-draft' } : asset) };
+  expect(() => parseLutManifest(stale, expected)).toThrow(/mismatched/);
+});
 
 test('returns an immutable manifest snapshot independent of the source JSON', () => {
   const input = { ...manifest, assets: manifest.assets.map(asset => ({ ...asset })), encoder: { ...manifest.encoder } };

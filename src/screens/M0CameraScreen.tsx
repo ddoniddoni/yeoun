@@ -267,6 +267,9 @@ export function M0CameraScreen() {
           }} onDateStamp={dateStamp => {
             setSettings(copyCameraSettings({ ...settings, dateStamp })); setFilterRevision(value => value + 1);
           }} onReset={() => selectFilter(settings.filterId)} />
+        {settings.filterId === 'retro-digital' ? <Text style={styles.info}>
+          실내 스냅은 촬영 설정에서 플래시를 켜 보세요. 지원하는 카메라에서 촬영할 때 적용돼요.
+        </Text> : null}
         {hasStyle ? <OriginalComparisonControls active={comparison.active} pinned={comparison.pinned}
           disabled={!comparisonAvailable} ready={filterReady} onHold={comparison.hold}
           onRelease={comparison.release} onToggle={comparison.toggle} /> : null}

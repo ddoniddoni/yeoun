@@ -1,6 +1,18 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-30 저장 전 필터 재편집
+## 현재 상태 — 2026-10-30 실기기 피드백에 따른 필름·디카 색감 개정
+
+- 사용자 요청의 iPhone 세션에서 develop `80c7e51`을 열었다. 최초 devicectl은 CLT 경로라 실패해 프로세스별 Xcode 경로로 재조회했다. 기기는 available이었고 앱 조회 첫 연결은 reset by peer, 잠금 해제 후 재조회/launch 성공. JS bundle 822ms/1520 modules와 후면 1178×1572/up 프레임을 관측했다. 초기 frame-was-late 경고가 있었으며 성능 합격으로 기록하지 않는다. 사용자는 **필름/디카가 기대한 느낌이 아니라 실제 자료 조사 후 수정이 필요**하다고 답했다. 촬영·원본 비교·재편집·저장 통과 답변은 받지 않았다.
+- 깨끗한 develop에서 fetch/FF 후 `fix/retro-look-direction` 생성. Kodak 공식 자료와 실제 Gold 200 스캔/IXUS 40 촬영 샘플을 조사하고 두 이미지 파일을 임시 폴더에서 열어 관찰했다. 일부 Kodak URL/PDF·Lomography 기사 조회는 실패했으며 상세 근거는 `RETRO_LOOK_DIRECTION.md`에 남겼다. 외부 사진은 커밋하지 않는다.
+- 필름: 밝은 부분의 크림색과 그림자/초록·파랑 분리, lifted black/부드러운 하이라이트, 입자·붉은 번짐 절제. 디카: 깊은 명암과 밝게 뜨는 흰색, 전체 채도·선명도·상시 색 노이즈 감소. 두 기본 강도 90%. 세부 취향 질문은 답변 대기이며 첫 수정안은 HUMAN_REVIEW_PENDING이다. 날짜/빛샘/먼지 기본 꺼짐 및 나머지 필터 수치 유지.
+- 버전: 두 look만 0.2.0-draft, 나머지와 identity 0.1.0-draft. seed/schema/types, 선택별 runtime version 확인과 고정 manifest expectation을 갱신했다. seed 기본 강도를 사용하되 명시적 0은 보존한다. 구버전 설정을 새 색감으로 암묵 해석하지 않는다.
+- 자산: `npm run generate:luts` exit 0, identity+7 LUT 초안 생성. 새 seed hash `8bb861ae2c9cf38ec130ba840f49b953634e8d9e932e616a58975ab54acf0482`의 PNG/.lut/manifest와 Metro registry를 연결했다. 기존 hash 자산은 보존했다. MODULE_TYPELESS_PACKAGE_JSON 경고가 있었고 불필요한 패키지 설정 변경은 하지 않았다. 생성 과정의 내부 유효성 확인을 별도 테스트 실행으로 주장하지 않는다.
+- 변경 파일: seed/schema, `src/domain/filters/{cameraSettings,types}.ts`, `src/rendering/assets/{bundledLuts,lutManifest}.ts`, `src/screens/M0CameraScreen.tsx`, 위 새 hash 자산, cameraSettings/retroControls/lutManifest/lutLoader/bundledLutLoader 테스트 소스, 제품/엔진/검수/REFERENCES/PROGRESS 및 새 색감 방향 문서. 새 패키지·native·렌더 shader 변경 없음.
+- 실제 재반영: Metro를 중지한 뒤 자산 교체, 개발 서버 재시작과 devicectl `--terminate-existing --console --payload-url`로 앱 재실행. 수정 JS bundle 522ms/1359 modules와 후면 1178×1572/up 프레임 확인. 새 앱 프로세스는 유지된다. 이 관측은 필름/디카 선택·사용자 색감 승인이나 저장 결과 검증을 대신하지 않는다. DevTools 최신 다운로드 fallback 및 기존 UIKit background callback 경고는 남았다.
+- `git diff --check` exit 0. **NOT_RUN:** lint/typecheck/Jest/react-doctor/별도 자산 검사/native build/Android. 사용자 요청된 iPhone 앱 실행과 개발 JS 번들만 수행했다. 테스트 소스는 ID별 version pin과 기본 강도/0 우회를 보강했다. G0/G1/G2 미통과를 유지한다.
+- 다음: 사용자 선호 답변과 실제 두 필터 색감 확인으로 추가 조정. 기존 다음 기능 후보(한 장 세 분위기)는 이번 수정에 포함하지 않는다. 개발 후 상시 Git Flow로 develop 병합·동기화하고 앱/Metro는 비교할 수 있게 유지한다.
+
+## 이전 기록 — 2026-10-30 저장 전 필터 재편집
 
 - 요청: 원본 비교 다음 기능 개발. 깨끗한 develop `b55ab03`(PR #19 병합)에서 fetch/fast-forward 후 `feature/result-filter-editing`을 생성했다. 실기기 확인/테스트 실행 보류 지시를 유지했다.
 - UI: 결과 화면에서 현재 설정을 복사해 필터·강도·질감·날짜를 고른 뒤 명시적으로 적용한다. 조절 중에는 마지막 결과를 표시하고 저장/비교를 잠근다. 성공/취소 시 사진 위치로 돌아가며 실패 시 선택을 유지해 재시도할 수 있다. 원래 카메라 설정과 이미 갤러리에 저장한 사진은 변경하지 않는다.

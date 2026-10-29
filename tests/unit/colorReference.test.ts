@@ -227,3 +227,25 @@ test('existing seed drafts produce finite, bounded, deterministic RGB values', (
     }
   }
 });
+
+
+test('film keeps the neutral ramp neutral with deep blacks and separated highlights', () => {
+  const result = createFilterSeedValidator(schema)(seed);
+  if (!result.ok) throw new Error('The film seed must pass validation before rendering');
+  const film = result.data.filters.find(filter => filter.id === 'retro-film');
+  if (!film) throw new Error('Missing film look');
+  const transform = createAuthoringTransform(film.authoring);
+  let previous = -1;
+  for (let step = 0; step <= 100; step += 1) {
+    const gray = step / 100;
+    const output = transform([gray, gray, gray]);
+    // No green shadow or orange highlight veil on neutral objects.
+    expect(output[0]).toBeCloseTo(output[1], 12);
+    expect(output[1]).toBeCloseTo(output[2], 12);
+    expect(output[0]).toBeGreaterThan(previous);
+    previous = output[0];
+  }
+  expect(transform([0, 0, 0])[0]).toBeLessThan(0.03);
+  expect(transform([1, 1, 1])[0]).toBeGreaterThan(0.95);
+  expect(transform([0.18, 0.18, 0.18])[0]).toBeLessThan(0.18);
+});

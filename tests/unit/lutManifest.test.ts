@@ -1,4 +1,4 @@
-import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/8ab15d20f26ae3f74dafb8ff99b0bac1f4b15acd8cf625748fe04092bd2c9016/filter-manifest.json';
+import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/8f1d55b570a4cd626d2c64fe5fdc702b1431e62e97da933a5315b25c12c67a46/filter-manifest.json';
 import { parseLutManifest } from '../../src/rendering/assets/lutManifest';
 
 const expected = { sourceSeedSha256: manifest.sourceSeedSha256,
@@ -6,9 +6,9 @@ const expected = { sourceSeedSha256: manifest.sourceSeedSha256,
 
 test('mixed look revisions remain pinned per filter instead of accepting any supported version', () => {
   const parsed = parseLutManifest(manifest, expected);
-  expect(parsed.assets.find(asset => asset.filterId === 'retro-film')?.lookVersion).toBe('0.5.0-draft');
+  expect(parsed.assets.find(asset => asset.filterId === 'retro-film')?.lookVersion).toBe('0.6.0-draft');
   const stale = { ...manifest, assets: manifest.assets.map(asset => asset.filterId === 'retro-film'
-    ? { ...asset, lookVersion: '0.4.0-draft' } : asset) };
+    ? { ...asset, lookVersion: '0.5.0-draft' } : asset) };
   expect(() => parseLutManifest(stale, expected)).toThrow(/mismatched/);
 });
 

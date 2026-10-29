@@ -1,6 +1,17 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-30 필름 입자·오늘 날짜 기본 표시
+## 현재 상태 — 2026-10-30 필름 전역 색조 제거
+
+- 요청: 필름이 색 셀로판처럼 보인다는 피드백과 실제 필름 감성 재조사/재적용. 깨끗한 develop `e9c38be`에서 최신 fetch/FF 후 `fix/neutral-film-color-response` 생성. 테스트 보류와 개발 후 Git Flow 상시 승인 유지.
+- 조사: Kodak Gold 200 공식 E7022 기술자료와 The Darkroom 실제 스캔 갤러리를 읽었다. Gold200-E7-000336830003(야외 커플) 및 Gold-200-P67-000418530006-Edit(인물)을 임시 폴더에서 직접 관찰했다. 피부/흰옷/어둠이 분리되어 있어 참고 사진의 녹색 배경을 전역 색조로 해석한 이전 방향을 수정했다. 정확한 출처/관찰 한계는 REFERENCES S44. 외부 사진을 앱/저장소에 넣지 않았다.
+- 원인과 구현: 기존 film black0.10, shadow tint(-.01,.018,.014), highlight(.022,.008,.004), softness.38이 무채색도 물들이고 어둠을 띄우는 구조였다. 필름0.6은 tint를 모두0, exposure0/saturation1.04, black.018/white.975의 명암 곡선과 소폭 hue band로 변경. grain.55/Bloom.04/vignette.12/halation.02/softness.08. 입자800/.075, 기본 날짜true와 촬영 날짜 snapshot 유지. 디카0.3과 다른 look 정의/기본값은 변경하지 않았다. renderer0.5/spatial0.4 유지, shader/프레임 공유/자원 경로 변경 없음.
+- 자산: `npm run generate:luts` exit0, 새 seed hash `8f1d55b570a4cd626d2c64fe5fdc702b1431e62e97da933a5315b25c12c67a46`, film PNG SHA `443d25a734554282bc4300de67edd93e9665fdc7b1a107f30ad10f6cbb33d623`. identity+7 PNG와 동일 바이트 .lut/manifest, literal registry/import 갱신. 디카 SHA `f4f34d739a5f44b42347d3133e6a2ceb806912cc4e0379a34d0f09f4d648bc74` 유지. 이전 hash 자산 보존. MODULE_TYPELESS_PACKAGE_JSON 경고. 생성은 별도 검사 통과가 아니다.
+- 변경: seed/schema, domain cameraSettings/types, rendering assets bundledLuts/lutManifest, 새 hash 자산, unit cameraSettings/colorReference/lutManifest/retroControls 및 integration lutLoader/bundledLutLoader 테스트 소스, 제품/엔진/색감방향/검수/REFERENCES/PROGRESS. 중성 램프의 색 편향/단조 명암·검정/흰색 분리와 stale film version 거부를 테스트 소스로 기록하고 실행하지 않았다.
+- 실행: `git diff --check` exit0. Metro 시작 후 Xcode 경로 지정 devicectl `--terminate-existing --console --payload-url`로 앱 launch 성공. JS bundle541ms/1526 modules, 후면 실제1178×1572/up/yuv-420-8-bit-full/mirrorfalse 프레임을 관측. 기존 UIKit background callback/NO_COLOR 경고. 이 관측은 앱 시작 확인이며 새 필름 선택/색감/날짜/저장/장기 성능 합격이 아니다. 브랜치 전환 중 이전의 일시 resolver 오류 재발을 피하려고 Metro를 중지했으며 최종 develop 동기화 후 재개한다.
+- **NOT_RUN:** lint/typecheck/Jest/react-doctor/별도 자산 검사/native build/Android. 새 패키지/권한/native 변경 없음. 최종 필름 색감은 HUMAN_REVIEW_PENDING, G0/G1/G2 미통과 유지. 다음은 같은 조명에서 피부/흰색/검정을 비교하고 실제 저장 결과 확인; 디카 재조정/다음 기능으로 확장하지 않는다.
+- Git Flow: 해당 변경만 commit/push/develop PR·merge·동기화하고 develop에서 마친다. 실제 최종 통합 상태는 PR/Git 이력을 따른다.
+
+## 이전 기록 — 2026-10-30 필름 입자·오늘 날짜 기본 표시
 
 - 피드백: 디카는 ‘디카처럼 된듯’이라는 잠정 긍정(저장/성능 승인 아님). 필름은 아직 느낌이 다르며 오늘 날짜를 넣어 달라고 요청했다. 깨끗한 develop `bd5cba8`에서 fetch/FF 후 `fix/film-texture-date-stamp` 생성. 자동 검사 보류/개발 후 Git Flow 상시 승인 유지.
 - 소스 관찰: 기존 grain은 모든 look에1600 기준 격자/0.04 진폭과 작은 출력 감쇠·4 sample 평균을 적용했다. 강도만 바꿔도 작은 화면에서 입자가 미세할 수 있다는 가설로, 필름만 상대 격자800/진폭0.075를 적용하는 `grainStyle`을 추가했다. 동일 구도의 입자 간격2배이며 기본 grain0.70. 같은 hash/고정 seed/밝기 envelope/평균 방식을 유지하고 surface나 LUT sample을 추가하지 않는다. 이 변경을 시각 개선 확인으로 주장하지 않는다.

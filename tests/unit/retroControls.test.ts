@@ -10,7 +10,7 @@ test('each selectable look has one collection; new looks have distinct defaults 
   for (const id of ['retro-film', 'retro-digital', 'retro-rose', 'retro-travel'] as const) {
     expect(cameraSettings(id)).toMatchObject({ dateStamp: id === 'retro-film', lightLeak: 0, dust: 0 });
   }
-  expect(cameraSettings('retro-film')).toMatchObject({ grain: 0.7, halation: 0.04, softness: 0.38, dateStamp: true });
+  expect(cameraSettings('retro-film')).toMatchObject({ grain: 0.55, halation: 0.02, softness: 0.08, dateStamp: true });
   expect(cameraSettings('retro-digital')).toMatchObject({ grain: 0.02, bloom: 0.3, sharpness: 0, softness: 0.72, digitalNoise: 0 });
 });
 

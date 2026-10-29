@@ -43,7 +43,7 @@ export type DraftFilter = Readonly<{
   collection: CollectionId;
   name: string;
   caption: string;
-  lookVersion: '0.1.0-draft' | '0.2.0-draft' | '0.3.0-draft' | '0.4.0-draft' | '0.5.0-draft';
+  lookVersion: '0.1.0-draft' | '0.2.0-draft' | '0.3.0-draft' | '0.4.0-draft' | '0.5.0-draft' | '0.6.0-draft';
   status: 'design-draft';
   lut: null;
   authoring: FilterAuthoring;

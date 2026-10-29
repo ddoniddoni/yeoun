@@ -16,11 +16,11 @@ function expectIssue(input: unknown, kind: 'schema' | 'semantic', code: string, 
   });
 }
 
-test('the nine authoring drafts are accepted without becoming renderable assets', () => {
+test('the thirteen authoring drafts are accepted without becoming renderable assets', () => {
   const result = validate(seed);
   expect(result.ok).toBe(true);
   if (!result.ok) throw new Error('Expected a valid authoring seed');
-  expect(result.data.filters).toHaveLength(9);
+  expect(result.data.filters).toHaveLength(13);
   expect(result.data.filters.every(filter => filter.status === 'design-draft' && filter.lut === null)).toBe(true);
 });
 
@@ -96,7 +96,7 @@ test('does not accept a new schema or render contract version implicitly', () =>
   expectIssue({ ...seed, renderContractVersion: '0.2.0' }, 'semantic', 'unsupported-render-contract', '/renderContractVersion');
 });
 
-test('requires exactly nine filters and the fixed LUT layout', () => {
+test('requires exactly thirteen filters and the fixed LUT layout', () => {
   expectIssue({ ...seed, filters: seed.filters.slice(1) }, 'schema', 'minItems', '/filters');
   expectIssue({ ...seed, lutContract: { ...seed.lutContract, size: 32 } }, 'schema', 'const', '/lutContract/size');
 });
@@ -110,7 +110,7 @@ test('rejects completed asset data in an authoring draft', () => {
     'schema', 'const', '/filters/0/status');
 });
 
-test('rejects duplicate filter IDs even when the total is still nine', () => {
+test('rejects duplicate filter IDs even when the total is still thirteen', () => {
   const input = copySeed();
   input.filters[1]!.id = input.filters[0]!.id;
   expectIssue(input, 'semantic', 'duplicate-filter-id', '/filters/1/id');
@@ -124,7 +124,7 @@ test('rejects duplicate and missing collections', () => {
   expectIssue(input, 'semantic', 'missing-filter-collection', '/filters/3/collection');
 });
 
-test('enforces three filters per collection, beyond the total count', () => {
+test('enforces the filter count per collection, beyond the total count', () => {
   const input = copySeed();
   input.filters[2]!.collection = 'time';
   input.filters[2]!.id = 'time-spring';

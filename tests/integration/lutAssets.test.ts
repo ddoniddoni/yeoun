@@ -25,9 +25,10 @@ beforeAll(async () => {
 beforeEach(async () => { directory = await mkdtemp(join(tmpdir(), 'yeoun-lut-assets-')); });
 afterEach(async () => { await rm(directory, { recursive: true, force: true }); });
 
-test('generates identity plus the three representatives without promoting the seed or assets', () => {
+test('generates identity plus three representatives and four retro looks without promoting the seed or assets', () => {
   expect(bundle.manifest.assets.map(asset => asset.filterId)).toEqual([
     'identity', 'light-afternoon', 'time-summer', 'scene-dawn',
+    'retro-film', 'retro-digital', 'retro-rose', 'retro-travel',
   ]);
   expect(bundle.manifest.status).toBe('draft');
   expect(bundle.manifest.assets.every(asset => asset.status === 'draft')).toBe(true);

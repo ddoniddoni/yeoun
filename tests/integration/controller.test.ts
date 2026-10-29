@@ -152,3 +152,22 @@ test('native exposure reading is copied with its unit and preserved on render re
   expect(ports.render.mock.calls[1]![1]).toBe(snapshot);
   expect(ports.capture).toHaveBeenCalledTimes(1);
 });
+
+test('date and retro settings are frozen before capture and survive a retry on the next day', async () => {
+  jest.useFakeTimers();
+  try {
+    jest.setSystemTime(new Date(2026, 9, 29, 23, 59));
+    const { controller, ports } = setup();
+    const settings = { ...cameraSettings('retro-digital'), dateStamp: true, dust: 0.2, lightLeak: 0.3 };
+    ports.render.mockRejectedValueOnce(new Error('GPU'));
+    const capture = controller.capture(settings, 'back', 91);
+    settings.dateStamp = false; settings.dust = 0;
+    await capture;
+    jest.setSystemTime(new Date(2026, 9, 30, 0, 1));
+    await controller.retryRender();
+    const first = ports.capture.mock.calls[0]![0];
+    expect(first).toMatchObject({ stampDate: 261029, grainSeed: 91,
+      settings: { dateStamp: true, dust: 0.2, lightLeak: 0.3, sharpness: 0.5 } });
+    expect(ports.render.mock.calls[1]![1]).toBe(first);
+  } finally { jest.useRealTimers(); }
+});

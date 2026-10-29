@@ -10,8 +10,9 @@ try {
   const seedPath = values.seed ? resolve(values.seed) : resolve(root, 'spec/filters.seed.json');
   const { seed, hash } = await loadLutSeed(seedPath, resolve(root, 'spec/filters.schema.json'));
   const output = values.out ? resolve(values.out) : resolve(root, 'assets/lut-drafts', LUT_ENGINE_VERSION, hash);
-  const manifest = await writeLutBundle(output, buildLutBundle(seed, hash));
-  console.log(`LUT 초안 생성: identity + 대표 필터 3종\n${manifest}`);
+  const bundle = buildLutBundle(seed, hash);
+  const manifest = await writeLutBundle(output, bundle);
+  console.log(`LUT 초안 생성: identity + 필터 ${bundle.manifest.assets.length - 1}종\n${manifest}`);
   console.log('생성 결과는 draft입니다. 수치 테스트, 별도 자산 검사, GPU 및 색감 검수 결과가 아닙니다.');
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));

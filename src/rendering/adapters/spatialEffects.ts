@@ -1,6 +1,7 @@
 import { FilterMode, MipmapMode, Skia, TileMode, type SkRuntimeEffect, type SkShader } from '@shopify/react-native-skia';
 import type { CameraSettings } from '../../domain/filters/cameraSettings';
 import { assertGrainSeed } from '../../domain/filters/grainSeed';
+import { assertStampDate } from '../../domain/filters/retroControls';
 import { bloomGeometry, type SpatialGeometry } from '../reference/spatialGeometry';
 import { BLUR_SKSL, BRIGHT_SKSL, SPATIAL_SKSL } from '../shaders/spatial';
 import { releaseNativeResources, type NativeResource } from './lutResources';
@@ -40,15 +41,17 @@ function renderSmall(shader: SkShader, width: number, height: number, owned: Nat
 
 /** Borrow source and full-strength LUT. Caller releases owned in reverse AFTER draw/snapshot. */
 export function bindSpatialSource(resources: SpatialResources, source: SkShader, looked: SkShader,
-  settings: CameraSettings, geometry: SpatialGeometry, seed: number, owned: NativeResource[]): SkShader {
+  settings: CameraSettings, geometry: SpatialGeometry, seed: number, owned: NativeResource[], stampDate = 0): SkShader {
   'worklet';
   assertGrainSeed(seed);
-  for (const value of [settings.intensity, settings.grain, settings.bloom]) {
+  for (const value of [settings.intensity, settings.grain, settings.bloom, settings.vignette,
+    settings.halation, settings.sharpness, settings.digitalNoise, settings.lightLeak, settings.dust]) {
     if (!Number.isFinite(value) || value < 0 || value > 1) throw new Error('Invalid spatial strength');
   }
+  if (settings.dateStamp) assertStampDate(stampDate);
   const small = bloomGeometry(geometry.width, geometry.height);
-  let blurred = looked; // Unused child when bloom=0; no intermediate allocation.
-  if (settings.bloom > 0 && settings.intensity > 0) {
+  let blurred = looked; // Unused child when both bloom and halation are off.
+  if ((settings.bloom > 0 || settings.halation > 0) && settings.intensity > 0) {
     const bright = resources.bright.makeShaderWithChildren([
       ...geometry.inverse, geometry.width, geometry.height, small.scaleX, small.scaleY,
     ], [looked]); owned.push(bright);
@@ -61,6 +64,8 @@ export function bindSpatialSource(resources: SpatialResources, source: SkShader,
   const final = resources.composite.makeShaderWithChildren([
     ...geometry.forward, geometry.width, geometry.height, small.scaleX, small.scaleY,
     settings.intensity, settings.grain, settings.bloom, seed,
+    settings.vignette, settings.halation, settings.sharpness, settings.digitalNoise,
+    settings.lightLeak, settings.dust, settings.dateStamp ? 1 : 0, stampDate,
   ], [source, looked, blurred]);
   owned.push(final); return final;
 }

@@ -264,6 +264,8 @@ export function M0CameraScreen() {
             setSettings(copyCameraSettings({ ...settings, intensity })); setFilterRevision(value => value + 1);
           }} onTexture={(control, value) => {
             setSettings(copyCameraSettings({ ...settings, [control]: value })); setFilterRevision(value => value + 1);
+          }} onDateStamp={dateStamp => {
+            setSettings(copyCameraSettings({ ...settings, dateStamp })); setFilterRevision(value => value + 1);
           }} onReset={() => selectFilter(settings.filterId)} />
         {hasStyle ? <OriginalComparisonControls active={comparison.active} pinned={comparison.pinned}
           disabled={!comparisonAvailable} ready={filterReady} onHold={comparison.hold}

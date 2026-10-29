@@ -223,3 +223,16 @@ test('spatial allocation failure revokes readiness and keeps original fallback u
   expect(createSpatialResources).toHaveBeenCalledTimes(1);
   expect(r.cell.state.unlock).toHaveBeenCalledTimes(2);
 });
+
+test('retro effects and the preview date use the spatial path even with grain and bloom off', () => {
+  const r = setup();
+  const settings = { ...cameraSettings('retro-digital'), dateStamp: true, lightLeak: 0.3, dust: 0.2 };
+  r.cell.request.setBlocking({ ...r.cell.request.getBlocking()!, settings, stampDate: 261029 });
+  jest.mocked(createSpatialResources).mockReturnValue({ owned: [] } as ReturnType<typeof createSpatialResources>);
+  jest.mocked(bindSpatialSource).mockReturnValue(r.shader as ReturnType<typeof bindSpatialSource>);
+  expect(renderCameraLut(r.cell, r.render)?.phase).toBe('ready');
+  expect(bindLutSource).toHaveBeenCalledWith(expect.anything(), r.source, 1);
+  expect(jest.mocked(bindSpatialSource).mock.calls[0]![3]).toBe(settings);
+  expect(jest.mocked(bindSpatialSource).mock.calls[0]![7]).toBe(261029);
+  expect(r.cell.request.setBlocking).toHaveBeenCalledTimes(1); // RN publication only.
+});

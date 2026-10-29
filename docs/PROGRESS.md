@@ -10,7 +10,7 @@
 - 변경 파일: seed/schema, domain filters types/cameraSettings, rendering assets bundledLuts/lutManifest, M0CameraScreen, 위 새 hash 자산, cameraSettings/retroControls/lutManifest/lutLoader/bundledLutLoader 테스트 소스, README 및 제품/엔진/검수/REFERENCES/RETRO_LOOK_DIRECTION/PROGRESS. 새 패키지·native·권한·shader 변경 없음.
 - 실제 실행: 기존 Metro 중지 → 수정 완료 후 `EXPO_NO_TELEMETRY=1 EXPO_NO_DEPENDENCY_VALIDATION=1 npm start -- --lan --port 8081` → Xcode 경로를 지정한 devicectl `--terminate-existing --console --payload-url` launch 성공. JS Bundled **653ms / 1504 modules**, 후면 실제 frame **1178×1572 / yuv-420-8-bit-full / up / mirror false** 관측. 기존 UIKit callback/NO_COLOR 경고는 남는다. 앱/Metro는 사용자 비교를 위해 유지한다.
 - `git diff --check` exit 0, 관련 diff와 플래시 상태/촬영 호출부 소스 검토. **NOT_RUN:** lint/typecheck/Jest/react-doctor/별도 자산 검증/native build/Android. 테스트 소스의 버전 pin/기본값/import만 갱신하고 실행하지 않았다. 새 필름·디카 선택/실제 발광/저장 일치/색감 승인과 장기 성능은 미검증이며 G0/G1/G2 미통과를 유지한다.
-- 다음: 사용자에게 필름/디카 비교와 플래시 촬영 결과 피드백을 요청했다. 이번 작업은 선호에 따른 색감/촬영 동선 수정이며 다음 신규 기능으로 확장하지 않는다. 상시 승인된 Git Flow로 작업 커밋·푸시·develop PR 생성/병합·동기화를 진행한다.
+- 다음: 사용자에게 필름/디카 비교와 플래시 촬영 결과 피드백을 요청했다. 이번 작업은 선호에 따른 색감/촬영 동선 수정이며 다음 신규 기능으로 확장하지 않는다. Git Flow: 명시 파일 stage/staged diff 공백 검사, commit `4923150`, 작업 브랜치 push와 [PR #22](https://github.com/ddoniddoni/yeoun/pull/22) 생성 성공. 이 기록을 포함해 develop 병합·동기화하며 최종 병합 상태는 PR/Git 이력을 따른다.
 
 ## 이전 기록 — 2026-10-30 실기기 피드백에 따른 필름·디카 색감 개정
 

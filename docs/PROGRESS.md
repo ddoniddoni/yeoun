@@ -11,6 +11,7 @@
 - 실제 명령: `git status`, `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/result-filter-editing` exit 0. 기존 소스/설치 타입/공식 ScrollView 문서를 읽고 소유권·호출부를 검토했다. `git diff --check` exit 0. 앱·Metro·실기기 프로세스 시작 없음.
 - **NOT_RUN — 사용자 지시:** lint, typecheck, Jest, react-doctor, 자산 검사, JS/native build, iOS/Android 실행. 새 패키지·lockfile·권한·native·LUT/효과 수치 변경 없음. 소스 검토와 테스트 소스 추가를 실행 통과로 보고하지 않는다.
 - 남은 위험: 동기 고해상도 렌더 지연/발열, 후보 생성 시 디스크 공간, 실패/중단 시 실제 파일 정리와 Image 캐시, 원본 비교/색 공간/전후면/갤러리 일치, 작은 화면·큰 글자·스크롤/접근성. G0/G1/G2 미검증은 유지한다.
+- Git Flow: 명시 파일 stage, staged diff 공백 검사, 기능 commit `9c94d43`, 작업 브랜치 push 및 [PR #20](https://github.com/ddoniddoni/yeoun/pull/20) 생성 exit 0. 이 기록을 포함해 develop 병합·동기화를 진행하며 최종 merge 커밋은 PR 이력을 따른다.
 - 다음 개발: 한 장 세 분위기 비교, 이후 개인 레시피. 사용자 요청 전에는 실기기 확인을 재개하지 않는다. 상시 승인된 Git Flow로 작업 commit/push/develop PR·merge·동기화 후 develop에서 마친다. 최종 통합 상태는 PR/Git 이력을 따른다.
 
 ## 이전 기록 — 2026-10-30 촬영 결과 원본 비교

@@ -326,13 +326,13 @@ test('date and retro settings are frozen before capture and survive a retry on t
     const settings = { ...cameraSettings('retro-digital'), dateStamp: true, dust: 0.2, lightLeak: 0.3 };
     ports.render.mockRejectedValueOnce(new Error('GPU'));
     const capture = controller.capture(settings, 'back', 91);
-    settings.dateStamp = false; settings.dust = 0;
+    settings.dateStamp = false; settings.dust = 0; settings.softness = 0;
     await capture;
     jest.setSystemTime(new Date(2026, 9, 30, 0, 1));
     await controller.retryRender();
     const first = ports.capture.mock.calls[0]![0];
     expect(first).toMatchObject({ stampDate: 261029, grainSeed: 91,
-      settings: { dateStamp: true, dust: 0.2, lightLeak: 0.3, sharpness: 0.5 } });
+      settings: { dateStamp: true, dust: 0.2, lightLeak: 0.3, sharpness: 0, softness: 0.72 } });
     expect(ports.render.mock.calls[1]![1]).toBe(first);
   } finally { jest.useRealTimers(); }
 });

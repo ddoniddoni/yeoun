@@ -2,14 +2,14 @@ import filterSeed from '../../../spec/filters.seed.json';
 import type { RenderSettings } from './types';
 import { NO_RETRO, RETRO_AMOUNTS, type RetroControls } from './retroControls';
 
-export const CAMERA_RENDER_VERSION = 'lut-camera-0.3.0';
+export const CAMERA_RENDER_VERSION = 'lut-camera-0.4.0';
 export const CAMERA_FILTERS = [
   { id: 'original', name: '원본', caption: '색감 효과 없이' },
   { id: 'light-afternoon', name: '오후 네 시', caption: '따뜻한 빛, 맑은 그림자' },
   { id: 'time-summer', name: '여름방학', caption: '햇살과 바다를 닮은 필름색' },
   { id: 'scene-dawn', name: '푸른 새벽', caption: '차분한 푸른빛과 깊은 명암' },
-  { id: 'retro-film', name: '일회용 필름', caption: '진한 색, 짙은 그림자와 거친 입자' },
-  { id: 'retro-digital', name: '디카 2005', caption: '깊은 명암, 차가운 흰빛의 2000년대 스냅' },
+  { id: 'retro-film', name: '플래시 필름', caption: '녹회색 그림자, 부드러운 살구빛과 필름 입자' },
+  { id: 'retro-digital', name: '소프트 디카', caption: '뽀얀 흰빛, 차분한 색과 부드러운 포커스' },
   { id: 'retro-rose', name: '로즈 데이', caption: '분홍빛 하이라이트와 청록빛 거리' },
   { id: 'retro-travel', name: '맑은 여행', caption: '맑은 하늘색, 가벼운 햇빛과 부드러운 명암' },
 ] as const;
@@ -43,7 +43,7 @@ export function copyCameraSettings(input: CameraSettings): CameraSettings {
   }
   if (typeof input.dateStamp !== 'boolean') throw new Error('날짜 도장 설정이 올바르지 않아요.');
   const retro: RetroControls = input.filterId === 'original' ? NO_RETRO : {
-    vignette: input.vignette, halation: input.halation, sharpness: input.sharpness,
+    vignette: input.vignette, halation: input.halation, sharpness: input.sharpness, softness: input.softness,
     digitalNoise: input.digitalNoise, lightLeak: input.lightLeak, dust: input.dust, dateStamp: input.dateStamp,
   };
   return Object.freeze({ filterId: input.filterId, lookVersion: input.lookVersion,

@@ -4,6 +4,7 @@ export const RETRO_SKSL = `
 uniform float vignette;
 uniform float halation;
 uniform float sharpness;
+uniform float softness;
 uniform float digitalNoise;
 uniform float lightLeak;
 uniform float dust;
@@ -25,6 +26,23 @@ float3 sharpenLook(float2 xy, float3 center) {
     linearColor(looked.eval(xy + float2(0.0, radius))) +
     linearColor(looked.eval(xy - float2(0.0, radius)))) * 0.25;
   return clamp(center + (center - neighbors) * sharpness * 1.5, 0.0, 1.0);
+}
+float3 detailLook(float2 xy, float3 center) {
+  float3 detailed = sharpenLook(xy, center);
+  if (softness <= 0.0) return detailed;
+  // Normalized to the oriented crop: preview/export use the same relative radius.
+  // Symmetric 3x3 binomial kernel; no new surface or frame pixel readback.
+  float radius = max(size.x, size.y) * 0.0025;
+  float3 axes = linearColor(looked.eval(xy + float2(radius, 0.0))) +
+    linearColor(looked.eval(xy - float2(radius, 0.0))) +
+    linearColor(looked.eval(xy + float2(0.0, radius))) +
+    linearColor(looked.eval(xy - float2(0.0, radius)));
+  float3 diagonals = linearColor(looked.eval(xy + float2(radius, radius))) +
+    linearColor(looked.eval(xy + float2(radius, -radius))) +
+    linearColor(looked.eval(xy + float2(-radius, radius))) +
+    linearColor(looked.eval(xy - float2(radius, radius)));
+  float3 softened = (center * 4.0 + axes * 2.0 + diagonals) / 16.0;
+  return mix(detailed, softened, softness);
 }
 float3 applyRetro(float3 color, float2 p) {
   float longest = max(size.x, size.y);

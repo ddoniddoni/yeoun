@@ -20,6 +20,15 @@ export function sharpenLinear(center: Rgb, neighborAverage: Rgb, amount: number)
   return [channel(0), channel(1), channel(2)];
 }
 
+/** Averages are from the unsharpened LUT, in linear light; detail is the sharpened center. */
+export function softenLinear(center: Rgb, axisAverage: Rgb, diagonalAverage: Rgb, detail: Rgb, amount: number): Rgb {
+  for (const value of [center, axisAverage, diagonalAverage, detail]) assertRgbRange(value);
+  assertRange(amount, 0, 1, 'Softness');
+  const channel = (i: 0 | 1 | 2) => detail[i] * (1 - amount) +
+    (center[i] * 0.25 + axisAverage[i] * 0.5 + diagonalAverage[i] * 0.25) * amount;
+  return [channel(0), channel(1), channel(2)];
+}
+
 export function halationLinear(center: Rgb, blurredBright: Rgb, amount: number): Rgb {
   assertRgbRange(center); assertRgbRange(blurredBright); assertRange(amount, 0, 1, 'Halation');
   const luminance = encodedLuma(center);

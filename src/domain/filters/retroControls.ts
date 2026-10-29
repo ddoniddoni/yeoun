@@ -1,8 +1,8 @@
-export const RETRO_AMOUNTS = ['vignette', 'halation', 'sharpness', 'digitalNoise', 'lightLeak', 'dust'] as const;
+export const RETRO_AMOUNTS = ['vignette', 'halation', 'sharpness', 'softness', 'digitalNoise', 'lightLeak', 'dust'] as const;
 export type RetroAmount = typeof RETRO_AMOUNTS[number];
 export type RetroControls = Readonly<Record<RetroAmount, number> & { dateStamp: boolean }>;
 export const NO_RETRO: RetroControls = {
-  vignette: 0, halation: 0, sharpness: 0, digitalNoise: 0, lightLeak: 0, dust: 0, dateStamp: false,
+  vignette: 0, halation: 0, sharpness: 0, softness: 0, digitalNoise: 0, lightLeak: 0, dust: 0, dateStamp: false,
 };
 
 /** Six decimal digits, captured in local calendar time before any async work. */
@@ -25,6 +25,6 @@ export function assertStampDate(value: number): void {
 export function hasSpatialEffects(settings: RetroControls & { grain: number; bloom: number }): boolean {
   'worklet';
   return settings.grain > 0 || settings.bloom > 0 || settings.dateStamp ||
-    settings.vignette > 0 || settings.halation > 0 || settings.sharpness > 0 ||
+    settings.vignette > 0 || settings.halation > 0 || settings.sharpness > 0 || settings.softness > 0 ||
     settings.digitalNoise > 0 || settings.lightLeak > 0 || settings.dust > 0;
 }

@@ -351,3 +351,10 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 - Kodak 공식: https://kodakprofessional.com/en-gb/photographers/film/single-use-cameras — FunSaver 800 감도, 수동 플래시, 밝고 진한 색 설명.
 - 직접 촬영/현상 자료: https://thedarkroom.com/disposable-cameras-top-cameras-reviewed-compared/kodak-fun-saver-disposable-camera/ — 노란 철교 샘플을 임시 폴더에서 실제 열어 관찰. warm tones/subtle grain이라는 저자의 평가와, 강한 입자를 원하는 사용자 선호를 구분한다.
 - 적용: `RETRO_LOOK_DIRECTION.md`의 현재 방향. 0.3 필름 수치는 자체 설계이고 특정 필름/카메라 측정 복제가 아니다. 외부 사진을 앱/저장소에 포함하지 않았다.
+
+## S42. 사용자 실제 레퍼런스와 소프트 포커스 — 2026-10-30
+
+- 필름: 대화에 직접 첨부한 이미지. 녹회색 그림자·살구빛 피부·부드러운 윤곽·입자를 관찰했으며 얼굴/카메라의 정체를 추정하지 않는다.
+- 디카: https://www.instagram.com/p/DZE-NceGYVO/?img_index=3 — 일반 fetch 실패 후 ego-browser에서 직접 시각 확인. 이미지 내 BERRYFILM SE BLUR 75% 표기와 뽀얀 톤/회갈색 배경/부드러운 윤곽을 참고했다. 자체 필터 값과 75%의 수치 대응을 주장하지 않는다.
+- Skia 공식 https://skia.org/docs/user/sksl/ — child shader `.eval`, local/image pixel coordinates, linear sRGB 변환을 확인. React Native Skia의 설치 2.4.19 `RuntimeEffect.d.ts`에서 scalar uniform 배열/child shader API를 확인했다. 조회한 RN Skia shaders/overview URL은 404여서 근거로 사용하지 않았다.
+- 적용 수치는 자체 설계다. 외부 이미지를 bundle/commit하거나 사용자 사진을 업로드하지 않았다. 테스트/native build는 NOT_RUN이며 실제 관측과 미검증 상태는 PROGRESS에 구분한다.

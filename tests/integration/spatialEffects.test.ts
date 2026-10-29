@@ -30,9 +30,9 @@ function setup() {
 }
 afterEach(() => jest.resetAllMocks());
 
-test('bloom builds three bounded passes and retains all objects until caller finishes drawing', () => {
+test.each(['time-summer', 'retro-digital'] as const)('%s bloom with optional soft focus retains only three bounded passes until draw completes', id => {
   const r = setup(); const compiled = createSpatialResources(); const drawing: { dispose(): void }[] = [];
-  const final = bindSpatialSource(compiled, r.source, r.looked, cameraSettings('time-summer'), geometry, 7, drawing);
+  const final = bindSpatialSource(compiled, r.source, r.looked, cameraSettings(id), geometry, 7, drawing);
   expect(skia.Surface.MakeOffscreen).toHaveBeenCalledTimes(3);
   for (const call of skia.Surface.MakeOffscreen.mock.calls) expect(call).toEqual([384, 512]);
   expect(r.draws.every(draw => draw.mock.calls.length === 1)).toBe(true);
@@ -80,16 +80,29 @@ test('halation reuses the same three bounded bloom passes even when bloom is off
   for (const resource of r.allocated) expect(resource.dispose).toHaveBeenCalledTimes(1);
 });
 
-test('digital and overlay effects allocate no extra surface and forward the captured date as a scalar', () => {
+test('soft focus and overlay effects allocate no extra surface and forward the captured date as a scalar', () => {
   const r = setup(); const compiled = createSpatialResources(); const drawing: { dispose(): void }[] = [];
-  const settings = { ...cameraSettings('retro-digital'), dateStamp: true, lightLeak: 0.4, dust: 0.3 };
+  const settings = { ...cameraSettings('retro-digital'), intensity: 0.9, grain: 0, bloom: 0,
+    vignette: 0.04, sharpness: 0, softness: 0.72, digitalNoise: 0, dateStamp: true, lightLeak: 0.4, dust: 0.3 };
   expect(() => bindSpatialSource(compiled, r.source, r.looked, settings, geometry, 7, drawing, 0)).toThrow('date');
   expect(drawing).toHaveLength(0);
   bindSpatialSource(compiled, r.source, r.looked, settings, geometry, 7, drawing, 261029);
   expect(skia.Surface.MakeOffscreen).not.toHaveBeenCalled();
   expect(compiled.composite.makeShaderWithChildren).toHaveBeenCalledWith([
-    ...geometry.forward, 3024, 4032, 384 / 3024, 512 / 4032, 0.8, 0, 0, 7,
-    0.12, 0, 0.5, 0.22, 0.4, 0.3, 1, 261029,
+    ...geometry.forward, 3024, 4032, 384 / 3024, 512 / 4032, 0.9, 0, 0, 7,
+    0.04, 0, 0, 0.72, 0, 0.4, 0.3, 1, 261029,
   ], [r.source, r.looked, r.looked]);
   releaseNativeResources([...compiled.owned, ...drawing]);
+});
+
+test('softness is validated before allocation, including missing settings from an older renderer', () => {
+  const r = setup(); const compiled = createSpatialResources(); const drawing: { dispose(): void }[] = [];
+  for (const softness of [NaN, Infinity, -0.1, 1.1, undefined]) {
+    const settings = { ...cameraSettings('retro-digital'), softness };
+    expect(() => bindSpatialSource(compiled, r.source, r.looked,
+      settings as ReturnType<typeof cameraSettings>, geometry, 7, drawing)).toThrow('strength');
+  }
+  expect(drawing).toHaveLength(0);
+  expect(skia.Surface.MakeOffscreen).not.toHaveBeenCalled();
+  releaseNativeResources(compiled.owned);
 });

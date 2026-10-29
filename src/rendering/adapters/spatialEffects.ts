@@ -45,7 +45,7 @@ export function bindSpatialSource(resources: SpatialResources, source: SkShader,
   'worklet';
   assertGrainSeed(seed);
   for (const value of [settings.intensity, settings.grain, settings.bloom, settings.vignette,
-    settings.halation, settings.sharpness, settings.digitalNoise, settings.lightLeak, settings.dust]) {
+    settings.halation, settings.sharpness, settings.softness, settings.digitalNoise, settings.lightLeak, settings.dust]) {
     if (!Number.isFinite(value) || value < 0 || value > 1) throw new Error('Invalid spatial strength');
   }
   if (settings.dateStamp) assertStampDate(stampDate);
@@ -64,7 +64,7 @@ export function bindSpatialSource(resources: SpatialResources, source: SkShader,
   const final = resources.composite.makeShaderWithChildren([
     ...geometry.forward, geometry.width, geometry.height, small.scaleX, small.scaleY,
     settings.intensity, settings.grain, settings.bloom, seed,
-    settings.vignette, settings.halation, settings.sharpness, settings.digitalNoise,
+    settings.vignette, settings.halation, settings.sharpness, settings.softness, settings.digitalNoise,
     settings.lightLeak, settings.dust, settings.dateStamp ? 1 : 0, stampDate,
   ], [source, looked, blurred]);
   owned.push(final); return final;

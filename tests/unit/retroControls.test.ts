@@ -1,6 +1,6 @@
 import { CAMERA_COLLECTIONS, CAMERA_FILTERS, cameraSettings, cameraSettingsKey, copyCameraSettings } from '../../src/domain/filters/cameraSettings';
 import { NO_RETRO, RETRO_AMOUNTS, assertStampDate, hasSpatialEffects, localStampDate } from '../../src/domain/filters/retroControls';
-import { applyRetroSample, halationLinear, retroHash, sharpenLinear } from '../../src/rendering/reference/retro';
+import { applyRetroSample, halationLinear, retroHash, sharpenLinear, softenLinear } from '../../src/rendering/reference/retro';
 
 test('each selectable look has one collection; new looks have distinct defaults without surprise overlays', () => {
   const ids = CAMERA_COLLECTIONS.flatMap(collection => collection.ids);
@@ -10,8 +10,8 @@ test('each selectable look has one collection; new looks have distinct defaults 
   for (const id of ['retro-film', 'retro-digital', 'retro-rose', 'retro-travel'] as const) {
     expect(cameraSettings(id)).toMatchObject({ dateStamp: false, lightLeak: 0, dust: 0 });
   }
-  expect(cameraSettings('retro-film')).toMatchObject({ grain: 0.72, halation: 0.14 });
-  expect(cameraSettings('retro-digital')).toMatchObject({ grain: 0, bloom: 0, sharpness: 0.16, digitalNoise: 0.08 });
+  expect(cameraSettings('retro-film')).toMatchObject({ grain: 0.5, halation: 0.04, softness: 0.22 });
+  expect(cameraSettings('retro-digital')).toMatchObject({ grain: 0.02, bloom: 0.3, sharpness: 0, softness: 0.72, digitalNoise: 0 });
 });
 
 test.each(RETRO_AMOUNTS)('%s is bounded, participates in request identity, and independently enables spatial rendering', control => {
@@ -41,6 +41,18 @@ test('neutral effects preserve color and an even field is not sharpened or given
   expect(halationLinear([1, 1, 1], [1, 1, 1], 1)).toEqual([1, 1, 1]);
   const halo = halationLinear([0, 0, 0], [0.5, 0.5, 0.5], 1);
   expect(halo[0]).toBeGreaterThan(halo[1]); expect(halo[1]).toBeGreaterThan(halo[2]);
+});
+
+test('soft focus preserves flat fields and gently spreads a bright edge without overshooting', () => {
+  const flat = [0.4, 0.5, 0.6] as const;
+  expect(softenLinear(flat, flat, flat, flat, 1)).toEqual(flat);
+  const black = [0, 0, 0] as const;
+  const white = [1, 1, 1] as const;
+  expect(softenLinear(white, black, black, white, 0)).toEqual(white);
+  expect(softenLinear(white, black, black, white, 1)).toEqual([0.25, 0.25, 0.25]);
+  const soft = softenLinear(black, white, white, black, 0.5);
+  expect(soft).toEqual([0.375, 0.375, 0.375]);
+  for (const amount of [NaN, -0.1, 1.1]) expect(() => softenLinear(flat, flat, flat, flat, amount)).toThrow();
 });
 
 test('vignette follows crop coordinates and a fixed light leak survives output scaling', () => {

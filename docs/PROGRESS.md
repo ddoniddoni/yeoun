@@ -1,6 +1,22 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-30 일회용 필름·직광 스냅 선호 반영
+## 현재 상태 — 2026-10-30 실제 이미지 기준 필름·소프트 디카
+
+- 사용자 제공 레퍼런스: 직접 첨부한 녹회색 배경/살구빛 피부의 필름 인물 사진, Instagram `DZE-NceGYVO/?img_index=3`의 BERRYFILM SE BLUR 75% 표기 이미지. 링크는 일반 fetch가 실패했으나 이전 대화에서 ego-browser로 세 번째 사진을 실제 관찰했다. 사용자가 이 기준으로 구현을 승인했다. 앞선 고채도 일회용/직광 디카 방향을 대체한다.
+- 준비: 깨끗한 develop `3d8e20a`(PR #22 병합)에서 fetch/FF 후 `fix/reference-film-soft-digicam` 생성. 진행 중 Metro를 중지해 서로 다른 renderer/설정이 HMR로 섞이지 않게 했다. 검사 보류/자동 Git Flow 지시 유지.
+- 원인/설계: 기존 preset은 강한 채도·닫힌 검정과 디카 선명도를 강조했다. 실제 두 이미지의 부드러운 윤곽을 구현할 수 있는 효과도 없었다. 필름은 저채도·떠 있는 녹회색 검정·살구빛·입자(0.50), 디카는 밝은 중간톤·낮은 채도·뽀얀 하이라이트·Bloom(0.30)로 바꿨다. 이름은 ‘플래시 필름’/‘소프트 디카’. 수치는 자체 설계이며 최종 색감 승인은 HUMAN_REVIEW_PENDING.
+- 소프트 포커스: `softness` scalar 0~1을 추가. 기본 필름 0.22/디카 0.72/다른 look 0. domain copy/key/원본 우회·검증·shared request·snapshot·preview/export/재편집은 같은 설정을 사용한다. 공통 질감 패널에서 조절 가능하며 디카 플래시 안내는 선택 사항으로 변경했다.
+- shader: LUT 후 선형 RGB의 3×3 binomial 9 sample을 혼합. 간격 crop 긴 변×0.0025, 중심4/축2/대각선1을 합/16. 기존 sharpen 중심과 softness 비율로 mix 후 halation/Bloom/입자 순서, 전체 강도 최종1회. 원본/강도0 우회. softness0이면 이전 detail 경로. 사용 시 LUT 8회 추가 평가, 새 surface/JS 프레임 전달 없음. 기존 GPU 자원 수명과 bounded Bloom pass/단방향 ArrayBuffer/cache 규칙 유지. 성능·고해상도 지연 위험은 측정 전이다.
+- 버전: 필름 look 0.4.0-draft/디카 0.3.0-draft/나머지와 identity 0.1.0-draft. renderer `lut-camera-0.4.0`, spatial `grain-bloom-retro-0.3.0`, LUT authoring/atlas 유지. 이전 renderer와 불일치 ID-version은 거부한다. seed/schema/types/manifest pin을 갱신했다.
+- 자산 생성: `npm run generate:luts` exit0, identity+7 PNG와 byte-copy .lut/manifest를 새 hash `12659a3220a3de0677a130ade4e098feda55ddbe7824ffcf37d69061f174ac2d`에 생성하고 literal registry/import를 갱신했다. 기존 hash 보존. MODULE_TYPELESS_PACKAGE_JSON 경고 유지. 생성은 별도 검사/GPU 검증을 의미하지 않는다.
+- 근거: Skia 공식 SkSL `.eval`/pixel 좌표/linear sRGB 문서 및 설치 RN Skia2.4.19 RuntimeEffect uniform/child 타입을 읽었다. RN Skia shaders/overview URL은404. 정확한 문서/관찰은 REFERENCES S42와 RETRO_LOOK_DIRECTION에 기록. 사진/외부 캡처/새 패키지/권한/native 변경 없음.
+- 변경 파일: seed/schema, domain filters cameraSettings/retroControls/types, rendering assets bundledLuts/lutManifest, adapters/spatialEffects, shaders retro/spatial, reference/retro, screens FilterControls/M0CameraScreen, 새 hash 자산, unit cameraSettings/retroControls/lutManifest와 integration spatialEffects/controller/cameraLut/lutLoader/bundledLutLoader 테스트 소스, README 및 제품/엔진/기술/검수/REFERENCES/RETRO_LOOK_DIRECTION/PROGRESS.
+- 테스트 소스만 작성/갱신: softness0/flatfield/밝은 경계의 CPU 합성 수식·범위, scalar uniform 위치, 추가 surface 없음/기존 Bloom3pass 수명, 구 renderer/필터 버전 거부, 요청 key/원본 우회, 촬영 중 외부 설정 mutation과 다음날 retry에도 softness snapshot 유지. 이전 기본값을 하드코딩하던 spatial/controller 기대값도 현 설정에 맞춰 갱신. 실행하지 않았으며 native shader 증거로 사용하지 않는다.
+- 실제 실행: `git diff --check` exit0와 관련 소스/diff 검토. Metro `EXPO_NO_TELEMETRY=1 EXPO_NO_DEPENDENCY_VALIDATION=1 npm start -- --lan --port 8081`, Xcode 경로 지정 devicectl `--terminate-existing --console --payload-url` launch 성공. **JS bundle703ms/1525 modules**, 후면 **1178×1572/up/yuv-420-8-bit-full/mirror false** 관측. 시작 후 frame-was-late 경고7건과 기존 UIKit callback/appearance/DevTools fallback/NO_COLOR 경고가 있었다. 시작 기본 필터는 오후 네 시이며 이 관측은 새 두 필터 선택/색감/성능 통과 증거가 아니다.
+- **NOT_RUN — 사용자 지시:** lint/typecheck/Jest/react-doctor/별도 자산 검사/native build/Android. 이번 iPhone 실행은 이어지는 승인된 사용자 비교 세션이다. 실기기 색감 승인·두 필터 선택/촬영·전후면·JPEG 저장/재편집 일치·장기 FPS/발열은 대기. G0/G1/G2 미통과 유지.
+- 다음: 사용자에게 필름/디카 색감과 전환 후 미리보기 반응을 물었다. 앱/Metro를 유지해 비교 가능하게 두고 상시 승인 Git Flow로 이 수정만 develop까지 병합·동기화한다. 다음 신규 기능은 이번 범위가 아니다.
+
+## 이전 기록 — 2026-10-30 일회용 필름·직광 스냅 선호 반영
 
 - 사용자 후속 답변: 필름은 **일회용 카메라처럼 거친 입자와 진한 색**, 디카는 **2000년대 싸이월드·직광 플래시 스냅**. 첫 수정안 PR #21 병합 후 깨끗한 develop `d87777b`에서 fetch/FF와 `fix/disposable-flash-snap` 생성 성공. 이 선호가 이전 답변 대기/부드러운 필름 방향보다 우선한다.
 - 조사: Kodak 공식 FunSaver 소개와 The Darkroom 직접 촬영 자료를 읽고 노란 철교 사진을 임시 폴더에서 실제 열어 관찰했다. 타사 사진은 앱/저장소에 포함하지 않았다. 저자의 subtle grain 평가와 사용자가 원하는 강한 입자를 구분한다. 수치는 측정 복제가 아닌 자체 표현 선택이다.

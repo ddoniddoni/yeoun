@@ -11,6 +11,7 @@
 - 실제 명령: `git status`, `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/result-original-comparison` exit 0. 소스·설치 RN/Skia 타입과 공식 RN Image 문서를 읽었다. 추정 Canvas/테스트 파일 경로 일부가 없어 실제 경로로 다시 읽었으며 Skia surfaces 웹 조회는 실패했다. `git diff --check` exit 0. 앱·Metro·실기기 프로세스를 시작하지 않았다.
 - **NOT_RUN — 사용자 지시:** lint, typecheck, Jest, react-doctor, 자산 검증 CLI, JS/native build, iOS/Android 실행. 기존 레트로 확장/현재 비교의 G0/G1/G2 미검증을 유지한다. 소스 검토를 테스트 통과로 보고하지 않는다.
 - 남은 위험: 원본 전체 JPEG 디코드/동기 렌더의 실제 지연·메모리, 양 플랫폼 이미지 로딩/전환·접근성, 색 공간·구도·갤러리 파일 일치. 화면용 원본은 축소/재인코딩되어 1:1 픽셀 비교가 아니다.
+- Git Flow: 명시 파일 stage, commit `55caf74`, 작업 브랜치 push 및 [PR #19](https://github.com/ddoniddoni/yeoun/pull/19) 생성 exit 0. 마지막 staged diff 공백 검사도 exit 0. 아래 기록을 포함해 develop 병합·동기화를 진행하며 최종 merge 커밋은 PR 이력을 따른다.
 - 다음 개발: 저장 전 필터 재편집. 실기기 확인은 사용자가 요청할 때 재개한다. 개발 후 상시 승인된 Git Flow로 commit/push/develop PR·merge·동기화 후 develop에서 마친다. 최종 통합 상태는 해당 PR과 Git 이력을 따른다.
 
 ## 이전 기록 — 2026-10-29 필름·디카·도시 4종과 선택 효과

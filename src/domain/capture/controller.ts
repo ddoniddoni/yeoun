@@ -1,5 +1,5 @@
 import { assertGrainSeed, createGrainSeed } from '../filters/grainSeed';
-import { copyCameraSettings, type CameraSettings } from '../filters/cameraSettings';
+import { cameraSettingsKey, copyCameraSettings, type CameraSettings } from '../filters/cameraSettings';
 import { assertFlashMode, type PhotoFlashMode } from './flash';
 import { copyExposure, type ExposureReading } from './metering';
 import { localStampDate } from '../filters/retroControls';
@@ -14,10 +14,12 @@ export type Phase = 'idle' | 'capturing' | 'rendering' | 'file-ready' | 'saving-
 export type CaptureState = Readonly<{
   phase: Phase; output?: Output; message?: string; canRetryRender?: boolean;
   original?: Output; preparingOriginal?: boolean; originalError?: string;
+  outputSettings?: CameraSettings; editing?: boolean; editError?: string;
 }>;
 export interface CapturePorts {
   capture(snapshot: Snapshot): Promise<Draft>;
-  render(draft: Draft, snapshot: Snapshot): Promise<Output>;
+  // Each positive revision must write a distinct file, never overwrite an accepted output.
+  render(draft: Draft, snapshot: Snapshot, revision?: number): Promise<Output>;
   renderOriginal(draft: Draft, snapshot: Snapshot): Promise<Output>;
   save(output: Output): Promise<void>;
   remove(uri: string): Promise<void>;
@@ -32,6 +34,7 @@ export class CaptureController {
   private snapshot?: Snapshot;
   private output?: Output;
   private original?: Output;
+  private revision = 0;
   constructor(private ports: CapturePorts, private notify: (state: CaptureState) => void) {}
   private emit(state: CaptureState) { this.state = state; if (!this.closed) this.notify(state); }
   interrupt() { this.epoch++; } // Native operations finish and release before their results are dropped.
@@ -40,6 +43,7 @@ export class CaptureController {
     const uris = [this.draft?.sourceUri, this.output?.uri, this.original?.uri];
     this.draft = undefined; this.output = undefined; this.snapshot = undefined;
     this.original = undefined;
+    this.revision = 0;
     await Promise.all(uris.filter((uri): uri is string => !!uri).map(uri => this.ports.remove(uri)));
   }
   async discard(): Promise<void> {
@@ -65,7 +69,7 @@ export class CaptureController {
       this.emit({ phase: 'rendering' });
       this.output = await this.ports.render(this.draft, this.snapshot);
       if (epoch !== this.epoch) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }
-      this.emit({ phase: 'file-ready', output: this.output });
+      this.emit({ phase: 'file-ready', output: this.output, outputSettings: this.snapshot.settings });
     } catch (error) { this.emit({ phase: 'failed', message: String(error), canRetryRender: !!this.draft }); }
     finally { this.busy = false; if (this.closed) await this.clearFiles(); }
   }
@@ -77,13 +81,13 @@ export class CaptureController {
       this.emit({ phase: 'rendering' });
       this.output = await this.ports.render(this.draft, this.snapshot);
       if (epoch !== this.epoch) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }
-      this.emit({ phase: 'file-ready', output: this.output });
+      this.emit({ phase: 'file-ready', output: this.output, outputSettings: this.snapshot.settings });
     } catch (error) { this.emit({ phase: 'failed', message: String(error), canRetryRender: !!this.draft }); }
     finally { this.busy = false; if (this.closed) await this.clearFiles(); }
   }
   async prepareOriginal(): Promise<void> {
     if (this.busy || this.closed || !this.draft || !this.snapshot || !this.output || this.original ||
-      this.snapshot.settings.filterId === 'original' || this.snapshot.settings.intensity === 0) return;
+      this.state.outputSettings?.filterId === 'original' || this.state.outputSettings?.intensity === 0) return;
     this.busy = true;
     const epoch = this.epoch;
     this.emit({ ...this.state, preparingOriginal: true, originalError: undefined });
@@ -100,6 +104,43 @@ export class CaptureController {
       this.emit({ ...this.state, preparingOriginal: false,
         originalError: epoch === this.epoch ? '원본 비교를 준비하지 못했어요. 다시 시도해 주세요.' : undefined });
     } finally { this.busy = false; if (this.closed) await this.clearFiles(); }
+  }
+  async edit(settings: CameraSettings): Promise<boolean> {
+    if (this.busy || this.closed || !this.draft || !this.snapshot || !this.output ||
+      !this.state.outputSettings || this.state.phase === 'saved') return false;
+    const currentSettings = this.state.outputSettings;
+    this.busy = true;
+    const epoch = this.epoch;
+    let applied = false;
+    this.emit({ ...this.state, editing: true, editError: undefined });
+    try {
+      const nextSettings = copyCameraSettings(settings);
+      if (cameraSettingsKey(nextSettings) === cameraSettingsKey(currentSettings)) return true;
+      // Keep the capture date, grain seed, camera position and exposure immutable.
+      const nextSnapshot = Object.freeze({ ...this.snapshot, settings: nextSettings });
+      const next = await this.ports.render(this.draft, nextSnapshot, ++this.revision);
+      if (epoch !== this.epoch) {
+        await this.ports.remove(next.uri);
+        this.emit({ ...this.state, editError: '적용이 중단됐어요. 이전 사진을 유지했어요. 다시 적용해 주세요.' });
+        return false;
+      }
+      const previous = this.output;
+      this.output = next;
+      applied = true;
+      this.emit({ ...this.state, phase: 'file-ready', output: next, outputSettings: nextSettings,
+        message: undefined, canRetryRender: undefined });
+      // The accepted file is now owned by the controller; only the superseded file is removed.
+      await this.ports.remove(previous.uri);
+      return true;
+    } catch {
+      if (applied) console.warn('Previous photo cleanup failed; current result retained.');
+      else this.emit({ ...this.state, editError: '색감을 적용하지 못했어요. 이전 사진은 유지돼요. 다시 시도해 주세요.' });
+      return applied;
+    } finally {
+      this.busy = false;
+      if (this.closed) await this.clearFiles();
+      else this.emit({ ...this.state, editing: false });
+    }
   }
   async save(): Promise<void> {
     if (this.busy || this.closed || !this.output || this.state.phase === 'saved') return;

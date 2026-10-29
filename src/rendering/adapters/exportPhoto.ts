@@ -3,7 +3,7 @@ import { AlphaType, ColorType, FilterMode, ImageFormat, MipmapMode, Skia, TileMo
   type SkImage, type SkSurface } from '@shopify/react-native-skia';
 import type { Draft, Output, Snapshot } from '../../domain/capture/controller';
 import { cameraSettings, copyCameraSettings, type CameraSettings } from '../../domain/filters/cameraSettings';
-import { draftFile, removeFile } from '../../platform/files/drafts';
+import { draftFile, removeFile, type DraftFileName } from '../../platform/files/drafts';
 import { centerCrop43, neutralizeOrientation, orientationTransform } from './jpegOrientation';
 import { createBundledDraftLutLoader, loadDraftLutPipeline } from './bundledLutLoader';
 import { assertGrainSeed } from '../../domain/filters/grainSeed';
@@ -88,17 +88,18 @@ function renderStyledJpeg(input: Uint8Array, style: JpegStyle, maxEdge?: number)
       ...drawing, ...(rendered ? [rendered] : [])]);
   }
 }
-export async function exportPhoto(draft: Draft, snapshot: Snapshot): Promise<Output> {
-  return exportDraft(draft, snapshot, false);
+export async function exportPhoto(draft: Draft, snapshot: Snapshot, revision = 0): Promise<Output> {
+  if (!Number.isSafeInteger(revision) || revision < 0) throw new Error('Invalid photo revision');
+  return exportDraft(draft, snapshot, false, revision === 0 ? 'filtered.jpg' : `filtered-${revision}.jpg`);
 }
 
 export async function exportOriginalComparison(draft: Draft, snapshot: Snapshot): Promise<Output> {
-  return exportDraft(draft, snapshot, true);
+  return exportDraft(draft, snapshot, true, 'comparison-original.jpg');
 }
 
-async function exportDraft(draft: Draft, snapshot: Snapshot, comparison: boolean): Promise<Output> {
+async function exportDraft(draft: Draft, snapshot: Snapshot, comparison: boolean, name: DraftFileName): Promise<Output> {
   const source = new File(draft.sourceUri);
-  const file = draftFile(snapshot.id, comparison ? 'comparison-original.jpg' : 'filtered.jpg');
+  const file = draftFile(snapshot.id, name);
   let pipeline: SkiaLutPipeline | undefined;
   try {
     const settings = comparison ? cameraSettings('original') : copyCameraSettings(snapshot.settings);

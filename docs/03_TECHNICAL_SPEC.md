@@ -1,5 +1,14 @@
 # 03. 기술 설계와 구현 계약
 
+## 2026-10-30 재편집 결과 교체 계약
+
+- `CaptureState.outputSettings`는 현재 저장 가능한 output에 대응한다. 원래 촬영 snapshot은 불변으로 남기고 `edit(settings)`마다 검증·복사한 설정을 별도 render snapshot에 넣는다. seed/date/capturedAt/position/exposure는 원래 snapshot을 재사용한다. 렌더 입력은 항상 source JPEG이며 이전 필터 결과를 다시 처리하지 않는다.
+- 포트 `render(draft, snapshot, revision?)`에서 0은 기존 `filtered.jpg`, 양의 정수는 `filtered-N.jpg`다. 세션의 증가하는 revision으로 실패/취소 뒤에도 기존 output과 파일명·Image 캐시 URI가 충돌하지 않는다. adapter는 음수/소수/unsafe integer를 파일 접근 전에 거부한다. 고해상도·JPEG 재열기/치수/픽셀 검증은 동일하다.
+- 새 파일이 검증되고 epoch가 일치하면 output/settings를 함께 교체한다. 그 뒤 이전 output만 지우며 원본과 비교 파일은 유지한다. 교체 이전 background/close는 늦게 끝난 후보 파일을 지우고 이전 output을 보존한다. 교체 이후 close는 새 output까지 정리한다. 편집은 단일 busy에 포함되어 저장/비교 준비/버리기/중복 적용과 겹치지 않는다.
+- 편집 실패는 별도 editError로 남겨 기존 저장 오류 상태도 보존한다. 성공하면 file-ready로 바꾸고 이전 저장 오류를 지운다. 같은 설정은 재렌더하지 않고 저장 완료 상태에서는 edit를 거부한다.
+- 화면의 미적용 조절값은 `ResultFilterEditor` 로컬 상태다. 저장 버튼은 편집 화면을 닫은 뒤 사용할 수 있고 controller의 마지막 승인된 output을 저장한다. 카메라 설정은 건드리지 않는다. 원본 비교 가능 여부도 최초 촬영 설정 대신 현재 outputSettings로 판단한다.
+- 기존 RN/Skia/FileSystem API만 재사용하며 새 패키지/권한/native 변경은 없다. 동기 고해상도 렌더 비용과 실제 디스크/이미지 교체/메모리는 NOT_RUN이다. 새 렌더가 성공하기 전에는 source·기존 output·후보 output이 함께 존재할 수 있다.
+
 ## 2026-10-30 결과 원본 비교 소유권
 
 - `CaptureController.prepareOriginal()`은 사용자가 요청한 때만 `renderOriginal` 포트를 호출하고 성공 파일을 세션 동안 재사용한다. 기존 source와 filtered output에 `comparison-original.jpg` 하나를 추가로 소유한다. 원본/강도 0은 준비하지 않는다.

@@ -1,6 +1,7 @@
 import { Skia } from '@shopify/react-native-skia';
 import { bindSpatialSource, createSpatialResources } from '../../src/rendering/adapters/spatialEffects';
-import { exportOriginalComparison, renderJpeg, renderLutJpeg, renderOriginalComparisonJpeg } from '../../src/rendering/adapters/exportPhoto';
+import { exportOriginalComparison, exportPhoto, renderJpeg, renderLutJpeg, renderOriginalComparisonJpeg } from '../../src/rendering/adapters/exportPhoto';
+import type { Draft, Snapshot } from '../../src/domain/capture/controller';
 import { matrixFor } from '../../src/domain/filters/testFilter';
 import { cameraSettings } from '../../src/domain/filters/cameraSettings';
 import type { SkiaLutPipeline } from '../../src/rendering/adapters/lutSkia';
@@ -38,6 +39,41 @@ function setup() {
   return { data, image, paint, filter, rendered, canvas, surface, source };
 }
 afterEach(() => jest.resetAllMocks());
+const editDraft: Draft = { sourceUri: 'file:///source.jpg', width: 4032, height: 3024, orientation: 'up', mirrored: false };
+const editSnapshot: Snapshot = { id: 'shot', settings: cameraSettings('original'), position: 'back',
+  capturedAt: '2026-10-30T00:00:00Z', grainSeed: 1, flashMode: 'off', stampDate: 261030 };
+test('edited export uses a revision file and keeps full resolution', async () => {
+  const r = setup();
+  const files = jest.requireMock<{ draftFile: jest.Mock; removeFile: jest.Mock }>('../../src/platform/files/drafts');
+  const fs = jest.requireMock<{ File: jest.Mock }>('expo-file-system');
+  const file = { uri: 'file:///filtered-3.jpg', exists: true, size: 2222,
+    write: jest.fn(), bytes: jest.fn().mockResolvedValue(jpeg) };
+  fs.File.mockReturnValue({ bytes: jest.fn().mockResolvedValue(jpeg) }); files.draftFile.mockReturnValue(file);
+  const check = { width: () => 4032, height: () => 3024, readPixels: () => new Uint8Array(4), dispose: jest.fn() };
+  mockSkia.Image.MakeImageFromEncoded.mockReturnValueOnce(r.image).mockReturnValueOnce(check);
+  expect(await exportPhoto(editDraft, editSnapshot, 3)).toEqual({ uri: file.uri, width: 4032, height: 3024, bytes: 2222 });
+  expect(files.draftFile).toHaveBeenCalledWith('shot', 'filtered-3.jpg');
+  expect(fs.File).toHaveBeenCalledWith(editDraft.sourceUri);
+  expect(Skia.Surface.MakeOffscreen).toHaveBeenCalledWith(4032, 3024);
+  expect(files.removeFile).not.toHaveBeenCalled();
+});
+test('failed disk validation deletes only the rejected revision', async () => {
+  const r = setup();
+  const files = jest.requireMock<{ draftFile: jest.Mock; removeFile: jest.Mock }>('../../src/platform/files/drafts');
+  const fs = jest.requireMock<{ File: jest.Mock }>('expo-file-system');
+  const file = { uri: 'file:///filtered-2.jpg', exists: true, size: 2222,
+    write: jest.fn(), bytes: jest.fn().mockResolvedValue(jpeg) };
+  fs.File.mockReturnValue({ bytes: jest.fn().mockResolvedValue(jpeg) }); files.draftFile.mockReturnValue(file);
+  mockSkia.Image.MakeImageFromEncoded.mockReturnValueOnce(r.image).mockReturnValueOnce(null);
+  await expect(exportPhoto(editDraft, editSnapshot, 2)).rejects.toThrow('Written JPEG validation failed');
+  expect(files.removeFile.mock.calls).toEqual([[file.uri]]);
+  expect(files.draftFile).toHaveBeenCalledWith('shot', 'filtered-2.jpg');
+});
+test.each([-1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])('invalid revision %s is rejected before file access', async revision => {
+  const files = jest.requireMock<{ draftFile: jest.Mock }>('../../src/platform/files/drafts');
+  await expect(exportPhoto(editDraft, editSnapshot, revision)).rejects.toThrow('Invalid photo revision');
+  expect(files.draftFile).not.toHaveBeenCalled();
+});
 test('original comparison writes its own file and checks disk bytes without loading a LUT', async () => {
   const r = setup();
   const files = jest.requireMock<{ draftFile: jest.Mock; removeFile: jest.Mock }>('../../src/platform/files/drafts');

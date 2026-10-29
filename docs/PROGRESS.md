@@ -14,7 +14,7 @@
 - 테스트 소스만 작성/갱신: softness0/flatfield/밝은 경계의 CPU 합성 수식·범위, scalar uniform 위치, 추가 surface 없음/기존 Bloom3pass 수명, 구 renderer/필터 버전 거부, 요청 key/원본 우회, 촬영 중 외부 설정 mutation과 다음날 retry에도 softness snapshot 유지. 이전 기본값을 하드코딩하던 spatial/controller 기대값도 현 설정에 맞춰 갱신. 실행하지 않았으며 native shader 증거로 사용하지 않는다.
 - 실제 실행: `git diff --check` exit0와 관련 소스/diff 검토. Metro `EXPO_NO_TELEMETRY=1 EXPO_NO_DEPENDENCY_VALIDATION=1 npm start -- --lan --port 8081`, Xcode 경로 지정 devicectl `--terminate-existing --console --payload-url` launch 성공. **JS bundle703ms/1525 modules**, 후면 **1178×1572/up/yuv-420-8-bit-full/mirror false** 관측. 시작 후 frame-was-late 경고7건과 기존 UIKit callback/appearance/DevTools fallback/NO_COLOR 경고가 있었다. 시작 기본 필터는 오후 네 시이며 이 관측은 새 두 필터 선택/색감/성능 통과 증거가 아니다.
 - **NOT_RUN — 사용자 지시:** lint/typecheck/Jest/react-doctor/별도 자산 검사/native build/Android. 이번 iPhone 실행은 이어지는 승인된 사용자 비교 세션이다. 실기기 색감 승인·두 필터 선택/촬영·전후면·JPEG 저장/재편집 일치·장기 FPS/발열은 대기. G0/G1/G2 미통과 유지.
-- 다음: 사용자에게 필름/디카 색감과 전환 후 미리보기 반응을 물었다. 앱/Metro를 유지해 비교 가능하게 두고 상시 승인 Git Flow로 이 수정만 develop까지 병합·동기화한다. 다음 신규 기능은 이번 범위가 아니다.
+- 다음: 사용자에게 필름/디카 색감과 전환 후 미리보기 반응을 물었다. 앱/Metro를 유지해 비교 가능하게 둔다. Git Flow: 명시 파일 stage/staged diff 공백 검사, commit `4e44fb9`와 작업 브랜치 push 및 [PR #23](https://github.com/ddoniddoni/yeoun/pull/23) 생성 성공. 이 기록을 포함해 develop 병합·동기화하며 최종 merge commit/상태는 PR 이력을 따른다. 다음 신규 기능은 이번 범위가 아니다.
 
 ## 이전 기록 — 2026-10-30 일회용 필름·직광 스냅 선호 반영
 

@@ -751,31 +751,118 @@
     {
       "id": "retro-film",
       "collection": "retro",
-      "name": "일회용 필름",
-      "caption": "진한 색, 짙은 그림자와 거친 입자",
+      "name": "플래시 필름",
+      "caption": "녹회색 그림자, 부드러운 살구빛과 필름 입자",
+      "lookVersion": "0.4.0-draft",
+      "status": "design-draft",
+      "lut": null,
+      "authoring": {
+        "colorSpace": "srgb-encoded",
+        "exposureEv": 0.08,
+        "saturation": 0.86,
+        "toneCurve": [
+          [
+            0,
+            0.065
+          ],
+          [
+            0.18,
+            0.18
+          ],
+          [
+            0.4,
+            0.425
+          ],
+          [
+            0.6,
+            0.65
+          ],
+          [
+            0.82,
+            0.845
+          ],
+          [
+            1,
+            0.96
+          ]
+        ],
+        "shadowTintRgb": [
+          -0.008,
+          0.012,
+          0.008
+        ],
+        "highlightTintRgb": [
+          0.018,
+          0.004,
+          -0.004
+        ],
+        "hueBands": [
+          {
+            "centerDeg": 115,
+            "halfWidthDeg": 45,
+            "shiftDeg": -6,
+            "saturationMultiplier": 0.78
+          },
+          {
+            "centerDeg": 215,
+            "halfWidthDeg": 45,
+            "shiftDeg": -8,
+            "saturationMultiplier": 0.8
+          },
+          {
+            "centerDeg": 28,
+            "halfWidthDeg": 35,
+            "shiftDeg": -3,
+            "saturationMultiplier": 0.96
+          }
+        ]
+      },
+      "defaults": {
+        "intensity": 0.9,
+        "grain": 0.5,
+        "bloom": 0.12,
+        "vignette": 0.12,
+        "halation": 0.04,
+        "sharpness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false,
+        "softness": 0.22
+      },
+      "notes": [
+        "사용자가 직접 첨부한 인물 사진의 녹회색 그림자·떠 있는 검정·살구빛 피부·입자를 기준으로 한 자체 색감. 이전의 고채도 일회용 방향을 대체한다.",
+        "0.4.0-draft: 저채도 LUT와 약한 소프트 포커스. 밝은 인물/어두운 배경의 분리는 촬영 조명에 의존하며 얼굴 인식·미백·기하 보정은 하지 않는다."
+      ]
+    },
+    {
+      "id": "retro-digital",
+      "collection": "retro",
+      "name": "소프트 디카",
+      "caption": "뽀얀 흰빛, 차분한 색과 부드러운 포커스",
       "lookVersion": "0.3.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.06,
-        "saturation": 1.18,
+        "exposureEv": 0.16,
+        "saturation": 0.78,
         "toneCurve": [
           [
             0,
-            0.018
+            0.03
           ],
           [
             0.18,
-            0.125
+            0.185
           ],
           [
             0.4,
-            0.395
+            0.46
           ],
           [
             0.6,
-            0.68
+            0.69
           ],
           [
             0.82,
@@ -783,141 +870,56 @@
           ],
           [
             1,
-            0.98
+            0.975
           ]
         ],
         "shadowTintRgb": [
-          -0.006,
-          0.012,
-          -0.004
+          0.005,
+          0.002,
+          0
         ],
         "highlightTintRgb": [
-          0.028,
-          0.014,
-          -0.026
+          0.008,
+          0.004,
+          0.012
         ],
         "hueBands": [
           {
             "centerDeg": 115,
             "halfWidthDeg": 45,
-            "shiftDeg": -12,
-            "saturationMultiplier": 0.94
+            "shiftDeg": -6,
+            "saturationMultiplier": 0.82
           },
           {
             "centerDeg": 215,
             "halfWidthDeg": 45,
-            "shiftDeg": -6,
-            "saturationMultiplier": 1.02
+            "shiftDeg": 0,
+            "saturationMultiplier": 0.84
           },
           {
             "centerDeg": 28,
             "halfWidthDeg": 35,
             "shiftDeg": -2,
-            "saturationMultiplier": 0.96
+            "saturationMultiplier": 0.94
           }
         ]
       },
       "defaults": {
         "intensity": 0.9,
-        "grain": 0.72,
-        "bloom": 0.06,
-        "vignette": 0.28,
-        "halation": 0.14,
+        "grain": 0.02,
+        "bloom": 0.3,
+        "vignette": 0.04,
+        "halation": 0,
         "sharpness": 0,
         "digitalNoise": 0,
         "lightLeak": 0,
         "dust": 0,
-        "dateStamp": false
+        "dateStamp": false,
+        "softness": 0.72
       },
       "notes": [
-        "사용자 선호: 일회용 카메라처럼 거친 입자와 진한 색. FunSaver 공식 자료와 실제 촬영 스캔을 참고한 자체 해석이며 정밀 복제가 아님.",
-        "0.3.0-draft: 바랜 검정을 줄이고 명암·채도·입자 강도를 높임. 입자 크기/렌더 알고리즘은 유지하며 실제 색감 승인 대기."
-      ]
-    },
-    {
-      "id": "retro-digital",
-      "collection": "retro",
-      "name": "디카 2005",
-      "caption": "깊은 명암, 차가운 흰빛의 2000년대 스냅",
-      "lookVersion": "0.2.0-draft",
-      "status": "design-draft",
-      "lut": null,
-      "authoring": {
-        "colorSpace": "srgb-encoded",
-        "exposureEv": 0.04,
-        "saturation": 1.04,
-        "toneCurve": [
-          [
-            0,
-            0
-          ],
-          [
-            0.18,
-            0.115
-          ],
-          [
-            0.4,
-            0.405
-          ],
-          [
-            0.6,
-            0.705
-          ],
-          [
-            0.82,
-            0.945
-          ],
-          [
-            1,
-            1
-          ]
-        ],
-        "shadowTintRgb": [
-          -0.006,
-          0.004,
-          0.012
-        ],
-        "highlightTintRgb": [
-          -0.008,
-          0.002,
-          0.012
-        ],
-        "hueBands": [
-          {
-            "centerDeg": 215,
-            "halfWidthDeg": 45,
-            "shiftDeg": -6,
-            "saturationMultiplier": 1.08
-          },
-          {
-            "centerDeg": 115,
-            "halfWidthDeg": 45,
-            "shiftDeg": -14,
-            "saturationMultiplier": 1.06
-          },
-          {
-            "centerDeg": 0,
-            "halfWidthDeg": 35,
-            "shiftDeg": 0,
-            "saturationMultiplier": 1.02
-          }
-        ]
-      },
-      "defaults": {
-        "intensity": 0.9,
-        "grain": 0,
-        "bloom": 0,
-        "vignette": 0.1,
-        "halation": 0,
-        "sharpness": 0.16,
-        "digitalNoise": 0.08,
-        "lightLeak": 0,
-        "dust": 0,
-        "dateStamp": false
-      },
-      "notes": [
-        "2004년 Canon IXUS 40 실제 JPEG의 명암과 색 관계를 참고한 자체 스냅 해석. CCD 전체의 공통 특성이나 카메라 정밀 재현을 주장하지 않음.",
-        "0.2.0-draft: 중간 밝기·밝은 영역의 대비를 높이고 과한 선명도·상시 컬러 노이즈를 축소. 직광 조명은 필터가 만들 수 없으며 지원 기기에서 사용자가 플래시를 별도로 선택한다."
+        "사용자가 지정한 Instagram DZE-NceGYVO의 세 번째 이미지: BERRYFILM SE BLUR 75% 표기. 뽀얀 흰빛·회갈색 배경·부드러운 윤곽을 관찰해 자체 구현한다. 타사 필터 수치/자산을 복제하지 않는다.",
+        "0.3.0-draft: 직광/선명도/노이즈를 강조하던 방향을 저채도·밝은 중간톤·소프트 포커스·빛 번짐으로 변경. 참고 이미지의 75%와 이 앱 조절 수치는 대응하지 않는다."
       ]
     },
     {

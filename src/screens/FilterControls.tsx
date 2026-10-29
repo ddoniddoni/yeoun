@@ -51,7 +51,8 @@ export function FilterControls({ settings, disabled, onSelect, onOpen }: {
 const TEXTURE_CONTROLS: readonly { key: 'grain' | 'bloom' | RetroAmount; label: string }[] = [
   { key: 'grain', label: '필름 입자' }, { key: 'bloom', label: '빛 번짐' },
   { key: 'vignette', label: '가장자리 어둡게' }, { key: 'halation', label: '붉은 빛 번짐' },
-  { key: 'sharpness', label: '윤곽 선명도' }, { key: 'digitalNoise', label: '디지털 노이즈' },
+  { key: 'softness', label: '소프트 포커스' }, { key: 'sharpness', label: '윤곽 선명도' },
+  { key: 'digitalNoise', label: '디지털 노이즈' },
   { key: 'lightLeak', label: '빛샘' }, { key: 'dust', label: '먼지' },
 ];
 

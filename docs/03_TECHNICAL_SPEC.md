@@ -1,5 +1,10 @@
 # 03. 기술 설계와 구현 계약
 
+## 2026-10-30 소프트 포커스 계약
+
+`CameraSettings`의 `softness` scalar 0~1을 key·불변 copy·원본 우회·spatial 검증 및 uniform 순서(sharpness 다음)에 포함했다. preview/export가 기존 공통 binder를 사용하므로 재편집도 같은 경로다. 새 패키지/권한/native 코드는 없다. 기존 surface 소유권·thread cache·ArrayBuffer 전달 구조를 유지하며 shader의 8회 추가 LUT sample에 따른 비용은 실기기 확인이 남는다. renderer 0.4.0/spatial 0.3.0과 색감 수치는 엔진 문서·RETRO_LOOK_DIRECTION을 따른다.
+
+
 ## 2026-10-30 재편집 결과 교체 계약
 
 - `CaptureState.outputSettings`는 현재 저장 가능한 output에 대응한다. 원래 촬영 snapshot은 불변으로 남기고 `edit(settings)`마다 검증·복사한 설정을 별도 render snapshot에 넣는다. seed/date/capturedAt/position/exposure는 원래 snapshot을 재사용한다. 렌더 입력은 항상 source JPEG이며 이전 필터 결과를 다시 처리하지 않는다.

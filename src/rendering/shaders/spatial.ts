@@ -1,5 +1,5 @@
 import { RETRO_SKSL } from './retro';
-export const SPATIAL_BACKEND_VERSION = 'grain-bloom-retro-0.2.0';
+export const SPATIAL_BACKEND_VERSION = 'grain-bloom-retro-0.3.0';
 
 const COLOR = `
 float3 linearColor(half4 color) {
@@ -93,7 +93,7 @@ half4 main(float2 xy) {
   half4 original = source.eval(xy);
   if (intensity <= 0.0 || original.a <= 0.0) return original;
   float2 normalized = mapped(xy);
-  float3 linear = sharpenLook(xy, linearColor(looked.eval(xy)));
+  float3 linear = detailLook(xy, linearColor(looked.eval(xy)));
   if (halation > 0.0) {
     float3 halo = bloomAt(normalized * bloomScale);
     float luminance = dot(linear, float3(0.2126, 0.7152, 0.0722));

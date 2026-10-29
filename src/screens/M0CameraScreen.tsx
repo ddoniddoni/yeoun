@@ -268,9 +268,11 @@ export function M0CameraScreen() {
             setSettings(copyCameraSettings({ ...settings, dateStamp })); setFilterRevision(value => value + 1);
           }} onReset={() => selectFilter(settings.filterId)} />
         {settings.filterId === 'retro-digital' || settings.filterId === 'retro-film' ? <>
-          <Text style={styles.info}>{device?.hasFlash
-            ? '직광 플래시 스냅 · 플래시는 셔터를 누를 때 터져요. 밝아진 피사체와 배경의 차이는 촬영 결과에서 확인해 주세요.'
-            : '직광 플래시 스냅은 플래시를 지원하는 후면 카메라에서 사용할 수 있어요.'}</Text>
+          <Text style={styles.info}>{settings.filterId === 'retro-digital'
+            ? '뽀얀 색감은 부드러운 실내 빛에서 먼저 찍어 보세요. 플래시는 원하는 경우에만 켜 주세요.'
+            : device?.hasFlash
+              ? '플래시를 켜면 인물이 밝게 뜨는 스냅을 찍을 수 있어요. 셔터를 누를 때 터져요.'
+              : '직광 플래시 스냅은 플래시를 지원하는 후면 카메라에서 사용할 수 있어요.'}</Text>
           {device?.hasFlash ? <CameraAction
             label={flashMode === 'on' ? '플래시 켜짐 · 끄기' : flashMode === 'auto' ? '플래시 자동 · 항상 켜기' : '스냅 플래시 켜기'}
             disabled={assistDisabled} primary={flashMode === 'on'} onPress={() => {

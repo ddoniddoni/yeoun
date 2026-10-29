@@ -1,8 +1,14 @@
 # 02. 필터와 렌더링 계약
 
-## 2026-10-30 두 레트로 look 개정
+## 2026-10-30 실제 이미지 기준 개정 (현재 계약)
 
-`retro-film`은 `0.3.0-draft`, `retro-digital`은 `0.2.0-draft`, 다른 look/identity는 `0.1.0-draft`다. 렌더 엔진/효과 순서/atlas 형식은 그대로다. schema·도메인 타입은 세 초안 버전을 표현하고 실제 runtime은 선택 ID별 seed version과 고정 manifest expectation을 모두 확인한다. 기본 강도는 seed를 따르되 명시적 0은 유지한다. 기존 LUT 폴더를 덮어쓰지 않고 새 seed hash 아래에 자산을 생성했다. 색감 목표와 변환 수치는 [별도 기록](RETRO_LOOK_DIRECTION.md)에 있으며 정밀 필름/CCD 재현을 주장하지 않는다.
+필름은 `0.4.0-draft`, 디카는 `0.3.0-draft`, 나머지/identity는 `0.1.0-draft`. renderer는 `lut-camera-0.4.0`, spatial은 `grain-bloom-retro-0.3.0`이며 아래 2026-10-29의 버전보다 우선한다. LUT authoring/atlas와 master intensity 1회 계약은 유지한다. 구 renderer와 ID-version 불일치는 거부한다.
+
+`softness` 0~1을 추가한다. 기존 sharpen 중심과 LUT 후 선형 RGB의 3×3 binomial 저주파 색을 softness 비율로 혼합한다. 중심 가중치 4, 상하좌우 각각 2, 대각선 각각 1을 합해 16으로 나누며 sample 간격은 crop 긴 변의 0.0025다. 방향/미러는 기존 좌표계를 따르고 대칭 kernel이므로 회전 시 동일한 상대 반경을 갖는다. 기존 source의 Clamp sampling을 사용한다. 0이면 추가 sample 없음; 켜면 LUT 8회 추가 평가, 추가 full-size surface 없음. 두 효과를 함께 켜면 sharpening 결과에서 부드러운 색으로 혼합하므로 softness 1에서 sharpening은 남지 않는다.
+
+순서: 방향·crop → LUT → 선명도/소프트 포커스 → halation → Bloom → 입자 → 나머지 레트로 효과 → 전체 강도 1회 → 출력. 다른 look의 softness 기본값은 0이며 원본/강도 0은 모든 효과를 우회한다. 요청 key/설정 복사·범위 검사/preview/export/재편집은 같은 scalar 값을 전달한다. 실제 FPS·고해상도 처리 지연/양 플랫폼 일치는 미검증이다.
+
+새 자산/수치/근거는 [색감 방향 기록](RETRO_LOOK_DIRECTION.md)을 따른다. seed/schema가 softness를 허용하며 기존 seed 필터의 생략은 0으로 채우지만 runtime 필수값 누락은 거부한다.
 
 ## 2026-10-29 레트로 확장 계약 (이 절이 아래 v0 설명보다 우선)
 

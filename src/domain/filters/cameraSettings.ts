@@ -8,8 +8,8 @@ export const CAMERA_FILTERS = [
   { id: 'light-afternoon', name: '오후 네 시', caption: '따뜻한 빛, 맑은 그림자' },
   { id: 'time-summer', name: '여름방학', caption: '햇살과 바다를 닮은 필름색' },
   { id: 'scene-dawn', name: '푸른 새벽', caption: '차분한 푸른빛과 깊은 명암' },
-  { id: 'retro-film', name: '필름 35', caption: '따뜻한 필름색, 부드러운 입자와 붉은 빛 번짐' },
-  { id: 'retro-digital', name: '디카 2005', caption: '또렷한 윤곽, 선명한 색과 디지털 노이즈' },
+  { id: 'retro-film', name: '필름 35', caption: '크림빛 하이라이트, 바랜 검정과 차분한 청록' },
+  { id: 'retro-digital', name: '디카 2005', caption: '깊은 명암, 차가운 흰빛의 2000년대 스냅' },
   { id: 'retro-rose', name: '로즈 데이', caption: '분홍빛 하이라이트와 청록빛 거리' },
   { id: 'retro-travel', name: '맑은 여행', caption: '맑은 하늘색, 가벼운 햇빛과 부드러운 명암' },
 ] as const;
@@ -26,8 +26,10 @@ export type CameraSettings = RenderSettings & RetroControls & Readonly<{
 }>;
 
 export function copyCameraSettings(input: CameraSettings): CameraSettings {
+  const expectedVersion = input.filterId === 'original' ? '0.1.0-draft'
+    : filterSeed.filters.find(filter => filter.id === input.filterId)?.lookVersion;
   if (!CAMERA_FILTERS.some(filter => filter.id === input.filterId) ||
-      input.lookVersion !== '0.1.0-draft' || input.engineVersion !== 'lut-authoring-0.1.0' ||
+      input.lookVersion !== expectedVersion || input.engineVersion !== 'lut-authoring-0.1.0' ||
       input.rendererVersion !== CAMERA_RENDER_VERSION) throw new Error('지원하지 않는 필터 버전이에요.');
   if (!Number.isFinite(input.intensity) || input.intensity < 0 || input.intensity > 1) {
     throw new Error('필터 강도는 0~100%여야 해요.');
@@ -50,11 +52,12 @@ export function copyCameraSettings(input: CameraSettings): CameraSettings {
     grain: input.filterId === 'original' ? 0 : input.grain, bloom: input.filterId === 'original' ? 0 : input.bloom });
 }
 
-export function cameraSettings(filterId: CameraFilterId, intensity = 0.8): CameraSettings {
-  const defaults = filterSeed.filters.find(filter => filter.id === filterId)?.defaults;
-  return copyCameraSettings({ ...NO_RETRO, ...defaults, filterId, intensity,
+export function cameraSettings(filterId: CameraFilterId, intensity?: number): CameraSettings {
+  const filter = filterSeed.filters.find(filter => filter.id === filterId);
+  const defaults = filter?.defaults;
+  return copyCameraSettings({ ...NO_RETRO, ...defaults, filterId, intensity: intensity ?? defaults?.intensity ?? 0.8,
     grain: defaults?.grain ?? 0, bloom: defaults?.bloom ?? 0,
-    lookVersion: '0.1.0-draft', engineVersion: 'lut-authoring-0.1.0', rendererVersion: CAMERA_RENDER_VERSION });
+    lookVersion: filter?.lookVersion ?? '0.1.0-draft', engineVersion: 'lut-authoring-0.1.0', rendererVersion: CAMERA_RENDER_VERSION });
 }
 
 export function cameraSettingsKey(settings: CameraSettings): string {

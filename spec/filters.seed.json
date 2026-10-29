@@ -752,30 +752,30 @@
       "id": "retro-film",
       "collection": "retro",
       "name": "필름 35",
-      "caption": "따뜻한 필름색, 부드러운 입자와 붉은 빛 번짐",
-      "lookVersion": "0.1.0-draft",
+      "caption": "크림빛 하이라이트, 바랜 검정과 차분한 청록",
+      "lookVersion": "0.2.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.08,
-        "saturation": 0.93,
+        "exposureEv": 0.1,
+        "saturation": 1.02,
         "toneCurve": [
           [
             0,
-            0.025
+            0.055
           ],
           [
             0.18,
-            0.17
+            0.19
           ],
           [
             0.4,
-            0.405
+            0.43
           ],
           [
             0.6,
-            0.63
+            0.65
           ],
           [
             0.82,
@@ -783,46 +783,46 @@
           ],
           [
             1,
-            0.975
+            0.955
           ]
         ],
         "shadowTintRgb": [
-          0.018,
-          0.012,
-          -0.012
+          -0.009,
+          0.014,
+          0.006
         ],
         "highlightTintRgb": [
-          0.018,
-          0.006,
-          -0.022
+          0.022,
+          0.012,
+          -0.025
         ],
         "hueBands": [
           {
-            "centerDeg": 110,
+            "centerDeg": 115,
             "halfWidthDeg": 45,
-            "shiftDeg": -8,
-            "saturationMultiplier": 0.8
+            "shiftDeg": -14,
+            "saturationMultiplier": 0.76
           },
           {
-            "centerDeg": 220,
+            "centerDeg": 215,
             "halfWidthDeg": 45,
-            "shiftDeg": -8,
-            "saturationMultiplier": 0.9
+            "shiftDeg": -10,
+            "saturationMultiplier": 0.82
           },
           {
-            "centerDeg": 25,
-            "halfWidthDeg": 45,
-            "shiftDeg": 2,
-            "saturationMultiplier": 1.04
+            "centerDeg": 28,
+            "halfWidthDeg": 35,
+            "shiftDeg": -2,
+            "saturationMultiplier": 1.02
           }
         ]
       },
       "defaults": {
-        "intensity": 0.8,
-        "grain": 0.42,
-        "bloom": 0.08,
-        "vignette": 0.25,
-        "halation": 0.25,
+        "intensity": 0.9,
+        "grain": 0.24,
+        "bloom": 0.12,
+        "vignette": 0.16,
+        "halation": 0.09,
         "sharpness": 0,
         "digitalNoise": 0,
         "lightLeak": 0,
@@ -830,22 +830,22 @@
         "dateStamp": false
       },
       "notes": [
-        "여운 자체 제작 초안. 특정 필름·카메라·앱의 정밀 복제가 아님.",
-        "피부, 흰색, 하늘, 실내와 야간의 실제 사진으로 색감 승인 필요."
+        "Gold 200 실제 스캔의 따뜻한 밝은 영역과 청록·초록 관계를 참고한 자체 해석. 바랜 검정은 제품의 표현 선택이며 특정 필름의 정밀 복제가 아님.",
+        "0.2.0-draft: 전체 황색 덧씌우기 대신 밝기별 색 분리, 완만한 하이라이트와 절제한 입자·붉은 번짐. 실기기 색감 승인 대기."
       ]
     },
     {
       "id": "retro-digital",
       "collection": "retro",
       "name": "디카 2005",
-      "caption": "또렷한 윤곽, 선명한 색과 디지털 노이즈",
-      "lookVersion": "0.1.0-draft",
+      "caption": "깊은 명암, 차가운 흰빛의 2000년대 스냅",
+      "lookVersion": "0.2.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.05,
-        "saturation": 1.12,
+        "exposureEv": 0.04,
+        "saturation": 1.04,
         "toneCurve": [
           [
             0,
@@ -853,19 +853,19 @@
           ],
           [
             0.18,
-            0.135
+            0.115
           ],
           [
             0.4,
-            0.395
+            0.405
           ],
           [
             0.6,
-            0.66
+            0.705
           ],
           [
             0.82,
-            0.9
+            0.945
           ],
           [
             1,
@@ -873,51 +873,51 @@
           ]
         ],
         "shadowTintRgb": [
-          -0.012,
-          0.006,
-          0.025
+          -0.006,
+          0.004,
+          0.012
         ],
         "highlightTintRgb": [
-          0.012,
-          0.012,
-          -0.008
+          -0.008,
+          0.002,
+          0.012
         ],
         "hueBands": [
           {
-            "centerDeg": 210,
+            "centerDeg": 215,
             "halfWidthDeg": 45,
-            "shiftDeg": 7,
-            "saturationMultiplier": 1.13
-          },
-          {
-            "centerDeg": 110,
-            "halfWidthDeg": 45,
-            "shiftDeg": -5,
+            "shiftDeg": -6,
             "saturationMultiplier": 1.08
           },
           {
-            "centerDeg": 0,
+            "centerDeg": 115,
             "halfWidthDeg": 45,
+            "shiftDeg": -14,
+            "saturationMultiplier": 1.06
+          },
+          {
+            "centerDeg": 0,
+            "halfWidthDeg": 35,
             "shiftDeg": 0,
-            "saturationMultiplier": 1.04
+            "saturationMultiplier": 1.02
           }
         ]
       },
       "defaults": {
-        "intensity": 0.8,
+        "intensity": 0.9,
         "grain": 0,
         "bloom": 0,
-        "vignette": 0.12,
+        "vignette": 0.1,
         "halation": 0,
-        "sharpness": 0.5,
-        "digitalNoise": 0.22,
+        "sharpness": 0.16,
+        "digitalNoise": 0.08,
         "lightLeak": 0,
         "dust": 0,
         "dateStamp": false
       },
       "notes": [
-        "여운 자체 제작 초안. 특정 필름·카메라·앱의 정밀 복제가 아님.",
-        "피부, 흰색, 하늘, 실내와 야간의 실제 사진으로 색감 승인 필요."
+        "2004년 Canon IXUS 40 실제 JPEG의 명암과 색 관계를 참고한 자체 스냅 해석. CCD 전체의 공통 특성이나 카메라 정밀 재현을 주장하지 않음.",
+        "0.2.0-draft: 중간 밝기·밝은 영역의 대비를 높이고 과한 선명도·상시 컬러 노이즈를 축소. 직광 조명은 필터가 만들 수 없으며 지원 기기에서 사용자가 플래시를 별도로 선택한다."
       ]
     },
     {

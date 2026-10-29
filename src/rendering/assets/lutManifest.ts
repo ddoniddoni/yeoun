@@ -61,7 +61,9 @@ export function parseLutManifest(value: unknown, expected: LutManifestExpectatio
     const asset = object(item, ['filterId', 'role', 'lookVersion', 'status', 'path', 'sha256'], 'asset');
     const filterId = string(asset.filterId, /^(identity|(light|time|scene|retro)-[a-z]+)$/, 'filter ID');
     const sha256 = string(asset.sha256, hashPattern, 'checksum');
-    if (asset.lookVersion !== '0.1.0-draft' || asset.status !== 'draft') throw new Error('Invalid LUT look version/status');
+    if ((asset.lookVersion !== '0.1.0-draft' && asset.lookVersion !== '0.2.0-draft') || asset.status !== 'draft') {
+      throw new Error('Invalid LUT look version/status');
+    }
     if (seen.has(filterId) || expected.lookVersions.get(filterId) !== asset.lookVersion) {
       throw new Error(`Duplicate, unexpected or mismatched LUT version: ${filterId}`);
     }

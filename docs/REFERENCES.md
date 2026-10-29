@@ -338,6 +338,10 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 
 기존 React Native 0.83.10 필터 조절 컴포넌트와 FileSystem/Skia export 경로를 재사용한다. [RN 0.83 ScrollView 공식 문서](https://reactnative.dev/docs/0.83/scrollview#scrollto) 및 설치 `Libraries/Components/ScrollView/ScrollView.d.ts`의 options 형태 `scrollTo`를 확인하여 편집 적용/취소 후 사진 위치로 돌아가도록 했다. 상태 분리, revision 파일 교체와 촬영 metadata 보존은 프로젝트 설계이며 실제 UI/GPU/디스크 성능은 NOT_RUN이다.
 
+## S40. 필름·옛 디카 실제 촬영 레퍼런스 — 2026-10-30
+
+[색감 방향 기록](RETRO_LOOK_DIRECTION.md)에 Kodak 공식 소개, Coastal Film Lab 스캔, DCFever 직접 촬영/EXIF, DPReview의 당시 직접 리뷰를 연결했다. 외부 사진은 임시 폴더에서 관찰만 했고 앱/저장소에는 포함하지 않았다. 표의 수치와 프리셋 목표는 프로젝트의 해석이며 특정 필름·센서의 측정값이 아니다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

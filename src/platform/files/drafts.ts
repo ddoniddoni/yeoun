@@ -1,6 +1,6 @@
 import { Directory, File, Paths } from 'expo-file-system';
 const root = new Directory(Paths.cache, 'yeoun-m0');
-export function draftFile(id: string, name: 'source.jpg' | 'filtered.jpg'): File {
+export function draftFile(id: string, name: 'source.jpg' | 'filtered.jpg' | 'comparison-original.jpg'): File {
   const directory = new Directory(root, id);
   directory.create({ intermediates: true, idempotent: true });
   return new File(directory, name);

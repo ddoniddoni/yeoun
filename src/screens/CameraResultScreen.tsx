@@ -1,19 +1,20 @@
-import { Alert, Image, Modal, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, Modal, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CaptureState, Output } from '../domain/capture/controller';
 import { CAMERA_FILTERS, type CameraSettings } from '../domain/filters/cameraSettings';
-import { CameraAction, FrameCorners } from './CameraControls';
+import { CameraAction } from './CameraControls';
+import { ResultPhotoComparison } from './ResultPhotoComparison';
 import { cameraTheme as theme, filterPresentation } from './cameraTheme';
 
-export function CameraResultScreen({ state, output, settings, foreground, returning, returnError, onSave, onReturn, onSettings }: {
+export function CameraResultScreen({ state, output, settings, foreground, returning, returnError, onSave, onReturn, onSettings, onPrepareOriginal }: {
   state: CaptureState; output: Output; settings: CameraSettings; foreground: boolean;
-  returning: boolean; returnError?: string; onSave(): void; onReturn(): void; onSettings(): void;
+  returning: boolean; returnError?: string; onSave(): void; onReturn(): void; onSettings(): void; onPrepareOriginal(): void;
 }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const saved = state.phase === 'saved';
   const saving = state.phase === 'saving-gallery';
-  const locked = saving || returning || !foreground;
+  const locked = saving || returning || !foreground || !!state.preparingOriginal;
   const filter = CAMERA_FILTERS.find(item => item.id === settings.filterId);
   const accent = filterPresentation[settings.filterId].color;
   const ratio = output.width / output.height;
@@ -43,11 +44,9 @@ export function CameraResultScreen({ state, output, settings, foreground, return
           입자 {Math.round(settings.grain * 100)}% · 빛 번짐 {Math.round(settings.bloom * 100)}%
           {settings.intensity === 0 ? ' · 강도 0%로 효과 꺼짐' : ''}
         </Text> : null}
-        <View style={[styles.imageFrame, { width: imageWidth, aspectRatio: ratio }]}>
-          <Image source={{ uri: output.uri }} style={StyleSheet.absoluteFill} resizeMode="contain"
-            accessibilityLabel={`${filter?.name ?? '선택한 필터'}로 촬영한 사진`} />
-          <FrameCorners />
-        </View>
+        <ResultPhotoComparison key={output.uri} output={output} state={state}
+          width={imageWidth} enabled={settings.filterId !== 'original' && settings.intensity > 0}
+          locked={locked} filterName={filter?.name ?? '선택한 필터'} onPrepare={onPrepareOriginal} />
         <View style={styles.panel}>
           <Text accessibilityLiveRegion="polite" style={styles.status}>
             {returning ? '카메라로 돌아가고 있어요' : saved ? '저장 완료 · 사진 앱에서 만나요' : saving
@@ -76,7 +75,6 @@ const styles = StyleSheet.create({
   title: { color: theme.text, fontSize: 18, fontWeight: '500' },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 8 },
   dot: { width: 6, height: 6, borderRadius: 3 }, filterName: { color: theme.text, fontSize: 16 },
-  imageFrame: { alignSelf: 'center', backgroundColor: theme.inset },
   panel: { gap: 12, padding: 16, backgroundColor: theme.surface, borderTopWidth: 1, borderTopColor: theme.line },
   status: { color: theme.text, fontSize: 16, lineHeight: 24 },
   error: { color: theme.error, fontSize: 14, lineHeight: 22 },

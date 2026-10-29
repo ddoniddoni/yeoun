@@ -10,6 +10,7 @@
 - 변경 파일: seed/schema, `src/domain/filters/{cameraSettings,types}.ts`, `src/rendering/assets/{bundledLuts,lutManifest}.ts`, `src/screens/M0CameraScreen.tsx`, 위 새 hash 자산, cameraSettings/retroControls/lutManifest/lutLoader/bundledLutLoader 테스트 소스, 제품/엔진/검수/REFERENCES/PROGRESS 및 새 색감 방향 문서. 새 패키지·native·렌더 shader 변경 없음.
 - 실제 재반영: Metro를 중지한 뒤 자산 교체, 개발 서버 재시작과 devicectl `--terminate-existing --console --payload-url`로 앱 재실행. 수정 JS bundle 522ms/1359 modules와 후면 1178×1572/up 프레임 확인. 새 앱 프로세스는 유지된다. 이 관측은 필름/디카 선택·사용자 색감 승인이나 저장 결과 검증을 대신하지 않는다. DevTools 최신 다운로드 fallback 및 기존 UIKit background callback 경고는 남았다.
 - `git diff --check` exit 0. **NOT_RUN:** lint/typecheck/Jest/react-doctor/별도 자산 검사/native build/Android. 사용자 요청된 iPhone 앱 실행과 개발 JS 번들만 수행했다. 테스트 소스는 ID별 version pin과 기본 강도/0 우회를 보강했다. G0/G1/G2 미통과를 유지한다.
+- Git Flow: 명시 파일 stage와 staged diff 공백 검사, 기능 commit `4e8088f`, 작업 브랜치 push와 [PR #21](https://github.com/ddoniddoni/yeoun/pull/21) 생성 exit 0. 이 기록을 포함해 develop 병합·동기화하며 최종 merge commit은 PR 이력을 따른다.
 - 다음: 사용자 선호 답변과 실제 두 필터 색감 확인으로 추가 조정. 기존 다음 기능 후보(한 장 세 분위기)는 이번 수정에 포함하지 않는다. 개발 후 상시 Git Flow로 develop 병합·동기화하고 앱/Metro는 비교할 수 있게 유지한다.
 
 ## 이전 기록 — 2026-10-30 저장 전 필터 재편집

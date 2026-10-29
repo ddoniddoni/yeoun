@@ -364,3 +364,10 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 - 사용자 피드백: 디카는 ‘디카처럼 된듯’, 필름은 아직 필름 느낌이 아니며 오늘 날짜를 넣어 달라는 요청. 실제 이미지 기준은 S42 유지.
 - 소스 근거: 기존 grain의1600 기준/0.04 진폭·작은 출력 감쇠와 단색 평균을 확인해 필름 전용 크기/진폭을 도입했다. 최종 개선은 검수 대기인 가설/표현 선택이다.
 - 날짜는 기존 `localStampDate`, `useCameraLut`의60초/active 갱신, `CaptureController`의 촬영 전 Date snapshot, 재편집 snapshot 재사용 경로를 유지하고 필름 기본값만 true로 전환했다. 디카 수치/날짜 기본값은 유지한다.
+
+
+## S44. 필름 색조 과잉 수정 — 2026-10-30
+
+- [Kodak Gold 200 공식 기술자료](https://imaging.kodakalaris.com/sites/default/files/files/resources/E7022_Gold_200.pdf): 일광/전자 플래시용 컬러 네거티브와 입자/선명도 특성. 자료가 전역 녹색 필터를 제시하는 것은 아니다.
+- [The Darkroom Gold 200 실제 스캔](https://thedarkroom.com/film/gold-200/): 갤러리의 [35mm 야외 커플](https://thedarkroom.com/app/uploads/2019/07/Gold200-E7-000336830003-679x1024.jpg), [120 인물](https://thedarkroom.com/app/uploads/2019/07/Gold-200-P67-000418530006-Edit-979x1200.jpg)을 임시 폴더에서 직접 열었다. 피부와 흰옷, 녹색 배경, 어두운 옷/반사 부분의 분리를 관찰했다. 포맷/조명/스캔이 다르므로 동일한 입자량이나 노출의 측정 근거로 사용하지 않는다.
+- 무채색 보존/전역 tint 제거/명암과 hue band 수치는 이 프로젝트의 표현 선택이며 필름 stock의 정밀 에뮬레이션이 아니다. 외부 이미지는 앱/저장소에 포함하지 않았다. 최종 사용자 색감 승인 대기.

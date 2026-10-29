@@ -752,87 +752,87 @@
       "id": "retro-film",
       "collection": "retro",
       "name": "플래시 필름",
-      "caption": "바랜 녹회색, 살구빛과 거친 입자 · 날짜 도장",
-      "lookVersion": "0.5.0-draft",
+      "caption": "깊은 명암, 자연스러운 색과 거친 입자 · 날짜 도장",
+      "lookVersion": "0.6.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.02,
-        "saturation": 0.82,
+        "exposureEv": 0,
+        "saturation": 1.04,
         "toneCurve": [
           [
             0,
-            0.1
+            0.018
           ],
           [
             0.18,
-            0.2
+            0.15
           ],
           [
             0.4,
-            0.39
+            0.4
           ],
           [
             0.6,
-            0.63
+            0.64
           ],
           [
             0.82,
-            0.84
+            0.855
           ],
           [
             1,
-            0.94
+            0.975
           ]
         ],
         "shadowTintRgb": [
-          -0.01,
-          0.018,
-          0.014
+          0,
+          0,
+          0
         ],
         "highlightTintRgb": [
-          0.022,
-          0.008,
-          0.004
+          0,
+          0,
+          0
         ],
         "hueBands": [
           {
             "centerDeg": 115,
-            "halfWidthDeg": 45,
-            "shiftDeg": -6,
-            "saturationMultiplier": 0.78
+            "halfWidthDeg": 40,
+            "shiftDeg": -5,
+            "saturationMultiplier": 0.94
           },
           {
             "centerDeg": 215,
-            "halfWidthDeg": 45,
-            "shiftDeg": -8,
-            "saturationMultiplier": 0.8
+            "halfWidthDeg": 40,
+            "shiftDeg": -4,
+            "saturationMultiplier": 0.92
           },
           {
             "centerDeg": 28,
-            "halfWidthDeg": 35,
-            "shiftDeg": -3,
-            "saturationMultiplier": 1.03
+            "halfWidthDeg": 30,
+            "shiftDeg": -1,
+            "saturationMultiplier": 0.98
           }
         ]
       },
       "defaults": {
         "intensity": 1,
-        "grain": 0.7,
-        "bloom": 0.1,
-        "vignette": 0.2,
-        "halation": 0.04,
+        "grain": 0.55,
+        "bloom": 0.04,
+        "vignette": 0.12,
+        "halation": 0.02,
         "sharpness": 0,
         "digitalNoise": 0,
         "lightLeak": 0,
         "dust": 0,
         "dateStamp": true,
-        "softness": 0.38
+        "softness": 0.08
       },
       "notes": [
-        "사용자가 직접 첨부한 인물 사진의 녹회색 그림자·떠 있는 검정·살구빛 피부·입자를 기준으로 한 자체 색감. 이전의 고채도 일회용 방향을 대체한다.",
-        "0.5.0-draft: 필름 질감 미승인 피드백으로 녹회색 검정과 상대 입자 크기/진폭을 강화. 필름만 800 기준 입자와 진폭 0.075를 사용하고 오늘 날짜를 기본 표시한다. 저장/재편집 날짜는 촬영 시점을 유지한다."
+        "0.6.0-draft: 색 셀로판 같은 인상이라는 피드백으로 실제 Gold 200 인물/야외 스캔을 재조사. 배경의 녹색을 전체 필름 색조로 해석한 이전 방향을 수정했다. 특정 필름의 정밀 재현이 아닌 자체 제작 색감이다.",
+        "전역 shadow/highlight tint를 제거해 무채색을 보존하고 깊은 명암/완만한 하이라이트와 선택적 색상 조정으로 구성. 필름 입자 800/0.075와 기본 날짜 표시 유지; 저장/재편집 날짜는 촬영 시점 고정. 최종 색감 승인 대기."
       ]
     },
     {

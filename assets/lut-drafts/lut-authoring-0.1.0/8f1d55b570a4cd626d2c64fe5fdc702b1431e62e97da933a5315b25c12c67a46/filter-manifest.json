@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "status": "draft",
+  "renderContractVersion": "0.1.0",
+  "engineVersion": "lut-authoring-0.1.0",
+  "generatorVersion": "1.0.0",
+  "sourceSeedSha256": "8f1d55b570a4cd626d2c64fe5fdc702b1431e62e97da933a5315b25c12c67a46",
+  "encoder": {
+    "pngjs": "7.0.0",
+    "node": "26.4.0",
+    "zlib": "1.2.12"
+  },
+  "lutContract": {
+    "size": 33,
+    "tilesPerRow": 6,
+    "paddingPixels": 1,
+    "atlasWidth": 210,
+    "atlasHeight": 210,
+    "inputSpace": "srgb-encoded",
+    "outputSpace": "srgb-encoded",
+    "axisOrder": "r-fastest-g-next-b-slice",
+    "alpha": 1
+  },
+  "assets": [
+    {
+      "filterId": "identity",
+      "lookVersion": "0.1.0-draft",
+      "role": "identity",
+      "status": "draft",
+      "path": "luts/identity-5f6daa0568b6ae9153b1d8af6b88c716904e0eed03b7d10b71ec78c09ae32a7a.png",
+      "sha256": "5f6daa0568b6ae9153b1d8af6b88c716904e0eed03b7d10b71ec78c09ae32a7a"
+    },
+    {
+      "filterId": "light-afternoon",
+      "lookVersion": "0.1.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/light-afternoon-14836d7e195ea12374272fe2bf4946137f3fb1a59fcb5e577c67c42742bface0.png",
+      "sha256": "14836d7e195ea12374272fe2bf4946137f3fb1a59fcb5e577c67c42742bface0"
+    },
+    {
+      "filterId": "time-summer",
+      "lookVersion": "0.1.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/time-summer-d7f56bb99f487543d8d93066426cecd46041461b685bc0bdae26013e0c421477.png",
+      "sha256": "d7f56bb99f487543d8d93066426cecd46041461b685bc0bdae26013e0c421477"
+    },
+    {
+      "filterId": "scene-dawn",
+      "lookVersion": "0.1.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/scene-dawn-a5a38e22587bfcd5e2b45f4bf0ab04a492ad47cdf4c85e95a2db99fed7936490.png",
+      "sha256": "a5a38e22587bfcd5e2b45f4bf0ab04a492ad47cdf4c85e95a2db99fed7936490"
+    },
+    {
+      "filterId": "retro-film",
+      "lookVersion": "0.6.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/retro-film-443d25a734554282bc4300de67edd93e9665fdc7b1a107f30ad10f6cbb33d623.png",
+      "sha256": "443d25a734554282bc4300de67edd93e9665fdc7b1a107f30ad10f6cbb33d623"
+    },
+    {
+      "filterId": "retro-digital",
+      "lookVersion": "0.3.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/retro-digital-f4f34d739a5f44b42347d3133e6a2ceb806912cc4e0379a34d0f09f4d648bc74.png",
+      "sha256": "f4f34d739a5f44b42347d3133e6a2ceb806912cc4e0379a34d0f09f4d648bc74"
+    },
+    {
+      "filterId": "retro-rose",
+      "lookVersion": "0.1.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/retro-rose-dc976438cf30ca02e194fe1f004fced01c2735c76dfe72f8c6f9feda6292370b.png",
+      "sha256": "dc976438cf30ca02e194fe1f004fced01c2735c76dfe72f8c6f9feda6292370b"
+    },
+    {
+      "filterId": "retro-travel",
+      "lookVersion": "0.1.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/retro-travel-b00637adadf4f7fc884a921a4f12418251542d0f27a48fdf4dd1e824589bee46.png",
+      "sha256": "b00637adadf4f7fc884a921a4f12418251542d0f27a48fdf4dd1e824589bee46"
+    }
+  ]
+}

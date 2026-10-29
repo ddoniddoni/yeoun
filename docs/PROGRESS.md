@@ -11,7 +11,7 @@
 - 소스 검토/테스트 소스: 새 uniform 순서와 CPU 동일 style, 필름 상대 크기/해상도 비례·디카 기존 응답, 기본 날짜·촬영 다음날 재편집 날짜 보존, 구 look/renderer 거부 사례를 작성/수정했다. UI는 generic 설정 복사/선택 경로를 재사용한다. 날짜 켜진 필름을 binder에 직접 넘기는 기존 테스트에는 유효 날짜를 명시했다. 실행은 하지 않았다.
 - 실행: Metro 중지 후 변경, `EXPO_NO_TELEMETRY=1 EXPO_NO_DEPENDENCY_VALIDATION=1 npm start -- --lan --port 8081`, Xcode 경로 지정 devicectl `--terminate-existing --console --payload-url` launch 성공. **JS bundle519ms/1391 modules**, 후면 실제 **1178×1572/up/yuv-420-8-bit-full/mirror false** 프레임 관측. 시작 후 frame-was-late6건과 기존 UIKit callback/appearance/NO_COLOR 경고. 이 관측은 기본 시작 필터이며 새 필름/날짜 선택·저장/성능 합격 증거가 아니다. 앱/Metro는 사용자가 비교할 수 있게 유지한다.
 - `git diff --check` exit0. **NOT_RUN:** lint/typecheck/Jest/react-doctor/별도 자산 검사/native build/Android. 새 패키지/native/권한 없음. 필름 실제 질감·날짜 위치/방향·미리보기/고해상도 저장 일치·전후면·성능은 사용자 확인 대기. G0/G1/G2 미통과 유지.
-- 다음: 새 필름과 날짜를 아이폰에서 비교. 디카를 다시 튜닝하거나 다음 기능으로 확장하지 않는다. 상시 승인 Git Flow로 이번 변경만 커밋·푸시·develop PR/병합·동기화한다.
+- 다음: 새 필름과 날짜를 아이폰에서 비교. 디카를 다시 튜닝하거나 다음 기능으로 확장하지 않는다. Git Flow: 명시 파일 stage/staged diff 공백 검사, commit `109c190`·작업 브랜치 push와 [PR #24](https://github.com/ddoniddoni/yeoun/pull/24) 생성 성공. 이 기록을 포함해 develop 병합·동기화하며 최종 상태는 PR/Git 이력을 따른다.
 
 ## 이전 기록 — 2026-10-30 실제 이미지 기준 필름·소프트 디카
 

@@ -1,6 +1,42 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-29 필터 전환 크기 변동·버튼 종료 수정
+## 현재 상태 — 2026-10-29 필름·디카·도시 4종과 선택 효과
+
+- 사용자 요청: 필름카메라/옛날 디카/Analog Paris·Tokyo 참고 조사 후 제안한 기능을 모두 추가. 결과 원본 비교보다 이번 확장을 먼저 진행하도록 승인했다. 깨끗한 develop `438e60d`에서 fetch/fast-forward 후 `feature/retro-camera-looks`를 생성했다. 이전 안정화는 PR #17로 병합 완료된 상태였다.
+- 새 색감: **필름 35, 디카 2005, 로즈 데이, 맑은 여행**. 기존 대표 3종을 유지하고 앱 선택 가능 색감은 7종+원본이다. 제작 seed 전체는 기존 9종+4종=13종이며 기존 미제작 6종은 이번 범위에 포함하지 않았다. 필터 명칭만 붙인 Matrix가 아니라 서로 다른 tone curve/tint/hue band/saturation으로 생성한 33³ LUT를 등록했다. 모든 자산은 draft/HUMAN_REVIEW_PENDING이다.
+- 질감: 기존 입자/Bloom에 비네팅, 붉은 번짐, 윤곽 선명도, RGB 디지털 노이즈를 추가했다. 날짜/빛샘/먼지는 선택형이며 전부 기본 꺼짐이다. 새 효과도 공통 preview/export shader에 포함하고 원본/강도 0은 모두 우회한다. master intensity는 마지막에 한 번만 적용한다. 특정 상용 앱·필름·CCD의 정밀 재현은 주장하지 않는다.
+- 카메라 탭은 원본/빛/시간/장면/필름/디카/도시이며 도시는 2종을 포함한다. 전체 선택은 상세 패널의 가로 목록, 추가 조절은 펼치는 질감 영역 안에 둔다. 기존 프레임 내부 로딩 안내/고정 촬영 상태 높이를 유지한다. 활성 컬렉션 재탭으로 설정을 초기화하지 않고 전용 초기화 버튼을 사용한다.
+- 날짜 도장은 기기 현지 YY.MM.DD를 float 숫자로 전달하고 7-segment shader로 합성한다. capture 시작 전에 settings/seed/date를 불변 snapshot으로 복사하여 비동기 작업/재시도/다음 날에도 날짜와 패턴을 유지한다. 프리뷰 날짜는 옵션이 켜진 동안 60초/active 복귀에 갱신하며 자정에 최대 60초 표시 지연이 있을 수 있다. 실제 저장은 촬영 시점 날짜를 사용한다.
+- 성능/소유권 설계: 디지털/선택 효과는 추가 전체 크기 surface 없이 기존 composite에서 계산한다. 선명도는 활성 시 LUT 4회 추가 sample, 붉은 번짐은 기존 최대 512px의 blur 3-pass를 공유한다. 프레임 자원은 snapshot 뒤 해제하고, 16개 thread LRU와 request ArrayBuffer 단방향 전달을 유지한다. 추가 shared 값은 숫자/boolean뿐이고 사진 픽셀은 React state/JSON/Base64로 보내지 않는다. 실제 성능 개선/유지는 측정하지 않았다.
+- 버전: `lut-camera-0.3.0`, `grain-bloom-retro-0.2.0`. LUT 색 변환/atlas는 그대로여서 `lut-authoring-0.1.0` 유지. 새 seed hash `a8f45d69531b3554902333ecf99621a7cab1809e2c36767eb9dbd2f4b3da96f6`에 identity+7종 PNG와 동일 바이트 .lut, manifest를 생성했다. 기존 hash 디렉터리를 덮어쓰지 않았다. runtime expectation과 manifest는 정확한 ID/version 집합으로 검사하고 기존 SHA-256/PNG/구조 검사도 유지한다.
+- 새 패키지·lockfile·native 코드·권한 변경 없음. 공식 App Store/Skia 근거와 설치 2.4.19 RuntimeEffect 타입/C++ 확인은 S37에 기록했다. 상용 앱 소개 이미지는 참고만 했고 저장소/앱 자산으로 넣지 않았다.
+
+### 변경 파일
+
+- 정의/생성: `spec/filters.seed.json`, `filters.schema.json`, `src/domain/filters/{types,validateSeedSemantics,cameraSettings,retroControls,bundledDraftFilters}.ts`, `scripts/generate-luts.mjs`, `scripts/lib/{lutAssets,lutManifest}.ts`, `src/rendering/assets/{lutManifest,bundledLuts}.ts`, 새 seed hash의 LUT PNG/.lut/manifest.
+- 실행 경로: `src/rendering/shaders/{retro,spatial}.ts`, `src/rendering/reference/retro.ts`, `src/rendering/adapters/{spatialEffects,cameraLut,exportPhoto}.ts`, `src/platform/camera/useCameraLut.ts`, `src/domain/capture/controller.ts`.
+- UI: `src/screens/{FilterControls,M0CameraScreen}.tsx`, `cameraTheme.ts`. 문서: README, 제품/엔진/기술/계획/검수/근거/Stitch/PROGRESS.
+- 테스트 소스: `retroControls.test.ts` 신규. 기존 seed/manifest/LUT 생성·로더, capture controller/photo, camera LUT, spatial, export resource 테스트를 확장했다. 주요 내용은 13종/8자산 연결, 원본·단독 효과, 날짜 범위/자정 재시도, 미리보기/저장 값 전달, 표면 할당/해제다. CPU reference는 합성 값용이며 native shader/날짜 glyph 검증이 아니다.
+
+### 실제 명령과 결과
+
+| 명령/작업 | 결과 |
+|---|---|
+| `git status`, `git fetch origin`, `git merge --ff-only origin/develop`, `git switch -c feature/retro-camera-looks` | exit 0, 깨끗한 develop에서 새 작업 |
+| 설치 API·관련 소스/문서 읽기와 diff 검토 | 수행. 추정 RuntimeEffect 파일 경로는 없어 실제 경로로 재조회 |
+| `npm run generate:luts` | exit 0, identity+7종 초안 생성. Node의 MODULE_TYPELESS_PACKAGE_JSON 경고가 있었고 설정을 불필요하게 변경하지 않음 |
+| 생성 PNG의 `.lut` byte copy와 정적 Metro registry 작성 | exit 0. 새 hash 경로만 사용 |
+| `git diff --check` | exit 0 |
+| 이전 Metro exec session 종료 시도 | Unknown process id 91838. 새 Metro/앱/기기 실행은 하지 않음 |
+| 테스트·lint·typecheck·react-doctor·자산 검증 CLI·JS/native build | **NOT_RUN — 사용자 지시** |
+
+LUT 생성에는 정상적인 입력 schema/manifest/hash 확인이 포함되어 있지만 자동 테스트/색감/GPU 검증을 실행한 것으로 보고하지 않는다. 이번 새 shader 컴파일, 두 플랫폼 미리보기/고해상도 JPEG·날짜 방향·저장 일치, 장기 성능·접근성은 미검증이다. G0/G1/G2 및 출시 게이트 미통과를 유지한다. 사용자 승인 범위의 Git Flow로 작업 커밋·푸시·develop PR/병합·동기화를 마치며 최종 커밋과 병합 상태는 Git/PR 이력을 따른다.
+
+### 다음 작업
+
+사용자가 실행을 요청하면 새 7종과 선택 효과의 실기기 동작/색감/저장을 먼저 확인한다. 승인된 기기 확인 후 기존 결과 사진 원본 비교 기능으로 돌아간다. 실제 사진 색감 승인은 아직 대기 중이다.
+
+## 이전 기록 — 2026-10-29 필터 전환 크기 변동·버튼 종료 수정
 
 - 사용자 보고: 원본/빛/시간/장면 전환마다 카메라가 확대·축소되고 깨짐. 후속으로 “렉이 심하고 아무 버튼을 누르면 종료”를 보고해 종료 원인을 우선 조사했다. PR #16이 병합된 develop `2d48406`에서 `fix/stable-filter-preview-layout`을 생성했다. 기존 사용자 변경은 없었다.
 - 레이아웃 원인: 필터 로딩/실패 안내가 정상 레이아웃의 높이를 늘리고 `onLayout`으로 계산한 3:4 preview 폭까지 바꿨다. 로딩/오류 진입을 프레임 내부 absolute overlay로 옮기고 필터명 줄바꿈을 막았다. 전체 이름은 접근성 label과 조절 패널에서 유지한다. 촬영 상태 줄도 fontScale에 맞는 두 줄 공간을 고정 예약했다. 초점 좌표는 동일한 실제 preview 폭을 사용한다.

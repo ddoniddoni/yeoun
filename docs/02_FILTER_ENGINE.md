@@ -1,5 +1,27 @@
 # 02. 필터와 렌더링 계약
 
+## 2026-10-29 레트로 확장 계약 (이 절이 아래 v0 설명보다 우선)
+
+사용자 승인으로 기존 9종 seed에 `retro-film`, `retro-digital`, `retro-rose`, `retro-travel` 4종을 추가했다. 제작 컬렉션은 기존 3개에 `retro`가 추가되고, 앱 표시에서는 필름/디카/도시로 나눈다. 기존 필터 수치는 유지한다. 생성 대상은 identity + 기존 대표 3종 + 새 4종이며, 나머지 기존 6종은 생성하지 않는다. 새 seed hash 디렉터리에 8개 PNG/.lut와 manifest를 생성하고 이전 파일은 덮어쓰지 않는다. 앱의 expected ID/version 집합과 manifest가 정확히 일치해야 로딩한다.
+
+카메라 렌더 버전은 `lut-camera-0.3.0`, 공간 효과 버전은 `grain-bloom-retro-0.2.0`이다. 색 변환식/atlas 계약은 그대로여서 `lut-authoring-0.1.0`을 유지한다. 새 기본값은 seed의 단일 원본이며 날짜/빛샘/먼지는 0 또는 false다. 기존 항목에 없는 새 기본값은 0/false로 채우고 새 런타임 설정은 필수 범위를 검증한다.
+
+전체 순서: 방향·미러·crop → LUT → 선명도 → 붉은 번짐 → 기존 Bloom → encoded sRGB → 기존 단색 입자 → 디지털 컬러 노이즈 → 비네팅 → 빛샘 → 먼지 → 날짜 → 원본과 master intensity 한 번 혼합 → 출력 색 변환/JPEG. 원본과 강도 0은 전체 스타일을 우회한다. 미리보기/저장은 동일한 shader와 조절값, seed를 사용한다. 프리뷰와 저장의 실제 일치는 미검증이다.
+
+새 효과는 자체 제작 시각 효과이며 물리적 필름/CCD 시뮬레이션이라고 주장하지 않는다.
+
+| 효과 | 구현 계약 |
+|---|---|
+| 선명도 | 선형 RGB에서 LUT 중심과 상하좌우 4 sample 평균 차이를 `1.5 × amount`만큼 더함. 반경은 crop 긴 변/1600 source pixels. 0이면 추가 sample 없음 |
+| 붉은 번짐 | 기존 밝은 영역 추출·512px 이하 분리 blur를 재사용. blur 휘도에서 해당 위치 밝은 영역 휘도를 뺀 양수 부분에 `(0.9, 0.14, 0.025) × amount`를 더함. Bloom과 함께 켜도 중간 pass는 총 3개 |
+| 컬러 노이즈 | 1600 기준 좌표의 고정 seed hash를 RGB별 salt로 구분. 최대 진폭 `0.055 × amount`, 어두운 영역 가중, 작은 preview에서는 진폭 감쇠. 시간에 따라 흔들리지 않음 |
+| 비네팅 | crop 정규화 중심 거리 제곱에 smoothstep(0.2, 1.6), 최대 감광 55% × amount |
+| 빛샘 | seed로 좌우와 세로 중심 선택. 가장자리 지수 감쇠의 주황 `(1, .27, .055)`를 screen 합성. 최대 계수 .7 × amount |
+| 먼지 | crop 긴 변 기준 64칸의 sparse hash 점. 픽셀 크기에 따른 antialias, 최대 불투명도 .65 × amount. seed를 보존하므로 저장 재시도에도 배치 유지 |
+| 날짜 | 폰트 자산 없는 7-segment shader. 짧은 변의 3.2% 높이, 오른쪽 4%/아래 5% 여백. 현지 YY.MM.DD를 6자리 정수 float uniform으로 전달, 주황색/95% 불투명도 후 master mix |
+
+공유 상태에 추가하는 값은 숫자/boolean뿐이다. LUT ArrayBuffer request의 RN→camera 단방향 전달과 별도 cache cell은 유지한다. native 자원은 기존 snapshot 이후 해제 순서를 유지하며 새 효과의 texture/surface를 장기 캐시에 추가하지 않는다. `retro.ts` CPU reference는 합성 sample용 선명도/붉은 번짐/노이즈/비네팅/빛샘/먼지 수식을 제공한다. 날짜 glyph의 실제 raster, native shader 컴파일과 CPU/GPU 일치는 미검증이다.
+
 이 문서는 프로젝트 고유 설계다. 필터 수치는 제작 초안이며 카메라 제품이나 실제 필름을 정밀 복제한 수치가 아니다. 라이브러리의 실제 함수 시그니처는 설치 버전의 타입에서 확인한다.
 
 ## 1. 구현 원칙

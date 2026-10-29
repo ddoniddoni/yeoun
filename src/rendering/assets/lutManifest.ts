@@ -52,14 +52,14 @@ export function parseLutManifest(value: unknown, expected: LutManifestExpectatio
   if (Object.entries(LUT_CONTRACT).some(([key, expectedValue]) => contract[key] !== expectedValue)) {
     throw new Error('Invalid LUT atlas contract');
   }
-  if (!Array.isArray(input.assets) || input.assets.length !== 4 || expected.lookVersions.size !== 4 ||
+  if (!Array.isArray(input.assets) || input.assets.length !== expected.lookVersions.size || expected.lookVersions.size < 2 ||
       expected.lookVersions.get('identity') !== '0.1.0-draft') {
-    throw new Error('Manifest must include identity and the three representatives');
+    throw new Error('Manifest must include identity and exactly the registered looks');
   }
   const seen = new Set<string>();
   const assets = input.assets.map((item: unknown): LutAsset => {
     const asset = object(item, ['filterId', 'role', 'lookVersion', 'status', 'path', 'sha256'], 'asset');
-    const filterId = string(asset.filterId, /^(identity|(light|time|scene)-[a-z]+)$/, 'filter ID');
+    const filterId = string(asset.filterId, /^(identity|(light|time|scene|retro)-[a-z]+)$/, 'filter ID');
     const sha256 = string(asset.sha256, hashPattern, 'checksum');
     if (asset.lookVersion !== '0.1.0-draft' || asset.status !== 'draft') throw new Error('Invalid LUT look version/status');
     if (seen.has(filterId) || expected.lookVersions.get(filterId) !== asset.lookVersion) {

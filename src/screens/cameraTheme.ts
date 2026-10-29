@@ -14,4 +14,8 @@ export const filterPresentation: Record<CameraFilterId, { collection: string; co
   'light-afternoon': { collection: '빛', color: cameraTheme.light },
   'time-summer': { collection: '시간', color: cameraTheme.time },
   'scene-dawn': { collection: '장면', color: cameraTheme.scene },
+  'retro-film': { collection: '필름', color: '#D9B783' },
+  'retro-digital': { collection: '디카', color: '#A9C4CE' },
+  'retro-rose': { collection: '도시', color: '#E4B9C4' },
+  'retro-travel': { collection: '도시', color: '#B8D5E1' },
 };

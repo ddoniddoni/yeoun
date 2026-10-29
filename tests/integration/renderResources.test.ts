@@ -104,3 +104,16 @@ test('export shares spatial settings/seed, full strength LUT and normalized geom
   ]);
   for (const resource of [compiled, root, binding, r.source, r.image, r.surface]) expect(resource.dispose).toHaveBeenCalledTimes(1);
 });
+
+test('retro export forwards all controls and the frozen date without reducing JPEG dimensions', () => {
+  const r = setup();
+  const binding = { shader: {} as ReturnType<SkiaLutPipeline['bindSource']>['shader'], dispose: jest.fn() };
+  const pipeline: SkiaLutPipeline = { bindSource: jest.fn(() => binding), dispose: jest.fn() };
+  jest.mocked(createSpatialResources).mockReturnValue({ owned: [] } as ReturnType<typeof createSpatialResources>);
+  jest.mocked(bindSpatialSource).mockReturnValue(binding.shader);
+  const settings = { ...cameraSettings('retro-digital'), dateStamp: true, dust: 0.2, lightLeak: 0.3 };
+  expect(renderLutJpeg(jpeg, settings, pipeline, 91, 261029)).toMatchObject({ width: 4032, height: 3024 });
+  expect(pipeline.bindSource).toHaveBeenCalledWith(r.source, 1);
+  expect(jest.mocked(bindSpatialSource).mock.calls[0]![3]).toEqual(settings);
+  expect(jest.mocked(bindSpatialSource).mock.calls[0]![7]).toBe(261029);
+});

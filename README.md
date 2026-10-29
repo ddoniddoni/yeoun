@@ -3,7 +3,7 @@
 **문서 버전:** 1.0.0  
 **작성 및 공식 자료 확인 기준:** 2026-10-27  
 **대상:** React Native, iOS/Android, npm, Expo Development Build  
-**상태:** 대표 LUT 3종을 카메라 미리보기와 고해상도 JPEG 경로에 연결하는 코드, 강도 0~100% 조절, 로딩·오류 처리와 촬영 설정 snapshot을 작성했다. 색감은 초안이며 정적 입자·약한 빛 번짐의 공통 shader와 조절 UI까지 코드를 작성했다. 이번 변경의 테스트·빌드·실기기·GPU 검증은 사용자 지시로 NOT_RUN이다. 이전 아이폰 시작/메모리/전면 방향 수정의 실행 기록과 구분하며 G0/G1은 미통과다. 최신 상태는 [개발 진행 기록](docs/PROGRESS.md)을 기준으로 한다.
+**상태:** 기존 대표 3종에 필름 35·디카 2005·로즈 데이·맑은 여행을 더한 LUT 7종을 카메라 미리보기와 고해상도 JPEG 경로에 연결하는 코드, 강도 0~100% 조절, 로딩·오류 처리와 촬영 설정 snapshot을 작성했다. 색감은 초안이며 입자·빛 번짐·비네팅·붉은 번짐·선명도·디지털 노이즈·선택형 날짜/빛샘/먼지의 공통 shader와 조절 UI까지 코드를 작성했다. 이번 변경의 테스트·빌드·실기기·GPU 검증은 사용자 지시로 NOT_RUN이다. 이전 아이폰 시작/메모리/전면 방향 수정의 실행 기록과 구분하며 G0/G1은 미통과다. 최신 상태는 [개발 진행 기록](docs/PROGRESS.md)을 기준으로 한다.
 
 **Git:** `develop`으로 개발을 통합하고 `main`으로 릴리스한다. 작업 브랜치와 검사 실행 지시는 [Git Flow](docs/GIT_WORKFLOW.md)를 따른다.
 
@@ -48,20 +48,20 @@ AGENTS.md와 CODEX_START.md, docs/PROGRESS.md를 먼저 읽어줘.
 | [AGENTS.md](AGENTS.md) | Codex의 짧은 상시 작업 규칙 |
 | [CODEX_START.md](CODEX_START.md) | 최초 실행, 다음 단계, 재개, 색감 검수 프롬프트 |
 | [01_PRODUCT_DESIGN.md](docs/01_PRODUCT_DESIGN.md) | 브랜드, 범위, 기능별 동작, 화면과 디자인 토큰 |
-| [02_FILTER_ENGINE.md](docs/02_FILTER_ENGINE.md) | 9종 필터, LUT 제작, 색 공간, 효과 순서, 일관성 계약 |
+| [02_FILTER_ENGINE.md](docs/02_FILTER_ENGINE.md) | 기존 9종+레트로 4종, LUT 제작, 색 공간, 효과 순서, 일관성 계약 |
 | [03_TECHNICAL_SPEC.md](docs/03_TECHNICAL_SPEC.md) | 라이브러리, 호환성 확인, 구조, 데이터, 저장, 권한 |
 | [04_IMPLEMENTATION_PLAN.md](docs/04_IMPLEMENTATION_PLAN.md) | M0~M6 작업 순서와 완료 게이트 |
 | [05_TEST_RELEASE.md](docs/05_TEST_RELEASE.md) | 자동 테스트, 실기기 검수, 성능과 출시 기준 |
 | [PROGRESS.md](docs/PROGRESS.md) | 설치 버전, 작업 현황, 검증 증거, 결정 기록 |
 | [REFERENCES.md](docs/REFERENCES.md) | 확인한 공식 자료와 적용 범위 |
-| [filters.seed.json](spec/filters.seed.json) | 9개 필터의 구조화된 제작 초안 |
+| [filters.seed.json](spec/filters.seed.json) | 13개 필터의 구조화된 제작 초안 |
 | [filters.schema.json](spec/filters.schema.json) | 필터 초안의 JSON Schema |
 | [.env.example](.env.example) | 필수 환경변수가 없음을 명시한 환경 안내 |
 | [.gitignore.example](.gitignore.example) | 기존 설정에 병합할 제외 항목 예시 |
 
 ## 첫 출시 범위
 
-실시간 필터 9종, 전후면 전환, 탭 초점, 촬영 노출 보정, 격자, 필터 강도와 입자와 빛 번짐 조절, 사진 촬영, 원본 비교, 한 장 세 분위기, 개인 레시피, 즐겨찾기, 사진 한 장 가져오기, JPEG 저장과 시스템 공유를 제공한다.
+실시간 필터 13종을 목표로 한다(현재 앱 연결은 7종, 나머지 6종은 미제작). 전후면 전환, 탭 초점, 촬영 노출 보정, 격자, 필터 강도와 입자와 빛 번짐 조절, 사진 촬영, 원본 비교, 한 장 세 분위기, 개인 레시피, 즐겨찾기, 사진 한 장 가져오기, JPEG 저장과 시스템 공유를 제공한다.
 
 로그인, Supabase, 자체 서버, 사진 업로드, 결제, 동영상, AR, 얼굴 보정, AI 이미지 변환, RAW 현상, 커뮤니티는 포함하지 않는다. 제품 검증 없이 추가하지 않는다.
 

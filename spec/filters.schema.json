@@ -82,8 +82,8 @@
     },
     "collections": {
       "type": "array",
-      "minItems": 3,
-      "maxItems": 3,
+      "minItems": 4,
+      "maxItems": 4,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -98,7 +98,8 @@
             "enum": [
               "light",
               "time",
-              "scene"
+              "scene",
+              "retro"
             ]
           },
           "name": {
@@ -115,8 +116,8 @@
     },
     "filters": {
       "type": "array",
-      "minItems": 9,
-      "maxItems": 9,
+      "minItems": 13,
+      "maxItems": 13,
       "items": {
         "$ref": "#/$defs/filter"
       }
@@ -141,13 +142,14 @@
       "properties": {
         "id": {
           "type": "string",
-          "pattern": "^(light|time|scene)-[a-z]+$"
+          "pattern": "^(light|time|scene|retro)-[a-z]+$"
         },
         "collection": {
           "enum": [
             "light",
             "time",
-            "scene"
+            "scene",
+            "retro"
           ]
         },
         "name": {
@@ -193,6 +195,39 @@
               "type": "number",
               "minimum": 0,
               "maximum": 1
+            },
+            "vignette": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "halation": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "sharpness": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "digitalNoise": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "lightLeak": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "dust": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "dateStamp": {
+              "type": "boolean"
             }
           }
         },

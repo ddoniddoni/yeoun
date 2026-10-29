@@ -1,4 +1,4 @@
-import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/105988cbda3910f7ec200311ee3d96da5ae19a0eb7623574b16614451a578be0/filter-manifest.json';
+import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/a8f45d69531b3554902333ecf99621a7cab1809e2c36767eb9dbd2f4b3da96f6/filter-manifest.json';
 import { parseLutManifest } from '../../src/rendering/assets/lutManifest';
 
 const expected = { sourceSeedSha256: manifest.sourceSeedSha256,
@@ -32,7 +32,7 @@ test('rejects stale seed, missing/extra fields, changed contract and mismatched 
 test('rejects duplicate/missing entries, path traversal, wrong roles and invalid checksums', () => {
   const first = manifest.assets[0]!;
   expect(() => parseLutManifest({ ...manifest, assets: [first, first, ...manifest.assets.slice(2)] }, expected)).toThrow(/Duplicate/);
-  expect(() => parseLutManifest({ ...manifest, assets: manifest.assets.slice(1) }, expected)).toThrow(/representatives/);
+  expect(() => parseLutManifest({ ...manifest, assets: manifest.assets.slice(1) }, expected)).toThrow(/registered looks/);
   for (const patch of [{ path: '../escape.png' }, { role: 'look' }, { sha256: 'bad' }, { lookVersion: 'old' }, { status: 'approved' }]) {
     expect(() => parseLutManifest({ ...manifest, assets: [{ ...first, ...patch }, ...manifest.assets.slice(1)] }, expected)).toThrow(/Invalid/);
   }

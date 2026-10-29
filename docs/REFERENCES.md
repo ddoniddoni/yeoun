@@ -324,6 +324,12 @@ SkSL 컴파일, uniform layout, CPU/GPU 수치 일치, intermediate 양자화, �
 
 VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread marker는 실제 `thread_local` ID다. 실기기에서 동일 LUT를 유지해도 ID가 계속 바뀌어 단일 캐시가 반복 생성되는 것을 관찰했다. 설치 SkiaCamera의 `SurfacesCache.ts`처럼 thread별 자원 소유권을 유지하되, 앱 LUT/effect 캐시는 현재 자산에 대해 최대 16개 LRU로 제한한다. 자산 변경/종료 시 전체를 해제하며 frame source·중간 surface·paint는 여전히 해당 프레임 snapshot 뒤 해제한다. 프레임 texture/GPU surface를 공유 캐시에 추가하지 않는다. 이 상한은 프로젝트 선택이며 장기 성능 통과 수치는 아니다.
 
+## S37. 레트로 색감 참고와 공통 SkSL 확장
+
+2026-10-29 사용자가 [Analog Paris](https://apps.apple.com/us/app/analog-paris/id1035219562), [Analog Tokyo](https://apps.apple.com/us/app/analog-tokyo/id961932335)를 참고 대상으로 지정했다. 공식 App Store 설명과 Apple 공개 lookup API의 소개 이미지를 읽었다. 공개 예시의 분위기를 참고해 자체 LUT를 만들며 앱의 내부 수치/필터 파일은 사용하지 않는다. 공식 이미지도 앱 자산으로 복사하지 않았다. 사용자가 제안한 네 가지 초안과 선택 효과 추가를 승인했고, 기존 9종 범위는 13종 제작 목표로 확장됐다.
+
+[Skia SkSL Runtime Effects](https://skia.org/docs/user/sksl/)와 설치 Skia 2.4.19의 `src/skia/types/RuntimeEffect/RuntimeEffect.ts`, `cpp/api/JsiSkRuntimeEffect.h`를 확인했다. 기존 `makeShaderWithChildren(number[], SkShader[])`를 사용하고 새 조절값/날짜는 float uniform으로 넘긴다. 방향·crop 좌표는 기존 geometry를 재사용하며 별도 native API/패키지를 추가하지 않는다. 선명도/비네팅/붉은 번짐/노이즈/빛샘/먼지/7-segment 날짜 수식은 프로젝트의 자체 설계다. 실제 SkSL 컴파일, uniform 배치, 양 플랫폼 GPU/미리보기·저장 일치, 성능·색감은 NOT_RUN이며 공식 API 존재만으로 검증을 대신하지 않는다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

@@ -1,4 +1,5 @@
-export const COLLECTION_IDS = ['light', 'time', 'scene'] as const;
+import type { RetroControls } from './retroControls';
+export const COLLECTION_IDS = ['light', 'time', 'scene', 'retro'] as const;
 export type CollectionId = typeof COLLECTION_IDS[number];
 
 export type FilterControls = Readonly<{
@@ -46,7 +47,7 @@ export type DraftFilter = Readonly<{
   status: 'design-draft';
   lut: null;
   authoring: FilterAuthoring;
-  defaults: FilterControls;
+  defaults: FilterControls & Partial<RetroControls>;
   notes: readonly string[];
 }>;
 

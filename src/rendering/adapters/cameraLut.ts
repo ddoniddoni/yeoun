@@ -5,12 +5,13 @@ import type { Synchronizable } from 'react-native-worklets';
 import { previewGeometry } from '../reference/spatialGeometry';
 import { bindSpatialSource, createSpatialResources, type SpatialResources } from './spatialEffects';
 import type { CameraSettings } from '../../domain/filters/cameraSettings';
+import { hasSpatialEffects } from '../../domain/filters/retroControls';
 import { bindLutSource, createLutResources, releaseNativeResources,
   type LutResources, type NativeResource } from './lutResources';
 
 export type FilterStatus = Readonly<{ key: string; phase: 'loading' | 'applying' | 'ready' | 'error'; message?: string }>;
 export type PreviewLutRequest = {
-  id: number; key: string; settings: CameraSettings; grainSeed: number; loading: boolean;
+  id: number; key: string; settings: CameraSettings; grainSeed: number; loading: boolean; stampDate?: number;
   // Worklets 0.7 serializes TypedArrays through a worklet initializer, which
   // cannot be unpacked back on RN. Shared payloads must use raw ArrayBuffers.
   assetKey?: string; planes?: readonly [ArrayBuffer, ArrayBuffer, ArrayBuffer]; error?: string;
@@ -90,14 +91,14 @@ export function renderCameraLut(cell: PreviewLutCell, render: RenderFrame,
           caches.push(cached);
           const source = frameTexture.makeShaderOptions(TileMode.Clamp, TileMode.Clamp, FilterMode.Linear, MipmapMode.None);
           frameResources.push(source);
-          const spatial = request.settings.grain > 0 || request.settings.bloom > 0;
+          const spatial = hasSpatialEffects(request.settings);
           let shader = bindLutSource(cached.resources, source, spatial ? 1 : request.settings.intensity);
           frameResources.push(shader);
           if (spatial) {
             cached.spatial ??= createSpatialResources();
             shader = bindSpatialSource(cached.spatial, source, shader, request.settings,
               previewGeometry(frameTexture.width(), frameTexture.height(), frame.orientation, frame.isMirrored),
-              request.grainSeed, frameResources);
+              request.grainSeed, frameResources, request.stampDate);
           }
           const paint = Skia.Paint();
           frameResources.push(paint);

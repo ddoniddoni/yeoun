@@ -7,7 +7,7 @@ jest.mock('../../src/platform/files/drafts', () => ({ draftFile: jest.fn(), remo
 const files = jest.requireMock<{ draftFile: jest.Mock; removeFile: jest.Mock }>('../../src/platform/files/drafts');
 function snapshot(flashMode: PhotoFlashMode): Snapshot {
   return { id: 'capture', settings: cameraSettings('original'), grainSeed: 7, flashMode,
-    position: 'back', capturedAt: '2026-10-28T00:00:00.000Z' };
+    position: 'back', stampDate: 261028, capturedAt: '2026-10-28T00:00:00.000Z' };
 }
 function setup() {
   const file = { uri: 'file:///cache/source.jpg', exists: true, size: 1234 };

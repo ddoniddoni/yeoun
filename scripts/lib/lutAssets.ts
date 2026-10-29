@@ -3,6 +3,7 @@ import { link, lstat, mkdir, readFile, unlink, writeFile } from 'node:fs/promise
 import { dirname, join } from 'node:path';
 import { PNG } from 'pngjs';
 import type { FilterSeed, Rgb } from '../../src/domain/filters/types.ts';
+import { bundledDraftFilters } from '../../src/domain/filters/bundledDraftFilters.ts';
 import { createAuthoringTransform } from '../../src/rendering/reference/authoring.ts';
 import { assertLutAtlasStructure, createLutAtlas, LUT_CONTRACT, type LutAtlas } from '../../src/rendering/reference/lutAtlas.ts';
 import { assertLutPngContainer } from '../../src/rendering/assets/lutPng.ts';
@@ -52,9 +53,7 @@ export function buildLutBundle(seed: FilterSeed, seedHash: string): LutBundle {
     assets.push({ filterId, lookVersion, role, status: 'draft', path, sha256: hash });
   };
   add('identity', '0.1.0-draft', 'identity', input => input);
-  for (const collection of seed.collections) {
-    const filter = seed.filters.find(item => item.id === collection.representativeId);
-    if (!filter) throw new Error(`Missing representative: ${collection.representativeId}`);
+  for (const filter of bundledDraftFilters(seed)) {
     add(filter.id, filter.lookVersion, 'look', createAuthoringTransform(filter.authoring));
   }
   const manifest: LutManifest = {
@@ -118,7 +117,7 @@ export async function writeLutBundle(outputDirectory: string, bundle: LutBundle)
   for (const asset of bundle.manifest.assets) {
     if (!/^[a-f0-9]{64}$/.test(asset.sha256) ||
         asset.path !== `luts/${asset.filterId}-${asset.sha256}.png` ||
-        !/^(identity|(light|time|scene)-[a-z]+)$/.test(asset.filterId)) {
+        !/^(identity|(light|time|scene|retro)-[a-z]+)$/.test(asset.filterId)) {
       throw new Error('Refusing an invalid LUT output path');
     }
     const bytes = bundle.files.get(asset.path);

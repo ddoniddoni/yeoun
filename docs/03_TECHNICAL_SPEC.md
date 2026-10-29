@@ -1,5 +1,13 @@
 # 03. 기술 설계와 구현 계약
 
+## 2026-10-29 레트로 확장 구현
+
+- 새 패키지/native 소스/권한 없이 설치 Skia 2.4.19 RuntimeEffect를 확장한다. `CameraSettings`에 비네팅·붉은 번짐·선명도·디지털 노이즈·빛샘·먼지(각 0~1)와 날짜(boolean)를 필수로 추가하고 모든 필드를 요청 key와 불변 촬영 snapshot에 포함한다.
+- `CaptureController`는 비동기 capture 전에 현지 날짜 `stampDate`와 ISO `capturedAt`을 같은 Date에서 고정한다. 재렌더는 이 snapshot을 재사용한다. 날짜 미리보기는 날짜 옵션이 켜진 동안 60초 간격/앱 active 복귀에 갱신하며 최대 60초의 자정 표시 지연이 있을 수 있다. 저장 날짜는 실제 촬영 시점이므로 이 지연과 무관하다.
+- 미리보기와 export 모두 `hasSpatialEffects`를 사용하므로 입자/Bloom이 0이어도 새 효과가 있으면 공통 shader를 바인딩한다. 새 전체 크기 surface는 없다. 선명도는 켰을 때 LUT 추가 4회 sample이 필요하고 붉은 번짐은 bounded blur를 사용하므로 실제 프레임 비용 측정이 필요하다.
+- 새 seed는 13종이며 runtime bundle은 7종+identity다. manifest 수 검사는 고정 4개 대신 pinned expected map과 같은 개수/ID/version인지 확인한다. 임의 경로/URL, hash/PNG 형식 검사 우회는 허용하지 않는다. 기존 seed hash 디렉터리는 보존한다.
+- 렌더 버전이 0.3.0으로 바뀌었으므로 이전 버전 설정은 암묵적으로 해석하지 않는다. 레시피/영속 설정은 아직 구현 전이다. 현재 세션을 완전히 다시 열어 새 설정을 사용하는 것이 전제다.
+
 ## 1. 선택한 구조
 
 React Native와 TypeScript로 UI와 도메인을 구현한다. Expo Development Build를 사용하고, 카메라와 GPU 처리는 네이티브 라이브러리 adapter로 분리한다. MVP의 서버, 로그인, API 키와 외부 DB는 없다.

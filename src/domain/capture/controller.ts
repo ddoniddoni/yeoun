@@ -2,9 +2,10 @@ import { assertGrainSeed, createGrainSeed } from '../filters/grainSeed';
 import { copyCameraSettings, type CameraSettings } from '../filters/cameraSettings';
 import { assertFlashMode, type PhotoFlashMode } from './flash';
 import { copyExposure, type ExposureReading } from './metering';
+import { localStampDate } from '../filters/retroControls';
 export type Snapshot = Readonly<{
   id: string; settings: CameraSettings; position: 'front' | 'back'; capturedAt: string; grainSeed: number;
-  flashMode: PhotoFlashMode;
+  flashMode: PhotoFlashMode; stampDate: number;
   sourceExposure?: ExposureReading;
 }>;
 export type Draft = Readonly<{ sourceUri: string; width: number; height: number; orientation: string; mirrored: boolean }>;
@@ -46,8 +47,9 @@ export class CaptureController {
     try {
       assertGrainSeed(grainSeed);
       assertFlashMode(flashMode);
+      const now = new Date();
       this.snapshot = Object.freeze({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        capturedAt: new Date().toISOString(), position, grainSeed, flashMode,
+        capturedAt: now.toISOString(), stampDate: localStampDate(now), position, grainSeed, flashMode,
         sourceExposure: sourceExposure ? copyExposure(sourceExposure) : undefined, settings: copyCameraSettings(settings) });
       this.emit({ phase: 'capturing' });
       this.draft = await this.ports.capture(this.snapshot);

@@ -71,3 +71,25 @@ test('partial shader compilation releases previous effects', () => {
   expect(() => createSpatialResources()).toThrow('compilation');
   for (const item of r.allocated) expect(item.dispose).toHaveBeenCalledTimes(1);
 });
+
+test('halation reuses the same three bounded bloom passes even when bloom is off', () => {
+  const r = setup(); const compiled = createSpatialResources(); const drawing: { dispose(): void }[] = [];
+  bindSpatialSource(compiled, r.source, r.looked, { ...cameraSettings('retro-film'), bloom: 0 }, geometry, 7, drawing);
+  expect(skia.Surface.MakeOffscreen).toHaveBeenCalledTimes(3);
+  releaseNativeResources([...compiled.owned, ...drawing]);
+  for (const resource of r.allocated) expect(resource.dispose).toHaveBeenCalledTimes(1);
+});
+
+test('digital and overlay effects allocate no extra surface and forward the captured date as a scalar', () => {
+  const r = setup(); const compiled = createSpatialResources(); const drawing: { dispose(): void }[] = [];
+  const settings = { ...cameraSettings('retro-digital'), dateStamp: true, lightLeak: 0.4, dust: 0.3 };
+  expect(() => bindSpatialSource(compiled, r.source, r.looked, settings, geometry, 7, drawing, 0)).toThrow('date');
+  expect(drawing).toHaveLength(0);
+  bindSpatialSource(compiled, r.source, r.looked, settings, geometry, 7, drawing, 261029);
+  expect(skia.Surface.MakeOffscreen).not.toHaveBeenCalled();
+  expect(compiled.composite.makeShaderWithChildren).toHaveBeenCalledWith([
+    ...geometry.forward, 3024, 4032, 384 / 3024, 512 / 4032, 0.8, 0, 0, 7,
+    0.12, 0, 0.5, 0.22, 0.4, 0.3, 1, 261029,
+  ], [r.source, r.looked, r.looked]);
+  releaseNativeResources([...compiled.owned, ...drawing]);
+});

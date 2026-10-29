@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "status": "design-draft",
   "createdAt": "2026-10-27",
-  "description": "제작 시작용 수치. 완성된 LUT나 실기기 검증 결과가 아님.",
+  "description": "기존 9종과 승인된 레트로 확장 4종의 제작 초안. 색감 승인과 실기기 검증 전.",
   "renderContractVersion": "0.1.0",
   "lutContract": {
     "size": 33,
@@ -34,6 +34,12 @@
       "name": "장면",
       "subtitle": "시네마틱",
       "representativeId": "scene-dawn"
+    },
+    {
+      "id": "retro",
+      "name": "레트로",
+      "subtitle": "필름, 디카와 여행의 색",
+      "representativeId": "retro-film"
     }
   ],
   "filters": [
@@ -740,6 +746,350 @@
       "notes": [
         "따뜻한 피사체와 차가운 배경의 관계",
         "피부를 과하게 주황색으로 밀지 않음"
+      ]
+    },
+    {
+      "id": "retro-film",
+      "collection": "retro",
+      "name": "필름 35",
+      "caption": "따뜻한 필름색, 부드러운 입자와 붉은 빛 번짐",
+      "lookVersion": "0.1.0-draft",
+      "status": "design-draft",
+      "lut": null,
+      "authoring": {
+        "colorSpace": "srgb-encoded",
+        "exposureEv": 0.08,
+        "saturation": 0.93,
+        "toneCurve": [
+          [
+            0,
+            0.025
+          ],
+          [
+            0.18,
+            0.17
+          ],
+          [
+            0.4,
+            0.405
+          ],
+          [
+            0.6,
+            0.63
+          ],
+          [
+            0.82,
+            0.84
+          ],
+          [
+            1,
+            0.975
+          ]
+        ],
+        "shadowTintRgb": [
+          0.018,
+          0.012,
+          -0.012
+        ],
+        "highlightTintRgb": [
+          0.018,
+          0.006,
+          -0.022
+        ],
+        "hueBands": [
+          {
+            "centerDeg": 110,
+            "halfWidthDeg": 45,
+            "shiftDeg": -8,
+            "saturationMultiplier": 0.8
+          },
+          {
+            "centerDeg": 220,
+            "halfWidthDeg": 45,
+            "shiftDeg": -8,
+            "saturationMultiplier": 0.9
+          },
+          {
+            "centerDeg": 25,
+            "halfWidthDeg": 45,
+            "shiftDeg": 2,
+            "saturationMultiplier": 1.04
+          }
+        ]
+      },
+      "defaults": {
+        "intensity": 0.8,
+        "grain": 0.42,
+        "bloom": 0.08,
+        "vignette": 0.25,
+        "halation": 0.25,
+        "sharpness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
+      },
+      "notes": [
+        "여운 자체 제작 초안. 특정 필름·카메라·앱의 정밀 복제가 아님.",
+        "피부, 흰색, 하늘, 실내와 야간의 실제 사진으로 색감 승인 필요."
+      ]
+    },
+    {
+      "id": "retro-digital",
+      "collection": "retro",
+      "name": "디카 2005",
+      "caption": "또렷한 윤곽, 선명한 색과 디지털 노이즈",
+      "lookVersion": "0.1.0-draft",
+      "status": "design-draft",
+      "lut": null,
+      "authoring": {
+        "colorSpace": "srgb-encoded",
+        "exposureEv": 0.05,
+        "saturation": 1.12,
+        "toneCurve": [
+          [
+            0,
+            0
+          ],
+          [
+            0.18,
+            0.135
+          ],
+          [
+            0.4,
+            0.395
+          ],
+          [
+            0.6,
+            0.66
+          ],
+          [
+            0.82,
+            0.9
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "shadowTintRgb": [
+          -0.012,
+          0.006,
+          0.025
+        ],
+        "highlightTintRgb": [
+          0.012,
+          0.012,
+          -0.008
+        ],
+        "hueBands": [
+          {
+            "centerDeg": 210,
+            "halfWidthDeg": 45,
+            "shiftDeg": 7,
+            "saturationMultiplier": 1.13
+          },
+          {
+            "centerDeg": 110,
+            "halfWidthDeg": 45,
+            "shiftDeg": -5,
+            "saturationMultiplier": 1.08
+          },
+          {
+            "centerDeg": 0,
+            "halfWidthDeg": 45,
+            "shiftDeg": 0,
+            "saturationMultiplier": 1.04
+          }
+        ]
+      },
+      "defaults": {
+        "intensity": 0.8,
+        "grain": 0,
+        "bloom": 0,
+        "vignette": 0.12,
+        "halation": 0,
+        "sharpness": 0.5,
+        "digitalNoise": 0.22,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
+      },
+      "notes": [
+        "여운 자체 제작 초안. 특정 필름·카메라·앱의 정밀 복제가 아님.",
+        "피부, 흰색, 하늘, 실내와 야간의 실제 사진으로 색감 승인 필요."
+      ]
+    },
+    {
+      "id": "retro-rose",
+      "collection": "retro",
+      "name": "로즈 데이",
+      "caption": "분홍빛 하이라이트와 청록빛 거리",
+      "lookVersion": "0.1.0-draft",
+      "status": "design-draft",
+      "lut": null,
+      "authoring": {
+        "colorSpace": "srgb-encoded",
+        "exposureEv": 0.16,
+        "saturation": 0.94,
+        "toneCurve": [
+          [
+            0,
+            0.015
+          ],
+          [
+            0.18,
+            0.21
+          ],
+          [
+            0.4,
+            0.455
+          ],
+          [
+            0.6,
+            0.66
+          ],
+          [
+            0.82,
+            0.86
+          ],
+          [
+            1,
+            0.99
+          ]
+        ],
+        "shadowTintRgb": [
+          -0.012,
+          0.012,
+          0.018
+        ],
+        "highlightTintRgb": [
+          0.028,
+          -0.012,
+          0.012
+        ],
+        "hueBands": [
+          {
+            "centerDeg": 220,
+            "halfWidthDeg": 45,
+            "shiftDeg": -16,
+            "saturationMultiplier": 1.03
+          },
+          {
+            "centerDeg": 340,
+            "halfWidthDeg": 45,
+            "shiftDeg": 7,
+            "saturationMultiplier": 1.08
+          },
+          {
+            "centerDeg": 110,
+            "halfWidthDeg": 45,
+            "shiftDeg": -12,
+            "saturationMultiplier": 0.8
+          }
+        ]
+      },
+      "defaults": {
+        "intensity": 0.8,
+        "grain": 0.03,
+        "bloom": 0.12,
+        "vignette": 0,
+        "halation": 0,
+        "sharpness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
+      },
+      "notes": [
+        "여운 자체 제작 초안. 특정 필름·카메라·앱의 정밀 복제가 아님.",
+        "피부, 흰색, 하늘, 실내와 야간의 실제 사진으로 색감 승인 필요."
+      ]
+    },
+    {
+      "id": "retro-travel",
+      "collection": "retro",
+      "name": "맑은 여행",
+      "caption": "맑은 하늘색, 가벼운 햇빛과 부드러운 명암",
+      "lookVersion": "0.1.0-draft",
+      "status": "design-draft",
+      "lut": null,
+      "authoring": {
+        "colorSpace": "srgb-encoded",
+        "exposureEv": 0.22,
+        "saturation": 0.9,
+        "toneCurve": [
+          [
+            0,
+            0.03
+          ],
+          [
+            0.18,
+            0.235
+          ],
+          [
+            0.4,
+            0.475
+          ],
+          [
+            0.6,
+            0.675
+          ],
+          [
+            0.82,
+            0.86
+          ],
+          [
+            1,
+            0.985
+          ]
+        ],
+        "shadowTintRgb": [
+          0.002,
+          0.012,
+          0.024
+        ],
+        "highlightTintRgb": [
+          0.012,
+          0.012,
+          -0.008
+        ],
+        "hueBands": [
+          {
+            "centerDeg": 220,
+            "halfWidthDeg": 45,
+            "shiftDeg": -8,
+            "saturationMultiplier": 1.05
+          },
+          {
+            "centerDeg": 110,
+            "halfWidthDeg": 45,
+            "shiftDeg": -8,
+            "saturationMultiplier": 0.88
+          },
+          {
+            "centerDeg": 340,
+            "halfWidthDeg": 45,
+            "shiftDeg": 3,
+            "saturationMultiplier": 0.98
+          }
+        ]
+      },
+      "defaults": {
+        "intensity": 0.8,
+        "grain": 0.08,
+        "bloom": 0.06,
+        "vignette": 0,
+        "halation": 0,
+        "sharpness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
+      },
+      "notes": [
+        "여운 자체 제작 초안. 특정 필름·카메라·앱의 정밀 복제가 아님.",
+        "피부, 흰색, 하늘, 실내와 야간의 실제 사진으로 색감 승인 필요."
       ]
     }
   ]

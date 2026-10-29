@@ -11,6 +11,22 @@ function setup() {
 }
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(r => { resolve = r; }); return { promise, resolve }; }
 const edited: Output = { ...output, uri: 'file:///filtered-1.jpg', bytes: 2222 };
+test('film stamps the local capture date by default and editing tomorrow keeps that date', async () => {
+  jest.useFakeTimers();
+  try {
+    jest.setSystemTime(new Date(2026, 9, 30, 23, 59));
+    const { controller, ports } = setup();
+    await controller.capture(cameraSettings('retro-film'), 'back', 91);
+    const first = ports.capture.mock.calls[0]![0];
+    expect(first).toMatchObject({ stampDate: 261030, settings: { dateStamp: true } });
+    jest.setSystemTime(new Date(2026, 9, 31, 0, 1));
+    ports.render.mockResolvedValueOnce(edited);
+    expect(await controller.edit({ ...cameraSettings('retro-film'), grain: 0.4 })).toBe(true);
+    expect(ports.render.mock.calls[1]![1]).toMatchObject({ stampDate: 261030, capturedAt: first.capturedAt,
+      settings: { dateStamp: true, grain: 0.4 } });
+  } finally { jest.useRealTimers(); }
+});
+
 test('editing rerenders the source and preserves capture metadata; save uses the accepted revision', async () => {
   const { controller, ports } = setup(); const captured = cameraSettings('retro-film');
   await controller.capture(captured, 'front', 91, 'auto', { value: 1, unit: 'ev' });

@@ -1,5 +1,5 @@
 import { RETRO_SKSL } from './retro';
-export const SPATIAL_BACKEND_VERSION = 'grain-bloom-retro-0.3.0';
+export const SPATIAL_BACKEND_VERSION = 'grain-bloom-retro-0.4.0';
 
 const COLOR = `
 float3 linearColor(half4 color) {
@@ -62,6 +62,8 @@ uniform float intensity;
 uniform float grain;
 uniform float bloom;
 uniform float seed;
+uniform float grainResolution;
+uniform float grainAmplitude;
 ${COLOR}
 ${RETRO_SKSL}
 float hash(float2 cell) {
@@ -79,10 +81,10 @@ float noise(float2 p) {
 }
 float filteredNoise(float2 xy) {
   float longest = max(size.x, size.y);
-  float2 p = clamp(xy, float2(0.0), size) * (1600.0 / longest);
-  float offset = max(1.0, 1600.0 / longest) * 0.25;
+  float2 p = clamp(xy, float2(0.0), size) * (grainResolution / longest);
+  float offset = max(1.0, grainResolution / longest) * 0.25;
   return (noise(p + float2(-offset, -offset)) + noise(p + float2(offset, -offset)) +
-    noise(p + float2(-offset, offset)) + noise(p + float2(offset, offset))) * 0.25 * min(1.0, longest / 1600.0);
+    noise(p + float2(-offset, offset)) + noise(p + float2(offset, offset))) * 0.25 * min(1.0, longest / grainResolution);
 }
 float3 bloomAt(float2 p) {
   float2 cell = floor(p - 0.5) + 0.5; float2 f = fract(p - 0.5);
@@ -106,7 +108,7 @@ half4 main(float2 xy) {
   if (grain > 0.0) {
     float y = dot(styled, float3(0.2126, 0.7152, 0.0722));
     float envelope = 0.35 + 0.65 * (1.0 - abs(2.0*y - 1.0));
-    styled = clamp(styled + filteredNoise(normalized) * 0.04 * grain * envelope, 0.0, 1.0);
+    styled = clamp(styled + filteredNoise(normalized) * grainAmplitude * grain * envelope, 0.0, 1.0);
   }
   styled = applyRetro(styled, normalized);
   if (dateStamp > 0.0) styled = mix(styled, float3(1.0, 0.43, 0.12), stampMask(normalized) * 0.95);

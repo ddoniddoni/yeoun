@@ -5,15 +5,15 @@ test('original bypasses style and defaults come from the selected look while exp
   expect(cameraSettings('original').intensity).toBe(0);
   expect(cameraSettings('light-afternoon').intensity).toBe(0.8);
   expect(cameraSettings('time-summer', 0).intensity).toBe(0);
-  expect(cameraSettings('retro-film').intensity).toBe(0.9);
+  expect(cameraSettings('retro-film').intensity).toBe(1);
   expect(cameraSettings('retro-digital', 0).intensity).toBe(0);
 });
 
 test('revised film and digital looks require their exact new version without changing other looks', () => {
   for (const id of ['retro-film', 'retro-digital'] as const) {
     const settings = cameraSettings(id);
-    expect(settings.lookVersion).toBe(id === 'retro-film' ? '0.4.0-draft' : '0.3.0-draft');
-    const previousVersion = id === 'retro-film' ? '0.3.0-draft' : '0.2.0-draft';
+    expect(settings.lookVersion).toBe(id === 'retro-film' ? '0.5.0-draft' : '0.3.0-draft');
+    const previousVersion = id === 'retro-film' ? '0.4.0-draft' : '0.2.0-draft';
     expect(() => copyCameraSettings({ ...settings, lookVersion: previousVersion })).toThrow();
     expect(() => copyCameraSettings({ ...settings, lookVersion: '0.1.0-draft' })).toThrow();
     expect(cameraSettingsKey(settings)).not.toBe(cameraSettingsKey({ ...settings, lookVersion: '0.1.0-draft' }));
@@ -28,7 +28,7 @@ test('revised film and digital looks require their exact new version without cha
 test('unsupported versions and invalid strengths cannot silently render', () => {
   const source = cameraSettings('scene-dawn');
   expect(() => copyCameraSettings({ ...source, lookVersion: 'future' })).toThrow();
-  expect(() => copyCameraSettings({ ...source, rendererVersion: 'lut-camera-0.3.0' as typeof source.rendererVersion })).toThrow();
+  expect(() => copyCameraSettings({ ...source, rendererVersion: 'lut-camera-0.4.0' as typeof source.rendererVersion })).toThrow();
   for (const value of [NaN, Infinity, -0.1, 1.1]) {
     expect(() => copyCameraSettings({ ...source, grain: value })).toThrow();
     expect(() => copyCameraSettings({ ...source, bloom: value })).toThrow();

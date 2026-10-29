@@ -82,6 +82,9 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
       })}
     </ScrollView>
     <Text style={styles.caption}>{CAMERA_FILTERS.find(filter => filter.id === settings.filterId)?.caption}</Text>
+    {settings.dateStamp && settings.intensity > 0 ? <Text style={styles.caption}>
+      날짜 도장 켜짐 · 오른쪽 아래에 촬영한 날을 남겨요.
+    </Text> : null}
     {!original ? <>
       <EffectAmount label="필터 강도" value={settings.intensity} disabled={disabled} accent={accent} onChange={onIntensity} />
       <Pressable accessibilityRole="button" accessibilityLabel="질감과 레트로 효과"
@@ -98,7 +101,7 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
           <Switch accessibilityLabel="날짜 도장" disabled={disabled} value={settings.dateStamp}
             onValueChange={onDateStamp} trackColor={{ false: theme.line, true: accent }} />
         </View>
-        <Text style={styles.caption}>날짜·빛샘·먼지는 기본으로 꺼져 있어요. 켜면 저장한 사진에도 남아요.</Text>
+        <Text style={styles.caption}>필름은 날짜 도장이 기본으로 켜져 있어요. 날짜·빛샘·먼지를 켜면 저장한 사진에도 남아요.</Text>
       </> : null}
       {settings.intensity === 0 ? <Text style={styles.caption}>강도가 0%라 모든 효과가 보이지 않아요. 조절값은 유지돼요.</Text> : null}
       <CameraAction label="필터 기본값으로 초기화" disabled={disabled} onPress={onReset} />

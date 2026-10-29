@@ -1,5 +1,14 @@
 # 03. 기술 설계와 구현 계약
 
+## 2026-10-30 결과 원본 비교 소유권
+
+- `CaptureController.prepareOriginal()`은 사용자가 요청한 때만 `renderOriginal` 포트를 호출하고 성공 파일을 세션 동안 재사용한다. 기존 source와 filtered output에 `comparison-original.jpg` 하나를 추가로 소유한다. 원본/강도 0은 준비하지 않는다.
+- 비교는 기존 `neutralizeOrientation → centerCrop43 → orientationTransform` 경로를 공유한다. 원본 표시용 surface만 긴 변 최대 1600px로 제한하고 Linear sampling으로 축소한다. `exportPhoto`의 고해상도 출력/실패 정책은 유지한다. 모두 동일한 JPEG 파일 재열기·치수·픽셀 디코드 확인 뒤 URI를 공개한다.
+- 준비 작업도 기존 단일 busy/epoch에 포함한다. 준비 중 저장·버리기·중복 요청은 막는다. background는 epoch를 무효화하여 늦게 끝난 비교 파일만 지우고 기존 source/filtered/saved 상태는 유지한다. close는 진행 중 작업 종료 후 전체 임시 파일을 정리한다. discard 자체도 busy로 보호한다.
+- React에는 URI/치수/상태만 넘긴다. 새 비교 Image의 onLoad 성공 후에만 전환을 허용하며 onError는 필터 결과를 유지하고 다시 열기 버튼을 제공한다. 준비 오류는 저장 오류와 별도로 표시한다. held/pinned는 background·저장·복귀에서 해제한다.
+- 비교 중 저장도 controller가 소유한 filtered output만 사용한다. 저장 성공/실패가 비교 파일이나 촬영 snapshot을 교체하지 않는다. 비교 파일은 갤러리에 저장하지 않는다.
+- surface를 줄여도 source JPEG 전체 디코드와 RN JS runtime의 동기 GPU/readback/encoding 비용은 남는다. 실제 지연·메모리·색 공간·전/후면 방향 검증은 NOT_RUN이다. 패키지/native/권한 변경 없음.
+
 ## 2026-10-29 레트로 확장 구현
 
 - 새 패키지/native 소스/권한 없이 설치 Skia 2.4.19 RuntimeEffect를 확장한다. `CameraSettings`에 비네팅·붉은 번짐·선명도·디지털 노이즈·빛샘·먼지(각 0~1)와 날짜(boolean)를 필수로 추가하고 모든 필드를 요청 key와 불변 촬영 snapshot에 포함한다.

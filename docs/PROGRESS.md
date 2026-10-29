@@ -1,6 +1,19 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-29 필름·디카·도시 4종과 선택 효과
+## 현재 상태 — 2026-10-30 촬영 결과 원본 비교
+
+- 요청: “실기기확인 말고 다른것부터”. 레트로 확장의 실기기 확인을 보류하고 결과 원본 비교 개발을 진행했다. PR #18이 반영된 깨끗한 develop `c147762`에서 fetch/fast-forward 후 `feature/result-original-comparison`을 생성했다.
+- 구현: 결과 화면에서 요청 시 원본 비교 준비, 누르는 동안 비교/유지 스위치, 원본·필터 배지와 고정 프레임. 원본/강도 0에는 비교 조작이 없다. 이미지 로드 성공 전 전환을 막고 준비 실패/표시 실패를 각각 재시도한다. 원본 표시 중에도 저장은 촬영 당시 고해상도 필터 결과다.
+- 엔진: 같은 source와 EXIF 방향/crop 변환을 재사용하고 비교 surface만 긴 변 최대 1600px로 만든다. 전체 효과와 날짜를 우회하며 기존 고해상도 export 정책은 유지한다. 별도 `comparison-original.jpg`에 쓰고 재디코드 후 공개한다. 사진 업로드·새 패키지·lockfile/native/권한 변경 없음.
+- 수명: controller는 원본 준비까지 단일 작업으로 직렬화한다. 중복/저장/버리기를 막고 background에서 늦은 비교 결과만 지운다. close/discard는 세 파일을 정리한다. 저장 상태와 촬영 snapshot은 비교 실패에도 보존한다. 비교 재사용은 세션 안에서만 한다.
+- 변경 파일: `src/domain/capture/controller.ts`, `src/platform/files/drafts.ts`, `src/rendering/adapters/exportPhoto.ts`, `src/screens/{CameraResultScreen,M0CameraScreen,ResultPhotoComparison}.tsx`, `tests/integration/{controller,renderResources}.test.ts`, README 및 제품/기술/계획/검수/REFERENCES/PROGRESS 문서.
+- 테스트 소스: 지연 생성/캐시/필터 출력 저장, 중복 입력, 저장 후 실패·재시도, background/close 정리, 원본·강도 0 우회, 1600px 비교 surface와 고해상도 저장 분리, EXIF 1~8/비표준 crop의 동일 변환, 작은 소스 확대 금지와 실패 자원 해제. 작성만 했으며 실행하지 않았다.
+- 실제 명령: `git status`, `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/result-original-comparison` exit 0. 소스·설치 RN/Skia 타입과 공식 RN Image 문서를 읽었다. 추정 Canvas/테스트 파일 경로 일부가 없어 실제 경로로 다시 읽었으며 Skia surfaces 웹 조회는 실패했다. `git diff --check` exit 0. 앱·Metro·실기기 프로세스를 시작하지 않았다.
+- **NOT_RUN — 사용자 지시:** lint, typecheck, Jest, react-doctor, 자산 검증 CLI, JS/native build, iOS/Android 실행. 기존 레트로 확장/현재 비교의 G0/G1/G2 미검증을 유지한다. 소스 검토를 테스트 통과로 보고하지 않는다.
+- 남은 위험: 원본 전체 JPEG 디코드/동기 렌더의 실제 지연·메모리, 양 플랫폼 이미지 로딩/전환·접근성, 색 공간·구도·갤러리 파일 일치. 화면용 원본은 축소/재인코딩되어 1:1 픽셀 비교가 아니다.
+- 다음 개발: 저장 전 필터 재편집. 실기기 확인은 사용자가 요청할 때 재개한다. 개발 후 상시 승인된 Git Flow로 commit/push/develop PR·merge·동기화 후 develop에서 마친다. 최종 통합 상태는 해당 PR과 Git 이력을 따른다.
+
+## 이전 기록 — 2026-10-29 필름·디카·도시 4종과 선택 효과
 
 - 사용자 요청: 필름카메라/옛날 디카/Analog Paris·Tokyo 참고 조사 후 제안한 기능을 모두 추가. 결과 원본 비교보다 이번 확장을 먼저 진행하도록 승인했다. 깨끗한 develop `438e60d`에서 fetch/fast-forward 후 `feature/retro-camera-looks`를 생성했다. 이전 안정화는 PR #17로 병합 완료된 상태였다.
 - 새 색감: **필름 35, 디카 2005, 로즈 데이, 맑은 여행**. 기존 대표 3종을 유지하고 앱 선택 가능 색감은 7종+원본이다. 제작 seed 전체는 기존 9종+4종=13종이며 기존 미제작 6종은 이번 범위에 포함하지 않았다. 필터 명칭만 붙인 Matrix가 아니라 서로 다른 tone curve/tint/hue band/saturation으로 생성한 33³ LUT를 등록했다. 모든 자산은 draft/HUMAN_REVIEW_PENDING이다.

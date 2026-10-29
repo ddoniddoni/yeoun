@@ -2,13 +2,79 @@ import { cameraSettings } from '../../src/domain/filters/cameraSettings';
 import { CaptureController, type CapturePorts, type CaptureState, type Draft, type Output, type Snapshot } from '../../src/domain/capture/controller';
 const draft: Draft = { sourceUri: 'file:///source.jpg', width: 4032, height: 3024, orientation: 'up', mirrored: false };
 const output: Output = { uri: 'file:///filtered.jpg', width: 4032, height: 3024, bytes: 1234 };
+const original: Output = { uri: 'file:///comparison-original.jpg', width: 1600, height: 1200, bytes: 456 };
 function setup() {
   const states: CaptureState[] = [];
-  const ports: jest.Mocked<CapturePorts> = { capture: jest.fn<Promise<Draft>, [Snapshot]>().mockResolvedValue(draft), render: jest.fn<Promise<Output>, [Draft, Snapshot]>().mockResolvedValue(output), save: jest.fn<Promise<void>, [Output]>().mockResolvedValue(undefined), remove: jest.fn<Promise<void>, [string]>().mockResolvedValue(undefined) };
+  const ports: jest.Mocked<CapturePorts> = { capture: jest.fn<Promise<Draft>, [Snapshot]>().mockResolvedValue(draft), render: jest.fn<Promise<Output>, [Draft, Snapshot]>().mockResolvedValue(output), renderOriginal: jest.fn<Promise<Output>, [Draft, Snapshot]>().mockResolvedValue(original), save: jest.fn<Promise<void>, [Output]>().mockResolvedValue(undefined), remove: jest.fn<Promise<void>, [string]>().mockResolvedValue(undefined) };
   const controller = new CaptureController(ports, state => states.push(state));
   return { controller, ports, states };
 }
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(r => { resolve = r; }); return { promise, resolve }; }
+test('comparison is lazy, cached, and never becomes the gallery output', async () => {
+  const { controller, ports } = setup();
+  await controller.capture({ ...cameraSettings('retro-film'), dateStamp: true, dust: 0.5 }, 'front');
+  expect(ports.renderOriginal).not.toHaveBeenCalled();
+  await controller.prepareOriginal(); await controller.prepareOriginal();
+  expect(ports.renderOriginal).toHaveBeenCalledTimes(1);
+  expect(ports.renderOriginal).toHaveBeenCalledWith(draft, ports.capture.mock.calls[0]![0]);
+  expect(controller.state).toMatchObject({ phase: 'file-ready', output, original });
+  await controller.save();
+  expect(ports.save).toHaveBeenCalledWith(output);
+  expect(controller.state).toMatchObject({ phase: 'saved', output, original });
+  await controller.discard();
+  expect(ports.remove.mock.calls).toEqual([[draft.sourceUri], [output.uri], [original.uri]]);
+  expect(controller.state).toEqual({ phase: 'idle' });
+});
+test('comparison preparation serializes save, discard and repeated taps', async () => {
+  const { controller, ports } = setup();
+  await controller.capture(cameraSettings('time-summer'), 'back');
+  const pending = deferred<Output>(); ports.renderOriginal.mockReturnValueOnce(pending.promise);
+  const prepare = controller.prepareOriginal();
+  await controller.prepareOriginal(); await controller.save(); await controller.discard();
+  expect(controller.state).toMatchObject({ preparingOriginal: true, output });
+  expect(ports.renderOriginal).toHaveBeenCalledTimes(1);
+  expect(ports.remove).not.toHaveBeenCalled(); expect(ports.save).not.toHaveBeenCalled();
+  pending.resolve(original); await prepare; await controller.save();
+  expect(ports.save).toHaveBeenCalledWith(output);
+});
+test('comparison failure retains saved state and supports retry without recapture', async () => {
+  const { controller, ports } = setup();
+  await controller.capture(cameraSettings('retro-digital'), 'back'); await controller.save();
+  ports.renderOriginal.mockRejectedValueOnce(new Error('allocation'));
+  await controller.prepareOriginal();
+  expect(controller.state).toMatchObject({ phase: 'saved', output, preparingOriginal: false });
+  expect(controller.state.originalError).toBeDefined();
+  await controller.prepareOriginal();
+  expect(controller.state).toMatchObject({ phase: 'saved', original });
+  expect(controller.state.originalError).toBeUndefined();
+  expect(ports.capture).toHaveBeenCalledTimes(1); expect(ports.render).toHaveBeenCalledTimes(1);
+});
+test('background discards a late comparison but retains the source and filtered export for retry', async () => {
+  const { controller, ports } = setup();
+  await controller.capture(cameraSettings('scene-dawn'), 'front');
+  const pending = deferred<Output>(); ports.renderOriginal.mockReturnValueOnce(pending.promise);
+  const prepare = controller.prepareOriginal(); controller.interrupt(); pending.resolve(original); await prepare;
+  expect(ports.remove.mock.calls).toEqual([[original.uri]]);
+  expect(controller.state).toMatchObject({ phase: 'file-ready', output, preparingOriginal: false });
+  expect(controller.state.original).toBeUndefined();
+  await controller.prepareOriginal(); expect(controller.state.original).toBe(original);
+});
+test('unmount waits for comparison rendering before deleting all owned files, without publishing', async () => {
+  const { controller, ports, states } = setup();
+  await controller.capture(cameraSettings('scene-dawn'), 'front');
+  const pending = deferred<Output>(); ports.renderOriginal.mockReturnValueOnce(pending.promise);
+  const prepare = controller.prepareOriginal(); const count = states.length;
+  controller.close(); expect(ports.remove).not.toHaveBeenCalled();
+  pending.resolve(original); await prepare;
+  expect(states).toHaveLength(count);
+  expect(ports.remove.mock.calls).toEqual([[original.uri], [draft.sourceUri], [output.uri]]);
+});
+test.each(['original', 'zero'] as const)('already unstyled %s output does not allocate a comparison', async mode => {
+  const { controller, ports } = setup();
+  await controller.capture(mode === 'original' ? cameraSettings('original') : cameraSettings('retro-film', 0), 'back');
+  await controller.prepareOriginal(); expect(ports.renderOriginal).not.toHaveBeenCalled();
+  await controller.save(); expect(ports.save).toHaveBeenCalledWith(output);
+});
 test('initial state is idle; export does not report gallery success', async () => {
   const { controller, ports, states } = setup(); expect(controller.state.phase).toBe('idle');
   await controller.capture(cameraSettings('light-afternoon'), 'back');

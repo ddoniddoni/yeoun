@@ -330,6 +330,10 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 
 [Skia SkSL Runtime Effects](https://skia.org/docs/user/sksl/)와 설치 Skia 2.4.19의 `src/skia/types/RuntimeEffect/RuntimeEffect.ts`, `cpp/api/JsiSkRuntimeEffect.h`를 확인했다. 기존 `makeShaderWithChildren(number[], SkShader[])`를 사용하고 새 조절값/날짜는 float uniform으로 넘긴다. 방향·crop 좌표는 기존 geometry를 재사용하며 별도 native API/패키지를 추가하지 않는다. 선명도/비네팅/붉은 번짐/노이즈/빛샘/먼지/7-segment 날짜 수식은 프로젝트의 자체 설계다. 실제 SkSL 컴파일, uniform 배치, 양 플랫폼 GPU/미리보기·저장 일치, 성능·색감은 NOT_RUN이며 공식 API 존재만으로 검증을 대신하지 않는다.
 
+## S38. 촬영 결과 비교 이미지 표시 — 2026-10-30
+
+[React Native 0.83 Image 공식 문서](https://reactnative.dev/docs/0.83/image)의 onLoad/onError, contain, Android resizeMethod와 fadeDuration을 확인했다. 설치 `react-native@0.83.10/Libraries/Image/Image.d.ts`와 Skia 2.4.19의 `src/skia/types/Canvas.ts`에서 scale/drawImageOptions 시그니처를 확인했다. 비교용 이미지 로드 성공 여부를 따로 추적하고 고정된 프레임 안에서 전환한다. Android resize와 fadeDuration을 지정하며 iOS에 같은 구현을 주장하지 않는다. Skia surfaces 문서 조회는 도구에서 실패했고 이 부분은 설치 타입과 기존 offscreen 경로를 근거로 작성했다. 실제 렌더링·성능·접근성은 NOT_RUN이다.
+
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.

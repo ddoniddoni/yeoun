@@ -2,7 +2,7 @@
 
 ## 2026-10-30 두 레트로 look 개정
 
-`retro-film`/`retro-digital`은 `0.2.0-draft`, 다른 look/identity는 `0.1.0-draft`다. 렌더 엔진/효과 순서/atlas 형식은 그대로다. schema·도메인 타입은 두 초안 버전을 표현하고 실제 runtime은 선택 ID별 seed version과 고정 manifest expectation을 모두 확인한다. 기본 강도는 seed를 따르되 명시적 0은 유지한다. 기존 LUT 폴더를 덮어쓰지 않고 새 seed hash 아래에 자산을 생성했다. 색감 목표와 변환 수치는 [별도 기록](RETRO_LOOK_DIRECTION.md)에 있으며 정밀 필름/CCD 재현을 주장하지 않는다.
+`retro-film`은 `0.3.0-draft`, `retro-digital`은 `0.2.0-draft`, 다른 look/identity는 `0.1.0-draft`다. 렌더 엔진/효과 순서/atlas 형식은 그대로다. schema·도메인 타입은 세 초안 버전을 표현하고 실제 runtime은 선택 ID별 seed version과 고정 manifest expectation을 모두 확인한다. 기본 강도는 seed를 따르되 명시적 0은 유지한다. 기존 LUT 폴더를 덮어쓰지 않고 새 seed hash 아래에 자산을 생성했다. 색감 목표와 변환 수치는 [별도 기록](RETRO_LOOK_DIRECTION.md)에 있으며 정밀 필름/CCD 재현을 주장하지 않는다.
 
 ## 2026-10-29 레트로 확장 계약 (이 절이 아래 v0 설명보다 우선)
 

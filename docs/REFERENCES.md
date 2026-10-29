@@ -345,3 +345,9 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 ## 추가 조사 시 기록 규칙
 
 새 기술을 채택할 때는 공식 URL, 확인 날짜, 설치할 정확한 버전, 적용하려는 기능과 미확인 부분을 함께 남긴다. 검색 결과의 설명만으로 동작을 단정하지 말고 타입 정의와 실제 빌드를 확인한다. 공식 문서에서 API가 확인되지 않으면 임의로 함수명을 만들어 사용하지 않는다.
+
+## S41. 일회용 필름과 직광 스냅 선호 반영 — 2026-10-30
+
+- Kodak 공식: https://kodakprofessional.com/en-gb/photographers/film/single-use-cameras — FunSaver 800 감도, 수동 플래시, 밝고 진한 색 설명.
+- 직접 촬영/현상 자료: https://thedarkroom.com/disposable-cameras-top-cameras-reviewed-compared/kodak-fun-saver-disposable-camera/ — 노란 철교 샘플을 임시 폴더에서 실제 열어 관찰. warm tones/subtle grain이라는 저자의 평가와, 강한 입자를 원하는 사용자 선호를 구분한다.
+- 적용: `RETRO_LOOK_DIRECTION.md`의 현재 방향. 0.3 필름 수치는 자체 설계이고 특정 필름/카메라 측정 복제가 아니다. 외부 사진을 앱/저장소에 포함하지 않았다.

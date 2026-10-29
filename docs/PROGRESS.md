@@ -1,6 +1,18 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-30 실기기 피드백에 따른 필름·디카 색감 개정
+## 현재 상태 — 2026-10-30 일회용 필름·직광 스냅 선호 반영
+
+- 사용자 후속 답변: 필름은 **일회용 카메라처럼 거친 입자와 진한 색**, 디카는 **2000년대 싸이월드·직광 플래시 스냅**. 첫 수정안 PR #21 병합 후 깨끗한 develop `d87777b`에서 fetch/FF와 `fix/disposable-flash-snap` 생성 성공. 이 선호가 이전 답변 대기/부드러운 필름 방향보다 우선한다.
+- 조사: Kodak 공식 FunSaver 소개와 The Darkroom 직접 촬영 자료를 읽고 노란 철교 사진을 임시 폴더에서 실제 열어 관찰했다. 타사 사진은 앱/저장소에 포함하지 않았다. 저자의 subtle grain 평가와 사용자가 원하는 강한 입자를 구분한다. 수치는 측정 복제가 아닌 자체 표현 선택이다.
+- 필름: 이름을 ‘일회용 필름’으로 변경, 채도 1.02→1.18, black 0.055→0.018, grain 0.24→0.72, vignette 0.16→0.28, bloom 0.12→0.06, halation 0.09→0.14. 입자 크기/패턴과 shader는 유지하며 더 굵은 입자 필요 여부는 실사진 피드백 대기. 필름만 0.3.0-draft, 디카는 0.2.0-draft, 나머지/identity는 0.1.0-draft.
+- 촬영 UI: 필름·디카의 카메라 조절 패널에서 실제 플래시 on/off 바로가기. 자동 상태에서는 on으로 전환하며 필터 선택만으로 켜지지 않는다. 기존 device별 선택/카메라 전환 초기화/촬영 snapshot 경로를 재사용한다. 미지원 카메라는 안내만 표시하고 촬영 후 편집에는 플래시 조작을 넣지 않는다.
+- 자산: `npm run generate:luts` exit 0. 새 hash `2c314f81399ef9933eff6b8a3c335957ac4a87a5638cf9b4fc48518508aa76b0`에 identity+7 PNG/.lut/manifest 생성 및 Metro literal registry 연결. 이전 자산 폴더 보존. 기존 MODULE_TYPELESS_PACKAGE_JSON 경고 유지. 생성기의 내부 입력 확인은 별도 검사 실행으로 주장하지 않는다.
+- 변경 파일: seed/schema, domain filters types/cameraSettings, rendering assets bundledLuts/lutManifest, M0CameraScreen, 위 새 hash 자산, cameraSettings/retroControls/lutManifest/lutLoader/bundledLutLoader 테스트 소스, README 및 제품/엔진/검수/REFERENCES/RETRO_LOOK_DIRECTION/PROGRESS. 새 패키지·native·권한·shader 변경 없음.
+- 실제 실행: 기존 Metro 중지 → 수정 완료 후 `EXPO_NO_TELEMETRY=1 EXPO_NO_DEPENDENCY_VALIDATION=1 npm start -- --lan --port 8081` → Xcode 경로를 지정한 devicectl `--terminate-existing --console --payload-url` launch 성공. JS Bundled **653ms / 1504 modules**, 후면 실제 frame **1178×1572 / yuv-420-8-bit-full / up / mirror false** 관측. 기존 UIKit callback/NO_COLOR 경고는 남는다. 앱/Metro는 사용자 비교를 위해 유지한다.
+- `git diff --check` exit 0, 관련 diff와 플래시 상태/촬영 호출부 소스 검토. **NOT_RUN:** lint/typecheck/Jest/react-doctor/별도 자산 검증/native build/Android. 테스트 소스의 버전 pin/기본값/import만 갱신하고 실행하지 않았다. 새 필름·디카 선택/실제 발광/저장 일치/색감 승인과 장기 성능은 미검증이며 G0/G1/G2 미통과를 유지한다.
+- 다음: 사용자에게 필름/디카 비교와 플래시 촬영 결과 피드백을 요청했다. 이번 작업은 선호에 따른 색감/촬영 동선 수정이며 다음 신규 기능으로 확장하지 않는다. 상시 승인된 Git Flow로 작업 커밋·푸시·develop PR 생성/병합·동기화를 진행한다.
+
+## 이전 기록 — 2026-10-30 실기기 피드백에 따른 필름·디카 색감 개정
 
 - 사용자 요청의 iPhone 세션에서 develop `80c7e51`을 열었다. 최초 devicectl은 CLT 경로라 실패해 프로세스별 Xcode 경로로 재조회했다. 기기는 available이었고 앱 조회 첫 연결은 reset by peer, 잠금 해제 후 재조회/launch 성공. JS bundle 822ms/1520 modules와 후면 1178×1572/up 프레임을 관측했다. 초기 frame-was-late 경고가 있었으며 성능 합격으로 기록하지 않는다. 사용자는 **필름/디카가 기대한 느낌이 아니라 실제 자료 조사 후 수정이 필요**하다고 답했다. 촬영·원본 비교·재편집·저장 통과 답변은 받지 않았다.
 - 깨끗한 develop에서 fetch/FF 후 `fix/retro-look-direction` 생성. Kodak 공식 자료와 실제 Gold 200 스캔/IXUS 40 촬영 샘플을 조사하고 두 이미지 파일을 임시 폴더에서 열어 관찰했다. 일부 Kodak URL/PDF·Lomography 기사 조회는 실패했으며 상세 근거는 `RETRO_LOOK_DIRECTION.md`에 남겼다. 외부 사진은 커밋하지 않는다.

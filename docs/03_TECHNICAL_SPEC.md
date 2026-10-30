@@ -1,5 +1,17 @@
 # 03. 기술 설계와 구현 계약
 
+## 2026-10-30 즐겨찾기 영구 저장
+
+명세 허용 목록의 `expo-sqlite@55.0.20`을 exact 설치했다. Expo55.0.32의 bundledNativeModules와 공식 SDK55 문서 권장 범위가~55.0.20이고 peer는 Expo/React/RN `*`이다. MIT, npm unpacked78,017,151바이트이며 이는 앱 용량 증가 실측이 아니다. transitive await-lock2.2.2도 lockfile에 고정된다. lifecycle script/Pod install/prebuild/JS·native build는 실행하지 않았다. 새 모듈을 포함한 iOS/Android 개발 빌드가 이후 기기 확인의 선행 조건이다. [S48](REFERENCES.md#s48-즐겨찾기와-expo-sqlite--2026-10-30).
+
+`src/storage/favoritesRepository.ts`는 앱 전용 기본 DB 경로의 `yeoun.db`를 비동기로 연다. 임시 촬영 cache 삭제와 분리한다. 앱 수명 동안 연결 하나를 공유하며 초기화 실패 때 닫고 다음 요청에서 다시 연다. native 모듈 import도 비동기 실패 경계 안에 둔다. DB 로딩 실패가 카메라 화면 자체를 막지 않는다. 추가 시스템 권한·서버·사진 저장 없음.
+
+schema1은 이번에 필요한 favorite_filters(filter_id PK, sort_order, created_at)만 생성한다. `PRAGMA user_version`0→1과 CREATE는 exclusive transaction으로 함께 처리하고,1은 유지, 알 수 없는 버전은 변경 없이 오류를 반환한다. WAL 모드를 사용하고 사용자 값은 runAsync의 바인딩 인자로만 전달한다. 등록은 기존 ID에 대한 중복 없는 insert, 해제는 해당 ID delete, 결과 읽기는 같은 transaction에서 진행한다. commit 완료 전 성공을 반환하지 않는다. 미래/제거된 카탈로그 ID는 화면에서 숨기되 DB에서 지우지 않는다.
+
+`FavoritesStore`는 마지막 확인 ID 목록과 loading/ready/saving/error만 보관한다. 로딩/저장 중 요청은 중복 실행하지 않는다. 저장 실패/결과 불명확 상태는 목록을 되돌려 확정하지 않고 마지막 확인 목록을 유지하며 재조회 전 추가 변경을 막는다. 사진·픽셀·CameraSettings나 노출은 저장/복원하지 않는다. 필터 즐겨찾기는 최신 카탈로그 ID를 사용하고 향후 레시피의 버전 고정과 구분한다.
+
+Context는 저장소 인스턴스만 공유하고 useSyncExternalStore 구독은 필터 UI에 둔다. 별/목록 변경은 M0CameraScreen의 설정/request key 또는 카메라 세션을 바꾸지 않는다. SQL/기기 수명·실제 재실행 보존 검증은 NOT_RUN이다.
+
 ## 2026-10-30 소프트 포커스 계약
 
 `CameraSettings`의 `softness` scalar 0~1을 key·불변 copy·원본 우회·spatial 검증 및 uniform 순서(sharpness 다음)에 포함했다. preview/export가 기존 공통 binder를 사용하므로 재편집도 같은 경로다. 새 패키지/권한/native 코드는 없다. 기존 surface 소유권·thread cache·ArrayBuffer 전달 구조를 유지하며 shader의 8회 추가 LUT sample에 따른 비용은 실기기 확인이 남는다. renderer 0.4.0/spatial 0.3.0과 색감 수치는 엔진 문서·RETRO_LOOK_DIRECTION을 따른다.

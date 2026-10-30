@@ -22,6 +22,10 @@ const resetArc = outline(Array.from({ length: 25 }, (_, index): [number, number]
 }));
 // Original 24pt line glyphs. Native views only: no font download or GPU canvas.
 const GLYPHS = {
+  star: { lines: outline([[12, 2], [15, 8.5], [22, 9.5], [17, 14.5], [18.2, 22],
+    [12, 18.5], [5.8, 22], [7, 14.5], [2, 9.5], [9, 8.5]], true) },
+  favorites: { lines: [...outline([[8, 3], [10, 7], [14, 7.6], [11, 10.5], [11.7, 15],
+    [8, 12.9], [4.3, 15], [5, 10.5], [2, 7.6], [6, 7]], true), [17, 6, 22, 6], [17, 12, 22, 12], [3, 20, 22, 20]] },
   settings: { lines: gear, boxes: [[9, 9, 6, 6, 3]] },
   close: { lines: [[6, 6, 18, 18], [18, 6, 6, 18]] },
   plus: { lines: [[5, 12, 19, 12], [12, 5, 12, 19]] },

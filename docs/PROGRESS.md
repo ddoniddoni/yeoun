@@ -1,6 +1,19 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-30 실내 필터 후속 확인
+## 현재 상태 — 2026-10-30 필터 즐겨찾기
+
+- 요청: 다음 작은 작업인 즐겨찾기 진행, 기기 테스트는 나중. clean develop `3f8ba61`(PR #30)에서 fetch/FF 후 `feature/filter-favorites` 생성 exit0. 기존 사용자 변경 없음. 이전 Metro 세션66911을 Ctrl-C로 종료(exit0)해 수정이 기기에 자동 전달되지 않게 했다. 앱 재실행/캡처/사진 렌더/기기 조작은 이번에 하지 않았다.
+- 범위: 이름 옆 별 등록/해제, 카드별 작은 별, 메인 별·목록 아이콘의 전체/즐겨찾기 전환, 나의 색감·결과 재편집의 즐겨찾기 탭. 등록 순서 유지, 원본은 저장하지 않고 모아보기 앞에 항상 제공한다. 선택 항목을 해제하거나 목록을 바꿔도 현재 색감/강도/질감/노출과 결과 편집 draft는 유지한다. 개인 레시피·가져오기·촬영 설정 영구 기억은 미구현이며 세 분위기는 계속 보류한다.
+- UI: 기존 차콜/베이지 토큰·시스템 글꼴·native View 선형 아이콘을 재사용. 새 star/favorites glyph,48pt checkbox/목록 버튼과 한국어 접근성 상태, 고정96pt 목록 영역, 빈 안내/로딩/재시도. Context 값은 store 인스턴스, 구독은 필터 UI에만 두어 즐겨찾기로 카메라 root/settings/request key를 갱신하지 않는다. frontend-design/React 지침을 소스 설계에 적용했으며 화면 실행 검증은 하지 않았다.
+- 영구 저장: FavoritesStore와 SQLite repository 분리. 초기 loading·saving 중 요청 차단, 실제 transaction commit 뒤 UI 확정, 실패/확인 불가 때 이전 확인 목록 유지·재조회 전 추가 변경 차단. DB는 캐시 정리와 분리된 yeoun.db, 앱 수명 연결 공유. schema0→1/CREATE를 exclusive transaction으로 수행하고 미래 schema는 거부하며 미래 필터 ID는 삭제 없이 숨긴다. insert/delete와 같은 transaction 안의 결과 조회, bound parameters, 개별 ID 중복 방지. 사진·프레임·CameraSettings는 저장하지 않는다.
+- 의존성: 명세의 허용 후보 expo-sqlite55.0.20 필요성을 확인해 exact 추가했다. Expo55.0.32 bundledNativeModules/공식 SDK55 문서/정확한 npm metadata와 설치 타입·소스를 읽었다. MIT·unpacked78,017,151bytes(앱 크기 실측 아님), await-lock2.2.2 lock 고정. `npm install --save-exact expo-sqlite@55.0.20 --ignore-scripts --no-audit --no-fund` exit0(added2/removed1). manifest/lock diff에는 SQLite와 await-lock 추가만 있다. 프로젝트 권한/app config/native 소스 변경 없음. 앱 재시작 보존은 코드 경로이며 실기기 검증 전이다.
+- 변경: App provider 연결, domain filters/favorites, storage/favoritesRepository, screens FilterFavorites/FilterControls/CameraIcon, package/lock, unit favorites 테스트 소스, README·제품·기술·계획·검수·REFERENCES·PROGRESS. 테스트 소스는 store 요청 순서/확정 상태/실패 재조회/구독 정리와 ID/순서 규칙을 다룬다. UI 구현을 그대로 복제하는 테스트는 추가하지 않았다.
+- **NOT_RUN:** lint/typecheck/Jest/react-doctor/별도 자산 검사/JS·native build/Pod install/prebuild/iOS·Android 실행·재실행 보존/UI·접근성·SQLite migration·성능. 기존 G0~G3 미통과 유지. 새 native SQLite 모듈 때문에 다음 기기 확인 전에 개발 앱 재빌드가 필요하다. 이번에는 사용자의 테스트 보류를 검사 요구보다 우선했다.
+- 소스 검토: UI 구독 범위/기존 설정·request key 분리, 초기 hydration/쓰기 중 잠금, 빠른 중복 탭을 실패 팝업과 구분하는 saved/ignored/failed 결과, 실패 후 DB 재조회, 원본·현재 선택 보존, exclusive transaction의 commit/rollback/statement 정리와 schema 상향 거부를 읽었다. `git diff --check` exit0. 미존재 optional 폴더/추정 파일 경로 조회는 실제 rg 경로로 보완했다. 이것은 lint/typecheck/SQLite 실행/UI 확인의 대체 통과 증거가 아니다.
+- Git Flow: 명시 파일 stage와 `git diff --cached --check` exit0, 기능 commit `d358a1c`, `git push -u origin feature/filter-favorites` 및 [PR #31](https://github.com/ddoniddoni/yeoun/pull/31)(base develop) 생성 exit0. 이 기록을 포함해 PR을 병합하고 develop fetch/FF/push와 원격 일치를 확인한 뒤 develop에서 마친다. 실제 최종 상태는 PR/Git 이력을 따른다.
+- 다음: 사용자 요청 때 SQLite 포함 개발 앱을 다시 빌드한 후 즐겨찾기 재실행 보존·화면·실패 복구를 확인한다. Metro는 종료 상태로 두며 기기 확인이나 다음 기능을 자동 시작하지 않는다.
+
+## 이전 기록 — 2026-10-30 실내 필터 후속 확인
 
 - 사용자 피드백: “깜빡임은 없는데, 필터 차이는 못 느끼겠음”. 하단 촬영 버튼 깜빡임 수정은 사용자 확인, 색감 구분은 미승인이다. 비교 장면은 실내·책상·벽. 이전 [PR #29](https://github.com/ddoniddoni/yeoun/pull/29)는 `fd6bc22425b017e1e2822cf20e786b4454192f57`로 병합, develop fetch/FF/push 완료 및 로컬/원격 일치·clean 확인 후 `fix/live-filter-distinction` 생성.
 - 조사: 실제 프레임 ready 직전 필터 ID/version/강도/자산 hash와 plane 길이만 임시 로그로 기록했다. iPhone에서 여름방학0.3/85%/969d6c263c71, 여행0.3/85%/9bcbb852797f, 로즈0.3/90%/9913c0c1f41b 각각 `drawn`, planes는 모두44100×3이었다. 서로 다른 최신 데이터가 실제 렌더 요청에 도달함을 확인했으며 픽셀 일치나 미적 승인을 뜻하지 않는다. 프레임 픽셀은 로그/외부로 보내지 않았다.

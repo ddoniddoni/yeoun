@@ -393,3 +393,11 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 - [Unsplash License](https://unsplash.com/license)와 각 원본 페이지의 무료 사용 표시를 확인했다. 7사진의 사진가/정확한 페이지/용도는 [FILTER_COLOR_REVIEW](FILTER_COLOR_REVIEW.md)에 기록한다. 원본·파생 이미지 모두 로컬 ignored 폴더에만 보관하고 사용자 사진 전송/번들/커밋을 하지 않았다.
 - [Skia CanvasKit 공식 설명](https://docs.skia.org/docs/user/modules/canvaskit/)과 [공식 변경 기록](https://github.com/google/skia/blob/main/modules/canvaskit/CHANGELOG.md), 설치0.40.0 node.example.js/types/index.d.ts의 RuntimeEffect/MakeImage/MakeSurface/readPixels/폰트/PNG API를 확인했다. 새 패키지를 설치하지 않고 기존 RN Skia의 transitive dependency를 사용한다.
 - 앱의 실제 LUT/Alpha8 plane·SkSL·geometry를 직접 읽는 로컬 제작 도구를 추가했다. 날짜 pow 오차는 이 환경에서 관측한 결과이며 Metal/Android에서 동일한 재현 또는 수정 검증을 주장하지 않는다. 실제 생성/관찰과 NOT_RUN 항목은 PROGRESS를 따른다.
+
+
+## S48. 즐겨찾기와 Expo SQLite — 2026-10-30
+
+- [Expo SDK55 SQLite 공식 문서](https://docs.expo.dev/versions/v55.0.0/sdk/sqlite/): 권장~55.0.20, 비동기 open/query·bind parameters, exclusive transaction·WAL 설명을 확인했다. 일반 withTransactionAsync는 외부 async query까지 포함될 수 있어 migration/쓰기에는 transaction 객체만 쓰는 exclusive 경로를 선택했다.
+- 설치55.0.20의 src/SQLiteDatabase.ts/build 타입을 읽어 openDatabaseAsync, getFirstAsync/getAllAsync, runAsync, closeAsync와 withExclusiveTransactionAsync의 transaction 연결/commit·rollback/finally close를 확인했다. SQLiteDatabase의 run/get 편의 메서드는 내부 statement를 finalize한다.
+- `npm view expo-sqlite@55.0.20 version peerDependencies dependencies license dist.unpackedSize --json`과 Expo55.0.32 bundledNativeModules.json을 확인했다. npm install --save-exact --ignore-scripts --no-audit --no-fund로 설치했으며 Pod/prebuild/기기/native build를 실행하지 않았다. native module config/Apple podspec/빈 Android manifest를 읽었고 프로젝트 권한이나 app config는 추가하지 않았다.
+- 저장 상태와 등록 순서·원본 제외·future ID 보존은 프로젝트 제품 결정이다. 실행하지 않은 SQLite·UI 검증은 PROGRESS/05_TEST_RELEASE의 NOT_RUN을 따른다.

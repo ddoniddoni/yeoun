@@ -1,5 +1,5 @@
 import type { RetroControls } from './retroControls';
-export const COLLECTION_IDS = ['light', 'time', 'scene', 'retro'] as const;
+export const COLLECTION_IDS = ['light', 'time', 'scene', 'retro', 'portrait', 'food'] as const;
 export type CollectionId = typeof COLLECTION_IDS[number];
 
 export type FilterControls = Readonly<{

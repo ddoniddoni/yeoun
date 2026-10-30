@@ -1,6 +1,19 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-30 아이콘 중심 카메라 제품 UI
+## 현재 상태 — 2026-10-30 장면별 필터 17종
+
+- 요청: 한 장 세 분위기는 보류하고 Analog Paris·Tokyo/Foodie/SODA 등을 조사해 실사용 필터를 더 구성. 이번 기기 테스트는 하지 않는다고 명시했다. clean develop `4d190cd`(PR #26)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/curated-filter-collection` exit0. 이전 Metro 세션을 Ctrl-C로 종료했고 이번에는 재시작/앱 실행/캡처를 하지 않는다.
+- 조사: 공식 App Store 소개와 실제 마케팅 이미지4종을 ego-browser TaskSpace3에서 직접 관찰하고 조사용 탭을 종료했다. Foodie의 LINE 공식 초기 자료는 역사 근거로만 사용. 파리의 분홍/청록, 도쿄의 차분한 도시와 포인트색, 음식/카페별 색, 인물의 정돈된 톤을 독자 수치로 해석했다. 동일 원본 경쟁 앱 비교/프리셋 추출은 하지 않았으며 타 앱 이미지/사용자 사진은 앱 자산·외부 업로드에 쓰지 않았다. 근거/한계는 REFERENCES S46와 FILTER_CATALOG.
+- 구성: 기존 선택7종의 authoring/default/version 유지. 미제작6종(우윳빛 아침·봄의 공기·오래된 일기·밤의 필름·비 온 뒤·엔딩 크레딧)을0.2로 개정해 연결하고 맑은 얼굴·피치 스킨·오늘의 식탁·크림 라떼4종0.1을 추가했다. 총17종+원본. 새10종은 tint0, 각기 다른 EV/6점 tone curve/hue band/saturation, 용도별 낮은 입자·번짐/softness 기본값이다. 피부 보정/저조도 복원은 아니다. 필름0.6 날짜 기본true·디카0.3 유지.
+- 앱: CAMERA_FILTERS/프레젠테이션/팔레트17종. 메인 높이는 유지하고 상세/결과 재편집 패널에 전체·인물4·푸드2·여행5·레트로3·야간·비3 탭을 추가했다. 탭은 목록만 바꾸며 실제 카드 선택 시 기본값을 적용한다. 현재 선택이 그룹 밖일 때도 이름/설명과 조절값을 표시한다. 기존 동일 카드 재선택/원본·0%/초기화/촬영 snapshot 및 고해상도 export 계약 유지.
+- 자산: `npm run generate:luts` 첫 실행 exit1 — 출력 경로 whitelist가 portrait/food를 몰라 중단. 메시지와 `writeLutBundle` 경로 검사를 추적해 두 접두사만 허용하고 재실행 exit0. identity+17 PNG를 hash `0fb99cc4fd30cac0668d59a5c693a32c27459fefc255612556f81929d262f6e3`에 생성, .lut 바이트 복사와 literal Metro registry/manifest 기대값을 갱신했다. 이전 hash 파일은 보존. film SHA `443d25a734554282bc4300de67edd93e9665fdc7b1a107f30ad10f6cbb33d623`, digital SHA `f4f34d739a5f44b42347d3133e6a2ceb806912cc4e0379a34d0f09f4d648bc74` 유지. MODULE_TYPELESS_PACKAGE_JSON 경고는 기존 상태. 자산 생성의 내부 입력 처리를 별도 테스트 통과로 보고하지 않는다.
+- 소스 검토: seed 변경 비교에서 기존7종 정의 변경 없음, 미제작6종 개정과 신규4종만 확인. manifest ID/version/checksum과 UI→CameraSettings→on-demand loader→preview/export 호출부를 읽었다. GPU 캐시/프레임 공유/렌더 shader/engine version은 변경하지 않았다. `git diff --check` exit0. React/frontend/verification 지침은 소스 검토에 적용하고 실행 검사 요구는 사용자 보류 지시를 우선했다.
+- 변경 파일: seed/schema; domain filters bundledDraftFilters/cameraSettings/types/validateSeedSemantics; scripts/lib/lutAssets; rendering assets bundledLuts/lutManifest; screens FilterControls/FilterSwatch/cameraTheme; 위 새 hash 자산; unit filterSeed/cameraSettings/colorReference/lutManifest와 integration lutAssets/lutSampling/lutLoader/bundledLutLoader 테스트 소스; README, 제품/엔진/계획/검수/REFERENCES/PROGRESS와 신규 FILTER_CATALOG. 새 의존성/lockfile/native/권한 변경 없음.
+- 테스트 소스만 작성/수정:17종 노출/seed/default/version 연결, 구버전 거부,18종 manifest 범위·각기 다른 자산 checksum, 전체 LUT 격자의 analytic 대응, 새10종 중성 램프/따뜻한 색 교차 방지. 이것은 실행 결과나 피부/감성 품질 승인 근거가 아니다.
+- **NOT_RUN — 사용자 지시:** lint/typecheck/Jest/react-doctor/별도 seed·자산 검사/JS 및 native build/iOS·Android 실행. 이번17종 UI/색감/저장/성능과 기존 G0/G1/G2 미검증 유지. **HUMAN_REVIEW_PENDING:** 같은 원본 사진에서 피부 밝기별 표현, 흰색·음식·하늘 계조, 야간 노이즈, 룩 간 체감 차이, 프리뷰/고해상도 저장 일치. 단순 이름 변경이나 생성 성공을 색감 합격으로 표시하지 않는다.
+- 다음: 사용자가 요청할 때 장면별 원본/50%/기본/100% 비교와 저장 검수를 재개한다. 세 분위기 개발/다음 기능을 자동 시작하지 않는다. 상시 Git Flow로 관련 변경만 commit/push/develop PR·merge·동기화하며 develop에서 마친다. 이번에는 Metro/앱을 다시 열지 않는다. 최종 통합은 PR/Git 이력을 따른다.
+
+## 이전 기록 — 2026-10-30 아이콘 중심 카메라 제품 UI
 
 - 요청: 다음 기능보다 실제 제품 같은 필터 앱 디자인, 텍스트 대신 적절한 아이콘. clean develop `ddee8a5`에서 fetch/FF 후 `feature/camera-product-design` 생성. 기존 Metro를 중지하고 작업. frontend-design 지침과 Stitch 프로젝트7812018568704993424의 실제 카메라 PNG를 읽고 화면 위계를 재설계했다. 원격 디자인 쓰기 없음.
 - 구현: 메인 텍스트 컬렉션/선택 버튼을 원본+7개 팔레트 카드로 통합, 선택 테두리/체크/가로 자동 노출. 큰 3:4 뷰파인더와 고정 셔터, 자체 선형 아이콘의 플래시/격자/설정/비교/전후면. 플래시는 off-auto-on 순환, 격자는 기본 꺼짐. 카메라 설정은 톱니바퀴와 필터 조절 슬라이더로 구분. `CameraIcon`/`FilterSwatch`는 memo/native View 아트로 새 패키지·폰트·GPU Canvas 없이 구성했다. 카드 그림은 실제 필터 사진 썸네일이 아니다.

@@ -82,8 +82,8 @@
     },
     "collections": {
       "type": "array",
-      "minItems": 4,
-      "maxItems": 4,
+      "minItems": 6,
+      "maxItems": 6,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -99,7 +99,9 @@
               "light",
               "time",
               "scene",
-              "retro"
+              "retro",
+              "portrait",
+              "food"
             ]
           },
           "name": {
@@ -116,8 +118,8 @@
     },
     "filters": {
       "type": "array",
-      "minItems": 13,
-      "maxItems": 13,
+      "minItems": 17,
+      "maxItems": 17,
       "items": {
         "$ref": "#/$defs/filter"
       }
@@ -142,14 +144,16 @@
       "properties": {
         "id": {
           "type": "string",
-          "pattern": "^(light|time|scene|retro)-[a-z]+$"
+          "pattern": "^(light|time|scene|retro|portrait|food)-[a-z]+$"
         },
         "collection": {
           "enum": [
             "light",
             "time",
             "scene",
-            "retro"
+            "retro",
+            "portrait",
+            "food"
           ]
         },
         "name": {
@@ -161,7 +165,14 @@
           "minLength": 1
         },
         "lookVersion": {
-          "enum": ["0.1.0-draft", "0.2.0-draft", "0.3.0-draft", "0.4.0-draft", "0.5.0-draft", "0.6.0-draft"]
+          "enum": [
+            "0.1.0-draft",
+            "0.2.0-draft",
+            "0.3.0-draft",
+            "0.4.0-draft",
+            "0.5.0-draft",
+            "0.6.0-draft"
+          ]
         },
         "status": {
           "const": "design-draft"

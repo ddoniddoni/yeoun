@@ -117,7 +117,7 @@ export async function writeLutBundle(outputDirectory: string, bundle: LutBundle)
   for (const asset of bundle.manifest.assets) {
     if (!/^[a-f0-9]{64}$/.test(asset.sha256) ||
         asset.path !== `luts/${asset.filterId}-${asset.sha256}.png` ||
-        !/^(identity|(light|time|scene|retro)-[a-z]+)$/.test(asset.filterId)) {
+        !/^(identity|(light|time|scene|retro|portrait|food)-[a-z]+)$/.test(asset.filterId)) {
       throw new Error('Refusing an invalid LUT output path');
     }
     const bytes = bundle.files.get(asset.path);

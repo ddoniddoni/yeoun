@@ -1,30 +1,35 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
-import { CAMERA_FILTERS, type CameraFilterId, type CameraSettings } from '../domain/filters/cameraSettings';
+import { CAMERA_COLLECTIONS, CAMERA_FILTERS, type CameraFilterId, type CameraSettings } from '../domain/filters/cameraSettings';
 import type { RetroAmount } from '../domain/filters/retroControls';
 import { CameraIcon, type CameraIconName } from './CameraIcon';
 import { IconButton } from './CameraControls';
 import { FilterSwatch } from './FilterSwatch';
 import { cameraTheme as theme, filterPresentation } from './cameraTheme';
 
-function FilterStrip({ selectedId, disabled, onSelect }: {
+const FILTER_GROUPS = [
+  { name: '전체', filters: CAMERA_FILTERS },
+  ...CAMERA_COLLECTIONS.filter(collection => collection.name !== '원본').map(collection => ({
+    name: collection.name, filters: CAMERA_FILTERS.filter(filter => collection.ids.includes(filter.id)),
+  })),
+];
+
+function FilterStrip({ selectedId, disabled, onSelect, filters = CAMERA_FILTERS }: {
   selectedId: CameraFilterId; disabled: boolean; onSelect(id: CameraFilterId): void;
+  filters?: ReadonlyArray<typeof CAMERA_FILTERS[number]>;
 }) {
   const scroll = useRef<ScrollView>(null);
   const viewport = useRef(0);
-  const revealSelected = () => {
-    const index = CAMERA_FILTERS.findIndex(filter => filter.id === selectedId);
-    scroll.current?.scrollTo({ x: Math.max(0, index * 80 - (viewport.current - 72) / 2), animated: false });
-  };
-  useEffect(() => {
-    const index = CAMERA_FILTERS.findIndex(filter => filter.id === selectedId);
-    scroll.current?.scrollTo({ x: Math.max(0, index * 80 - (viewport.current - 72) / 2), animated: false });
-  }, [selectedId]);
+  const revealSelected = useCallback(() => {
+    const index = filters.findIndex(filter => filter.id === selectedId);
+    scroll.current?.scrollTo({ x: index < 0 ? 0 : Math.max(0, index * 80 - (viewport.current - 72) / 2), animated: false });
+  }, [filters, selectedId]);
+  useEffect(revealSelected, [revealSelected]);
   return <ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator={false}
     contentContainerStyle={styles.strip} accessibilityRole="radiogroup" accessibilityLabel="필터 선택"
     onLayout={event => { viewport.current = event.nativeEvent.layout.width; revealSelected(); }}
     onContentSizeChange={revealSelected}>
-    {CAMERA_FILTERS.map(filter => {
+    {filters.map(filter => {
       const selected = selectedId === filter.id;
       const color = filterPresentation[filter.id].color;
       return <Pressable key={filter.id} accessibilityRole="radio" accessibilityLabel={`${filter.name}, ${filter.caption}`}
@@ -78,12 +83,25 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
   onDateStamp(enabled: boolean): void; onReset(): void;
 }) {
   const [effect, setEffect] = useState<EffectKey>('intensity');
+  const [groupName, setGroupName] = useState('전체');
+  const group = FILTER_GROUPS.find(item => item.name === groupName)!;
+  const selected = CAMERA_FILTERS.find(filter => filter.id === settings.filterId);
   const original = settings.filterId === 'original';
   const accent = filterPresentation[settings.filterId].color;
   const activeEffect = EFFECTS.find(item => item.key === effect)!;
   return <View style={styles.adjustment}>
-    <FilterStrip selectedId={settings.filterId} disabled={disabled} onSelect={onSelect} />
-    <Text style={styles.caption}>{CAMERA_FILTERS.find(filter => filter.id === settings.filterId)?.caption}</Text>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.groups}
+      accessibilityRole="tablist" accessibilityLabel="촬영 장면별 필터">
+      {FILTER_GROUPS.map(item => <Pressable key={item.name} accessibilityRole="tab"
+        accessibilityLabel={`${item.name}, ${item.filters.length}개`}
+        accessibilityState={{ selected: groupName === item.name, disabled }} disabled={disabled}
+        onPress={() => setGroupName(item.name)}
+        style={({ pressed }) => [styles.group, groupName === item.name && styles.groupSelected, pressed && styles.pressed, disabled && styles.disabled]}>
+        <Text style={[styles.groupName, groupName === item.name && styles.groupNameSelected]}>{item.name}</Text>
+      </Pressable>)}
+    </ScrollView>
+    <FilterStrip filters={group.filters} selectedId={settings.filterId} disabled={disabled} onSelect={onSelect} />
+    <Text style={styles.caption}>{selected?.name} · {selected?.caption}</Text>
     {!original ? <>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.effects}
         accessibilityRole="tablist" accessibilityLabel="조절할 효과">
@@ -149,6 +167,9 @@ const styles = StyleSheet.create({
   cardName: { color: theme.secondary, textAlign: 'center', fontSize: 11, lineHeight: 16, fontWeight: '500' },
   check: { width: 17, height: 17, borderRadius: 9, position: 'absolute', right: 0, bottom: -2, alignItems: 'center', justifyContent: 'center' },
   adjustment: { gap: 16 }, caption: { color: theme.secondary, fontSize: 12, lineHeight: 18 },
+  groups: { gap: 6 }, group: { minHeight: 48, paddingHorizontal: 16, borderRadius: 24, justifyContent: 'center' },
+  groupSelected: { backgroundColor: theme.text }, groupName: { color: theme.secondary, fontSize: 13, fontWeight: '600' },
+  groupNameSelected: { color: theme.background },
   effects: { gap: 6 }, effect: { width: 66, minHeight: 70, borderRadius: 16, justifyContent: 'center', alignItems: 'center', gap: 8 },
   effectSelected: { backgroundColor: theme.inset }, effectName: { color: theme.secondary, fontSize: 11 },
   amount: { borderRadius: 18, padding: 12, backgroundColor: theme.inset, gap: 4 },

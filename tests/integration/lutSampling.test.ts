@@ -7,6 +7,7 @@ import type { Rgb } from '../../src/domain/filters/types';
 import { createAuthoringTransform } from '../../src/rendering/reference/authoring';
 import type { LutAtlas } from '../../src/rendering/reference/lutAtlas';
 import { createLutSampler } from '../../src/rendering/reference/lutSampling';
+import seedData from '../../spec/filters.seed.json';
 
 type Fixture = Readonly<{
   filterId: string;
@@ -29,7 +30,7 @@ beforeAll(async () => {
   }));
 });
 
-test.each(['identity', 'light-afternoon', 'time-summer', 'scene-dawn'])(
+test.each(['identity', ...seedData.filters.map(filter => filter.id)])(
   'tracked %s PNG matches the quantized analytic transform at every grid point', filterId => {
     const fixture = fixtures.find(item => item.filterId === filterId);
     if (!fixture) throw new Error(`Missing fixture ${filterId}`);

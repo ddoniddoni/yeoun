@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "status": "design-draft",
   "createdAt": "2026-10-27",
-  "description": "기존 9종과 승인된 레트로 확장 4종의 제작 초안. 색감 승인과 실기기 검증 전.",
+  "description": "인물·푸드·여행·레트로·야간용 17종 제작 초안. 공식 앱 색감 예시를 참고한 독자 LUT이며 색감 승인과 실기기 검증 전.",
   "renderContractVersion": "0.1.0",
   "lutContract": {
     "size": 33,
@@ -40,6 +40,18 @@
       "name": "레트로",
       "subtitle": "필름, 디카와 여행의 색",
       "representativeId": "retro-film"
+    },
+    {
+      "id": "portrait",
+      "name": "인물",
+      "subtitle": "맑고 편안한 피부 톤",
+      "representativeId": "portrait-clear"
+    },
+    {
+      "id": "food",
+      "name": "푸드",
+      "subtitle": "식탁과 카페의 색",
+      "representativeId": "food-table"
     }
   ],
   "filters": [
@@ -126,26 +138,26 @@
       "id": "light-milk",
       "collection": "light",
       "name": "우윳빛 아침",
-      "caption": "부드러운 명암, 깨끗한 흰색",
-      "lookVersion": "0.1.0-draft",
+      "caption": "부드러운 아침빛, 깨끗한 흰색",
+      "lookVersion": "0.2.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.2,
-        "saturation": 0.88,
+        "exposureEv": 0.12,
+        "saturation": 0.9,
         "toneCurve": [
           [
             0,
-            0.025
+            0.022
           ],
           [
             0.18,
-            0.22
+            0.215
           ],
           [
             0.4,
-            0.46
+            0.465
           ],
           [
             0.65,
@@ -153,7 +165,94 @@
           ],
           [
             0.85,
-            0.88
+            0.89
+          ],
+          [
+            1,
+            0.995
+          ]
+        ],
+        "shadowTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "highlightTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "hueBands": [
+          {
+            "centerDeg": 28,
+            "halfWidthDeg": 28,
+            "shiftDeg": 0,
+            "saturationMultiplier": 1.07
+          },
+          {
+            "centerDeg": 115,
+            "halfWidthDeg": 42,
+            "shiftDeg": -4,
+            "saturationMultiplier": 0.93
+          },
+          {
+            "centerDeg": 215,
+            "halfWidthDeg": 38,
+            "shiftDeg": -2,
+            "saturationMultiplier": 0.94
+          }
+        ]
+      },
+      "defaults": {
+        "intensity": 0.8,
+        "grain": 0,
+        "bloom": 0.04,
+        "vignette": 0,
+        "halation": 0,
+        "sharpness": 0,
+        "softness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
+      },
+      "notes": [
+        "창가 인물·흰 셔츠·밝은 실내용. 무채색 틴트 없이 중간 밝기를 열고 검정은 남긴다.",
+        "전역 노출 상승이 있으므로 강한 역광에서는 강도를 낮춘다. 피부 미백·얼굴 보정 기능이 아니다."
+      ]
+    },
+    {
+      "id": "light-spring",
+      "collection": "light",
+      "name": "봄의 공기",
+      "caption": "꽃의 분홍, 싱그러운 연두",
+      "lookVersion": "0.2.0-draft",
+      "status": "design-draft",
+      "lut": null,
+      "authoring": {
+        "colorSpace": "srgb-encoded",
+        "exposureEv": 0.06,
+        "saturation": 0.98,
+        "toneCurve": [
+          [
+            0,
+            0.012
+          ],
+          [
+            0.18,
+            0.19
+          ],
+          [
+            0.4,
+            0.435
+          ],
+          [
+            0.65,
+            0.69
+          ],
+          [
+            0.85,
+            0.875
           ],
           [
             1,
@@ -161,117 +260,58 @@
           ]
         ],
         "shadowTintRgb": [
-          0.003,
-          0.002,
-          0.002
+          0,
+          0,
+          0
         ],
         "highlightTintRgb": [
-          0.004,
-          0.003,
-          0.002
+          0,
+          0,
+          0
         ],
         "hueBands": [
           {
-            "centerDeg": 0,
-            "halfWidthDeg": 30,
-            "shiftDeg": 0,
-            "saturationMultiplier": 1.06
+            "centerDeg": 350,
+            "halfWidthDeg": 32,
+            "shiftDeg": -5,
+            "saturationMultiplier": 1.08
           },
           {
-            "centerDeg": 30,
-            "halfWidthDeg": 25,
-            "shiftDeg": 0,
-            "saturationMultiplier": 1.04
+            "centerDeg": 28,
+            "halfWidthDeg": 23,
+            "shiftDeg": -1,
+            "saturationMultiplier": 1.01
+          },
+          {
+            "centerDeg": 105,
+            "halfWidthDeg": 40,
+            "shiftDeg": -9,
+            "saturationMultiplier": 0.91
+          },
+          {
+            "centerDeg": 210,
+            "halfWidthDeg": 38,
+            "shiftDeg": -5,
+            "saturationMultiplier": 0.94
           }
         ]
       },
       "defaults": {
         "intensity": 0.8,
-        "grain": 0.0,
-        "bloom": 0.12
+        "grain": 0,
+        "bloom": 0.03,
+        "vignette": 0,
+        "halation": 0,
+        "sharpness": 0,
+        "softness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
       },
       "notes": [
-        "중간 밝기를 부드럽게 올림",
-        "음식의 붉은색이 회색으로 죽지 않도록 검수"
-      ]
-    },
-    {
-      "id": "light-spring",
-      "collection": "light",
-      "name": "봄의 공기",
-      "caption": "가벼운 분홍, 산뜻한 초록",
-      "lookVersion": "0.1.0-draft",
-      "status": "design-draft",
-      "lut": null,
-      "authoring": {
-        "colorSpace": "srgb-encoded",
-        "exposureEv": 0.1,
-        "saturation": 0.94,
-        "toneCurve": [
-          [
-            0,
-            0.015
-          ],
-          [
-            0.18,
-            0.2
-          ],
-          [
-            0.4,
-            0.43
-          ],
-          [
-            0.65,
-            0.68
-          ],
-          [
-            0.85,
-            0.87
-          ],
-          [
-            1,
-            1
-          ]
-        ],
-        "shadowTintRgb": [
-          0.002,
-          0.003,
-          0.003
-        ],
-        "highlightTintRgb": [
-          0.006,
-          -0.001,
-          0.004
-        ],
-        "hueBands": [
-          {
-            "centerDeg": 330,
-            "halfWidthDeg": 30,
-            "shiftDeg": 2,
-            "saturationMultiplier": 1.04
-          },
-          {
-            "centerDeg": 120,
-            "halfWidthDeg": 45,
-            "shiftDeg": -8,
-            "saturationMultiplier": 0.93
-          },
-          {
-            "centerDeg": 220,
-            "halfWidthDeg": 45,
-            "shiftDeg": -6,
-            "saturationMultiplier": 0.95
-          }
-        ]
-      },
-      "defaults": {
-        "intensity": 0.8,
-        "grain": 0.03,
-        "bloom": 0.08
-      },
-      "notes": [
-        "꽃과 연두를 부드럽게 표현",
-        "하늘이 과한 민트색으로 변하지 않게 제한"
+        "Analog Paris 공식 예시의 꽃·도시 분홍과 초록 분리에서 착안한 독자 색감.",
+        "흰색을 분홍으로 덮지 않고 원래 색이 있는 영역의 hue/saturation만 이동한다."
       ]
     },
     {
@@ -363,34 +403,34 @@
       "id": "time-diary",
       "collection": "time",
       "name": "오래된 일기",
-      "caption": "바랜 색과 조용한 입자",
-      "lookVersion": "0.1.0-draft",
+      "caption": "바랜 초록, 담백한 종이색",
+      "lookVersion": "0.2.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.05,
-        "saturation": 0.82,
+        "exposureEv": 0,
+        "saturation": 0.86,
         "toneCurve": [
           [
             0,
-            0.055
+            0.04
           ],
           [
             0.18,
-            0.22
+            0.2
           ],
           [
             0.4,
-            0.44
+            0.435
           ],
           [
             0.65,
-            0.66
+            0.655
           ],
           [
             0.85,
-            0.83
+            0.825
           ],
           [
             1,
@@ -398,123 +438,139 @@
           ]
         ],
         "shadowTintRgb": [
-          0.014,
-          0.007,
-          -0.005
+          0,
+          0,
+          0
         ],
         "highlightTintRgb": [
-          0.012,
-          0.008,
-          -0.006
+          0,
+          0,
+          0
         ],
         "hueBands": [
           {
-            "centerDeg": 220,
-            "halfWidthDeg": 45,
-            "shiftDeg": -3,
-            "saturationMultiplier": 0.82
-          },
-          {
-            "centerDeg": 120,
-            "halfWidthDeg": 45,
-            "shiftDeg": -7,
-            "saturationMultiplier": 0.88
-          },
-          {
             "centerDeg": 30,
-            "halfWidthDeg": 25,
-            "shiftDeg": 0,
-            "saturationMultiplier": 1.03
+            "halfWidthDeg": 28,
+            "shiftDeg": -1,
+            "saturationMultiplier": 1.08
+          },
+          {
+            "centerDeg": 110,
+            "halfWidthDeg": 45,
+            "shiftDeg": -11,
+            "saturationMultiplier": 0.79
+          },
+          {
+            "centerDeg": 215,
+            "halfWidthDeg": 45,
+            "shiftDeg": -6,
+            "saturationMultiplier": 0.85
           }
         ]
       },
       "defaults": {
-        "intensity": 0.8,
-        "grain": 0.32,
-        "bloom": 0.0
+        "intensity": 0.85,
+        "grain": 0.22,
+        "bloom": 0,
+        "vignette": 0.04,
+        "halation": 0,
+        "sharpness": 0,
+        "softness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
       },
       "notes": [
-        "검정을 갈색 회색으로 표현",
-        "입자가 압축 잡음처럼 보이지 않게 조절"
+        "낡은 인화지처럼 낮은 명암과 탈색된 초록·파랑. 기존 플래시 필름의 깊은 명암과 구분한다.",
+        "전체 갈색/녹색 틴트 없이 회색 축 유지. 날짜 도장은 선택형이다."
       ]
     },
     {
       "id": "time-night",
       "collection": "time",
       "name": "밤의 필름",
-      "caption": "따뜻한 조명, 깊은 밤의 색",
-      "lookVersion": "0.1.0-draft",
+      "caption": "호박빛 조명, 깊고 조용한 밤",
+      "lookVersion": "0.2.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": -0.1,
-        "saturation": 0.9,
+        "exposureEv": -0.06,
+        "saturation": 0.95,
         "toneCurve": [
           [
             0,
-            0.015
+            0.006
           ],
           [
             0.18,
-            0.15
+            0.145
           ],
           [
             0.4,
-            0.38
+            0.385
           ],
           [
             0.65,
-            0.67
+            0.68
           ],
           [
             0.85,
-            0.87
+            0.875
           ],
           [
             1,
-            0.985
+            0.98
           ]
         ],
         "shadowTintRgb": [
-          -0.006,
-          -0.003,
-          0.016
+          0,
+          0,
+          0
         ],
         "highlightTintRgb": [
-          0.018,
-          0.007,
-          -0.012
+          0,
+          0,
+          0
         ],
         "hueBands": [
           {
-            "centerDeg": 0,
+            "centerDeg": 45,
             "halfWidthDeg": 30,
+            "shiftDeg": -7,
+            "saturationMultiplier": 1.12
+          },
+          {
+            "centerDeg": 0,
+            "halfWidthDeg": 25,
             "shiftDeg": 0,
-            "saturationMultiplier": 0.88
+            "saturationMultiplier": 0.9
           },
           {
             "centerDeg": 220,
             "halfWidthDeg": 45,
-            "shiftDeg": -3,
-            "saturationMultiplier": 0.94
-          },
-          {
-            "centerDeg": 30,
-            "halfWidthDeg": 25,
-            "shiftDeg": -2,
-            "saturationMultiplier": 1.02
+            "shiftDeg": -6,
+            "saturationMultiplier": 0.9
           }
         ]
       },
       "defaults": {
         "intensity": 0.8,
-        "grain": 0.3,
-        "bloom": 0.08
+        "grain": 0.12,
+        "bloom": 0.12,
+        "vignette": 0.08,
+        "halation": 0.03,
+        "sharpness": 0,
+        "softness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
       },
       "notes": [
-        "원본 노이즈가 강하면 사용자가 입자를 줄일 수 있음",
-        "빛 번짐은 약한 Bloom이며 Halation 아님"
+        "조명과 야간 거리용. 노랑 조명을 호박색으로 옮기고 포화된 빨강을 절제한다.",
+        "야간 원본 노이즈에 입자를 과하게 얹지 않는다. 저조도 복원·노이즈 제거 기능은 아니다."
       ]
     },
     {
@@ -600,26 +656,26 @@
       "id": "scene-rain",
       "collection": "scene",
       "name": "비 온 뒤",
-      "caption": "청록 그림자와 젖은 도시의 색",
-      "lookVersion": "0.1.0-draft",
+      "caption": "차분한 초록과 비 갠 거리",
+      "lookVersion": "0.2.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": -0.05,
-        "saturation": 0.88,
+        "exposureEv": -0.02,
+        "saturation": 0.9,
         "toneCurve": [
           [
             0,
-            0.005
+            0.01
           ],
           [
             0.18,
-            0.15
+            0.165
           ],
           [
             0.4,
-            0.38
+            0.405
           ],
           [
             0.65,
@@ -627,7 +683,100 @@
           ],
           [
             0.85,
-            0.86
+            0.85
+          ],
+          [
+            1,
+            0.985
+          ]
+        ],
+        "shadowTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "highlightTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "hueBands": [
+          {
+            "centerDeg": 130,
+            "halfWidthDeg": 45,
+            "shiftDeg": 8,
+            "saturationMultiplier": 0.83
+          },
+          {
+            "centerDeg": 215,
+            "halfWidthDeg": 45,
+            "shiftDeg": -10,
+            "saturationMultiplier": 0.86
+          },
+          {
+            "centerDeg": 52,
+            "halfWidthDeg": 24,
+            "shiftDeg": -2,
+            "saturationMultiplier": 1.08
+          },
+          {
+            "centerDeg": 28,
+            "halfWidthDeg": 22,
+            "shiftDeg": 0,
+            "saturationMultiplier": 1.04
+          }
+        ]
+      },
+      "defaults": {
+        "intensity": 0.85,
+        "grain": 0.05,
+        "bloom": 0,
+        "vignette": 0,
+        "halation": 0,
+        "sharpness": 0,
+        "softness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
+      },
+      "notes": [
+        "Analog Tokyo 공식 빗길 예시의 절제된 초록과 노란 포인트를 참고한다.",
+        "피부·콘크리트에 청록 덮개를 씌우지 않는다. 무채색 축을 유지한다."
+      ]
+    },
+    {
+      "id": "scene-ending",
+      "collection": "scene",
+      "name": "엔딩 크레딧",
+      "caption": "깊은 명암, 따뜻한 도시의 색",
+      "lookVersion": "0.2.0-draft",
+      "status": "design-draft",
+      "lut": null,
+      "authoring": {
+        "colorSpace": "srgb-encoded",
+        "exposureEv": 0,
+        "saturation": 0.97,
+        "toneCurve": [
+          [
+            0,
+            0.004
+          ],
+          [
+            0.18,
+            0.135
+          ],
+          [
+            0.4,
+            0.385
+          ],
+          [
+            0.65,
+            0.705
+          ],
+          [
+            0.85,
+            0.89
           ],
           [
             1,
@@ -635,117 +784,52 @@
           ]
         ],
         "shadowTintRgb": [
-          -0.008,
-          0.009,
-          0.013
+          0,
+          0,
+          0
         ],
         "highlightTintRgb": [
           0,
-          0.001,
-          0.001
+          0,
+          0
         ],
         "hueBands": [
           {
-            "centerDeg": 120,
-            "halfWidthDeg": 45,
-            "shiftDeg": 7,
-            "saturationMultiplier": 0.9
+            "centerDeg": 32,
+            "halfWidthDeg": 27,
+            "shiftDeg": -2,
+            "saturationMultiplier": 1.04
           },
           {
-            "centerDeg": 220,
-            "halfWidthDeg": 45,
-            "shiftDeg": -8,
-            "saturationMultiplier": 0.9
+            "centerDeg": 125,
+            "halfWidthDeg": 43,
+            "shiftDeg": 8,
+            "saturationMultiplier": 0.8
+          },
+          {
+            "centerDeg": 215,
+            "halfWidthDeg": 42,
+            "shiftDeg": -12,
+            "saturationMultiplier": 0.86
           }
         ]
       },
       "defaults": {
-        "intensity": 0.8,
-        "grain": 0.12,
-        "bloom": 0.03
+        "intensity": 0.75,
+        "grain": 0.06,
+        "bloom": 0.04,
+        "vignette": 0.06,
+        "halation": 0,
+        "sharpness": 0,
+        "softness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
       },
       "notes": [
-        "반사광과 젖은 표면의 디테일 유지",
-        "피부 계열이 회녹색으로 변하지 않게 검수"
-      ]
-    },
-    {
-      "id": "scene-ending",
-      "collection": "scene",
-      "name": "엔딩 크레딧",
-      "caption": "따뜻한 빛과 서늘한 그림자",
-      "lookVersion": "0.1.0-draft",
-      "status": "design-draft",
-      "lut": null,
-      "authoring": {
-        "colorSpace": "srgb-encoded",
-        "exposureEv": 0,
-        "saturation": 0.95,
-        "toneCurve": [
-          [
-            0,
-            0
-          ],
-          [
-            0.18,
-            0.14
-          ],
-          [
-            0.4,
-            0.39
-          ],
-          [
-            0.65,
-            0.7
-          ],
-          [
-            0.85,
-            0.9
-          ],
-          [
-            1,
-            1
-          ]
-        ],
-        "shadowTintRgb": [
-          -0.006,
-          0.002,
-          0.012
-        ],
-        "highlightTintRgb": [
-          0.017,
-          0.009,
-          -0.008
-        ],
-        "hueBands": [
-          {
-            "centerDeg": 30,
-            "halfWidthDeg": 25,
-            "shiftDeg": 0,
-            "saturationMultiplier": 0.94
-          },
-          {
-            "centerDeg": 120,
-            "halfWidthDeg": 45,
-            "shiftDeg": -3,
-            "saturationMultiplier": 0.88
-          },
-          {
-            "centerDeg": 220,
-            "halfWidthDeg": 45,
-            "shiftDeg": -5,
-            "saturationMultiplier": 0.9
-          }
-        ]
-      },
-      "defaults": {
-        "intensity": 0.8,
-        "grain": 0.08,
-        "bloom": 0.1
-      },
-      "notes": [
-        "따뜻한 피사체와 차가운 배경의 관계",
-        "피부를 과하게 주황색으로 밀지 않음"
+        "여행·거리의 따뜻한 피사체와 절제한 초록/청록 배경을 분리한다.",
+        "밝기만 올리는 인물 룩과 달리 명암을 강조. 중성 영역과 흰옷에 전역 틴트를 더하지 않는다."
       ]
     },
     {
@@ -1092,6 +1176,378 @@
       "notes": [
         "여운 자체 제작 초안. 특정 필름·카메라·앱의 정밀 복제가 아님.",
         "피부, 흰색, 하늘, 실내와 야간의 실제 사진으로 색감 승인 필요."
+      ]
+    },
+    {
+      "id": "portrait-clear",
+      "collection": "portrait",
+      "name": "맑은 얼굴",
+      "caption": "맑은 피부 톤, 또렷한 눈빛",
+      "lookVersion": "0.1.0-draft",
+      "status": "design-draft",
+      "lut": null,
+      "authoring": {
+        "colorSpace": "srgb-encoded",
+        "exposureEv": 0.07,
+        "saturation": 0.98,
+        "toneCurve": [
+          [
+            0,
+            0.008
+          ],
+          [
+            0.18,
+            0.19
+          ],
+          [
+            0.4,
+            0.43
+          ],
+          [
+            0.65,
+            0.68
+          ],
+          [
+            0.85,
+            0.87
+          ],
+          [
+            1,
+            0.995
+          ]
+        ],
+        "shadowTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "highlightTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "hueBands": [
+          {
+            "centerDeg": 28,
+            "halfWidthDeg": 28,
+            "shiftDeg": -1,
+            "saturationMultiplier": 0.97
+          },
+          {
+            "centerDeg": 0,
+            "halfWidthDeg": 22,
+            "shiftDeg": 0,
+            "saturationMultiplier": 0.94
+          },
+          {
+            "centerDeg": 115,
+            "halfWidthDeg": 40,
+            "shiftDeg": -3,
+            "saturationMultiplier": 0.91
+          },
+          {
+            "centerDeg": 220,
+            "halfWidthDeg": 40,
+            "shiftDeg": -2,
+            "saturationMultiplier": 0.96
+          }
+        ]
+      },
+      "defaults": {
+        "intensity": 0.75,
+        "grain": 0,
+        "bloom": 0,
+        "vignette": 0,
+        "halation": 0,
+        "sharpness": 0,
+        "softness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
+      },
+      "notes": [
+        "SODA 공식 인물/일상 예시의 정돈된 밝기와 편안한 색을 참고한 독자 LUT.",
+        "피부 계열의 과한 주황/빨강을 절제하되 어두운 피부를 특정 밝기로 맞추지 않는다. 피부 인식·미백·리터칭·얼굴 변형 없음."
+      ]
+    },
+    {
+      "id": "portrait-peach",
+      "collection": "portrait",
+      "name": "피치 스킨",
+      "caption": "은은한 복숭아빛, 부드러운 인물",
+      "lookVersion": "0.1.0-draft",
+      "status": "design-draft",
+      "lut": null,
+      "authoring": {
+        "colorSpace": "srgb-encoded",
+        "exposureEv": 0.05,
+        "saturation": 0.96,
+        "toneCurve": [
+          [
+            0,
+            0.018
+          ],
+          [
+            0.18,
+            0.205
+          ],
+          [
+            0.4,
+            0.445
+          ],
+          [
+            0.65,
+            0.69
+          ],
+          [
+            0.85,
+            0.875
+          ],
+          [
+            1,
+            0.99
+          ]
+        ],
+        "shadowTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "highlightTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "hueBands": [
+          {
+            "centerDeg": 28,
+            "halfWidthDeg": 28,
+            "shiftDeg": -4,
+            "saturationMultiplier": 1.04
+          },
+          {
+            "centerDeg": 355,
+            "halfWidthDeg": 22,
+            "shiftDeg": 0,
+            "saturationMultiplier": 0.95
+          },
+          {
+            "centerDeg": 115,
+            "halfWidthDeg": 42,
+            "shiftDeg": -5,
+            "saturationMultiplier": 0.88
+          },
+          {
+            "centerDeg": 220,
+            "halfWidthDeg": 42,
+            "shiftDeg": -3,
+            "saturationMultiplier": 0.9
+          }
+        ]
+      },
+      "defaults": {
+        "intensity": 0.8,
+        "grain": 0,
+        "bloom": 0.025,
+        "vignette": 0,
+        "halation": 0,
+        "sharpness": 0,
+        "softness": 0.06,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
+      },
+      "notes": [
+        "주황 계열을 살짝 붉은 복숭아색으로 이동하고 주변 초록/파랑의 채도를 낮춘다.",
+        "흰 벽은 중성으로 유지한다. 얼굴이 아닌 같은 색의 사물에도 적용되며 피부 보정 기능이 아니다."
+      ]
+    },
+    {
+      "id": "food-table",
+      "collection": "food",
+      "name": "오늘의 식탁",
+      "caption": "맛있는 빨강, 신선한 초록",
+      "lookVersion": "0.1.0-draft",
+      "status": "design-draft",
+      "lut": null,
+      "authoring": {
+        "colorSpace": "srgb-encoded",
+        "exposureEv": 0.03,
+        "saturation": 1.04,
+        "toneCurve": [
+          [
+            0,
+            0.004
+          ],
+          [
+            0.18,
+            0.165
+          ],
+          [
+            0.4,
+            0.42
+          ],
+          [
+            0.65,
+            0.69
+          ],
+          [
+            0.85,
+            0.88
+          ],
+          [
+            1,
+            0.995
+          ]
+        ],
+        "shadowTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "highlightTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "hueBands": [
+          {
+            "centerDeg": 8,
+            "halfWidthDeg": 28,
+            "shiftDeg": 0,
+            "saturationMultiplier": 1.08
+          },
+          {
+            "centerDeg": 35,
+            "halfWidthDeg": 24,
+            "shiftDeg": 1,
+            "saturationMultiplier": 1.05
+          },
+          {
+            "centerDeg": 105,
+            "halfWidthDeg": 38,
+            "shiftDeg": -6,
+            "saturationMultiplier": 1.06
+          },
+          {
+            "centerDeg": 215,
+            "halfWidthDeg": 40,
+            "shiftDeg": -2,
+            "saturationMultiplier": 0.9
+          }
+        ]
+      },
+      "defaults": {
+        "intensity": 0.8,
+        "grain": 0,
+        "bloom": 0,
+        "vignette": 0,
+        "halation": 0,
+        "sharpness": 0,
+        "softness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
+      },
+      "notes": [
+        "Foodie의 음식별 색감 방향을 참고한 식탁용. 토마토·소스와 잎채소의 색을 선택적으로 살린다.",
+        "흰 접시·수저의 중성색을 유지하고 음식 질감을 흐리는 Bloom/softness/입자는 기본 0."
+      ]
+    },
+    {
+      "id": "food-cafe",
+      "collection": "food",
+      "name": "크림 라떼",
+      "caption": "크림빛 디저트, 포근한 카페",
+      "lookVersion": "0.1.0-draft",
+      "status": "design-draft",
+      "lut": null,
+      "authoring": {
+        "colorSpace": "srgb-encoded",
+        "exposureEv": 0.02,
+        "saturation": 0.93,
+        "toneCurve": [
+          [
+            0,
+            0.02
+          ],
+          [
+            0.18,
+            0.195
+          ],
+          [
+            0.4,
+            0.44
+          ],
+          [
+            0.65,
+            0.675
+          ],
+          [
+            0.85,
+            0.855
+          ],
+          [
+            1,
+            0.98
+          ]
+        ],
+        "shadowTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "highlightTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "hueBands": [
+          {
+            "centerDeg": 36,
+            "halfWidthDeg": 32,
+            "shiftDeg": -3,
+            "saturationMultiplier": 1.13
+          },
+          {
+            "centerDeg": 350,
+            "halfWidthDeg": 26,
+            "shiftDeg": -1,
+            "saturationMultiplier": 1.04
+          },
+          {
+            "centerDeg": 112,
+            "halfWidthDeg": 45,
+            "shiftDeg": -9,
+            "saturationMultiplier": 0.79
+          },
+          {
+            "centerDeg": 218,
+            "halfWidthDeg": 42,
+            "shiftDeg": -3,
+            "saturationMultiplier": 0.77
+          }
+        ]
+      },
+      "defaults": {
+        "intensity": 0.85,
+        "grain": 0,
+        "bloom": 0.02,
+        "vignette": 0,
+        "halation": 0,
+        "sharpness": 0,
+        "softness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
+      },
+      "notes": [
+        "Foodie 공식 레시피 예시의 커피·와플·베이지 실내에서 착안. 갈색/황금색을 살리고 파랑/초록은 낮춘다.",
+        "전체 흰색을 노랗게 바꾸는 효과 없이 재료 색의 상대적 따뜻함으로 카페 무드를 만든다."
       ]
     }
   ]

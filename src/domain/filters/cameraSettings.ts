@@ -6,19 +6,32 @@ export const CAMERA_RENDER_VERSION = 'lut-camera-0.5.0';
 export const CAMERA_FILTERS = [
   { id: 'original', name: '원본', caption: '색감 효과 없이' },
   { id: 'light-afternoon', name: '오후 네 시', caption: '따뜻한 빛, 맑은 그림자' },
+  { id: 'light-milk', name: '우윳빛 아침', caption: '부드러운 아침빛, 깨끗한 흰색' },
+  { id: 'light-spring', name: '봄의 공기', caption: '꽃의 분홍, 싱그러운 연두' },
+  { id: 'portrait-clear', name: '맑은 얼굴', caption: '맑은 피부 톤, 또렷한 눈빛' },
+  { id: 'portrait-peach', name: '피치 스킨', caption: '은은한 복숭아빛, 부드러운 인물' },
+  { id: 'food-table', name: '오늘의 식탁', caption: '맛있는 빨강, 신선한 초록' },
+  { id: 'food-cafe', name: '크림 라떼', caption: '크림빛 디저트, 포근한 카페' },
   { id: 'time-summer', name: '여름방학', caption: '햇살과 바다를 닮은 필름색' },
-  { id: 'scene-dawn', name: '푸른 새벽', caption: '차분한 푸른빛과 깊은 명암' },
+  { id: 'retro-travel', name: '맑은 여행', caption: '맑은 하늘색, 가벼운 햇빛과 부드러운 명암' },
+  { id: 'retro-rose', name: '로즈 데이', caption: '분홍빛 하이라이트와 청록빛 거리' },
+  { id: 'time-diary', name: '오래된 일기', caption: '바랜 초록, 담백한 종이색' },
   { id: 'retro-film', name: '플래시 필름', caption: '깊은 명암, 자연스러운 색과 거친 입자 · 날짜 도장' },
   { id: 'retro-digital', name: '소프트 디카', caption: '뽀얀 흰빛, 차분한 색과 부드러운 포커스' },
-  { id: 'retro-rose', name: '로즈 데이', caption: '분홍빛 하이라이트와 청록빛 거리' },
-  { id: 'retro-travel', name: '맑은 여행', caption: '맑은 하늘색, 가벼운 햇빛과 부드러운 명암' },
+  { id: 'scene-dawn', name: '푸른 새벽', caption: '차분한 푸른빛과 깊은 명암' },
+  { id: 'scene-rain', name: '비 온 뒤', caption: '차분한 초록과 비 갠 거리' },
+  { id: 'time-night', name: '밤의 필름', caption: '호박빛 조명, 깊고 조용한 밤' },
+  { id: 'scene-ending', name: '엔딩 크레딧', caption: '깊은 명암, 따뜻한 도시의 색' },
 ] as const;
 export type CameraFilterId = typeof CAMERA_FILTERS[number]['id'];
+// Browsing groups describe use cases; seed collections remain stable authoring IDs.
 export const CAMERA_COLLECTIONS: readonly { name: string; ids: readonly CameraFilterId[] }[] = [
-  { name: '원본', ids: ['original'] }, { name: '빛', ids: ['light-afternoon'] },
-  { name: '시간', ids: ['time-summer'] }, { name: '장면', ids: ['scene-dawn'] },
-  { name: '필름', ids: ['retro-film'] }, { name: '디카', ids: ['retro-digital'] },
-  { name: '도시', ids: ['retro-rose', 'retro-travel'] },
+  { name: '원본', ids: ['original'] },
+  { name: '인물', ids: ['light-milk', 'light-spring', 'portrait-clear', 'portrait-peach'] },
+  { name: '푸드', ids: ['food-table', 'food-cafe'] },
+  { name: '여행', ids: ['light-afternoon', 'time-summer', 'retro-travel', 'retro-rose', 'scene-ending'] },
+  { name: '레트로', ids: ['time-diary', 'retro-film', 'retro-digital'] },
+  { name: '야간·비', ids: ['scene-dawn', 'scene-rain', 'time-night'] },
 ];
 export type CameraSettings = RenderSettings & RetroControls & Readonly<{
   filterId: CameraFilterId;

@@ -377,3 +377,12 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 - Stitch `7812018568704993424`의 카메라 화면 `6882efed6e4a40ba8cb3d0e9e99948ff`: 연결 get_screen/download_file로 실제 PNG를 재확인했다. 차콜 팔레트/큰 뷰파인더/하단 촬영 위계를 참고하고 미구현 가져오기/빛 가이드는 노출하지 않았다.
 - [React Native 0.83 Pressable](https://reactnative.dev/docs/0.83/pressable): disabled, 눌림 피드백과 press in/out 구분. 접근성 웹 페이지는 조회 timeout으로 근거에서 제외하고 설치0.83.10 `ViewAccessibility.d.ts`의 tab/radio/adjustable/checked/selected와 Pressable 기존 계약을 확인했다.
 - 기존 React19.2.0/RN0.83.10의 View/Text/ScrollView/Switch/ActivityIndicator를 재사용한다. 새 패키지/아이콘 폰트/외부 사진 없음. 자체 선형 아이콘과 팔레트 아트는 화면용이며 사진 처리에는 쓰이지 않는다.
+
+
+## S46. 장면별 필터 큐레이션 — 2026-10-30
+
+- [Analog Paris 공식 App Store](https://apps.apple.com/us/app/analog-paris/id1035219562), [Analog Tokyo 공식 App Store](https://apps.apple.com/us/app/analog-tokyo/id961932335): 브라우저에서 실제 소개 화면의 건물/서점/카페 및 신사/빗길/역 사진을 관찰했다.
+- [Foodie 공식 App Store](https://apps.apple.com/us/app/foodie-filter-film-camera/id1076859004): 음식별 필터 소개와 커피·와플·베이지 실내·야외 인물 화면. [LINE 공식 초기 소개](https://www.linecorp.com/en/pr/news/en/2016/1236)는 2016년 역사 자료이며 현재 필터 수/스펙 근거로 사용하지 않는다.
+- [SODA 공식 App Store](https://apps.apple.com/us/app/soda-natural-beauty-camera/id1437880869): 인물용 필터/일상 필터 설명과 화면. AI/beauty/메이크업과 색 변환은 다른 기능이며 여운에 피부 인식·얼굴 보정을 추가하지 않는다.
+- [FILTER_CATALOG](FILTER_CATALOG.md)에 관찰/해석/독자 제작 수치를 구분했다. 동일 원본으로 경쟁 앱을 비교한 것이 아니고 마케팅 사진의 촬영·보정 조건은 모른다. 외부 이미지는 조사용 임시 폴더에만 두고 번들/커밋하지 않았다. 사용자 사진 전송 없음.
+- 기존 RN0.83.10/React19.2.0 ScrollView/Pressable/useCallback, 동일 LUT/Skia preview·export 계약을 재사용한다. 새 API/의존성/native/shader 도입 없음. 자동 검사/기기 실행/새 색감 시각 검수는 NOT_RUN이다.

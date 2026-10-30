@@ -1,5 +1,27 @@
 import seed from '../../spec/filters.seed.json';
-import { cameraSettings, cameraSettingsKey, copyCameraSettings } from '../../src/domain/filters/cameraSettings';
+import { CAMERA_FILTERS, cameraSettings, cameraSettingsKey, copyCameraSettings } from '../../src/domain/filters/cameraSettings';
+
+test('every curated seed look is selectable with matching copy, defaults and exact version', () => {
+  expect(CAMERA_FILTERS.filter(filter => filter.id !== 'original').map(filter => filter.id).sort())
+    .toEqual(seed.filters.map(filter => filter.id).sort());
+  for (const filter of CAMERA_FILTERS) {
+    if (filter.id === 'original') continue;
+    const draft = seed.filters.find(item => item.id === filter.id)!;
+    expect(filter).toMatchObject({ name: draft.name, caption: draft.caption });
+    const settings = cameraSettings(filter.id);
+    expect(settings).toMatchObject({ ...draft.defaults, lookVersion: draft.lookVersion });
+    expect(copyCameraSettings(settings)).toEqual(settings);
+    expect(cameraSettings(filter.id, 0).intensity).toBe(0);
+  }
+});
+
+test.each(['light-milk', 'light-spring', 'time-diary', 'time-night', 'scene-rain', 'scene-ending'] as const)(
+  'rejects the unbundled old authoring version for %s', id => {
+    const settings = cameraSettings(id);
+    expect(settings.lookVersion).toBe('0.2.0-draft');
+    expect(() => copyCameraSettings({ ...settings, lookVersion: '0.1.0-draft' })).toThrow();
+  },
+);
 
 test('original bypasses style and defaults come from the selected look while explicit zero is preserved', () => {
   expect(cameraSettings('original').intensity).toBe(0);

@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { CAMERA_COLLECTIONS, CAMERA_FILTERS, type CameraFilterId, type CameraSettings } from '../domain/filters/cameraSettings';
 import type { RetroAmount } from '../domain/filters/retroControls';
 import { CameraIcon, type CameraIconName } from './CameraIcon';
 import { IconButton } from './CameraControls';
 import { FilterSwatch } from './FilterSwatch';
+import { FavoriteButton, FavoritesMessage, useFilterFavorites } from './FilterFavorites';
+import { isFavoriteFilterId, type FavoriteFilterId } from '../domain/filters/favorites';
 import { cameraTheme as theme, filterPresentation } from './cameraTheme';
 
 const FILTER_GROUPS = [
@@ -13,10 +15,16 @@ const FILTER_GROUPS = [
     name: collection.name, filters: CAMERA_FILTERS.filter(filter => collection.ids.includes(filter.id)),
   })),
 ];
+const FILTER_BY_ID = new Map(CAMERA_FILTERS.map(filter => [filter.id, filter]));
+function useFavoriteList(ids: readonly FavoriteFilterId[]) {
+  // Keep the original available in every favorites view; never auto-select a different look.
+  return useMemo(() => [CAMERA_FILTERS[0], ...ids.map(id => FILTER_BY_ID.get(id)!)], [ids]);
+}
 
-function FilterStrip({ selectedId, disabled, onSelect, filters = CAMERA_FILTERS }: {
+function FilterStrip({ selectedId, disabled, onSelect, filters = CAMERA_FILTERS, favoriteIds, message }: {
   selectedId: CameraFilterId; disabled: boolean; onSelect(id: CameraFilterId): void;
   filters?: ReadonlyArray<typeof CAMERA_FILTERS[number]>;
+  favoriteIds: readonly FavoriteFilterId[]; message?: ReactNode;
 }) {
   const scroll = useRef<ScrollView>(null);
   const viewport = useRef(0);
@@ -25,19 +33,21 @@ function FilterStrip({ selectedId, disabled, onSelect, filters = CAMERA_FILTERS 
     scroll.current?.scrollTo({ x: index < 0 ? 0 : Math.max(0, index * 80 - (viewport.current - 72) / 2), animated: false });
   }, [filters, selectedId]);
   useEffect(revealSelected, [revealSelected]);
-  return <ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator={false}
+  return <ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator={false} style={styles.stripViewport}
     contentContainerStyle={styles.strip} accessibilityRole="radiogroup" accessibilityLabel="필터 선택"
     onLayout={event => { viewport.current = event.nativeEvent.layout.width; revealSelected(); }}
     onContentSizeChange={revealSelected}>
     {filters.map(filter => {
       const selected = selectedId === filter.id;
+      const favorite = isFavoriteFilterId(filter.id) && favoriteIds.includes(filter.id);
       const color = filterPresentation[filter.id].color;
-      return <Pressable key={filter.id} accessibilityRole="radio" accessibilityLabel={`${filter.name}, ${filter.caption}`}
+      return <Pressable key={filter.id} accessibilityRole="radio" accessibilityLabel={`${filter.name}${favorite ? ', 즐겨찾기' : ''}, ${filter.caption}`}
         accessibilityState={{ checked: selected, disabled }} disabled={disabled}
         onPress={() => { if (!selected) onSelect(filter.id); }}
         style={({ pressed }) => [styles.card, pressed && styles.pressed, disabled && styles.disabled]}>
         <View style={[styles.cardFrame, selected && { borderColor: color }]}>
           <FilterSwatch id={filter.id} />
+          {favorite ? <View style={styles.favoriteMark}><CameraIcon name="star" size={11} color={theme.light} /></View> : null}
           {selected ? <View style={[styles.check, { backgroundColor: color }]}>
             <CameraIcon name="check" size={11} color={theme.background} />
           </View> : null}
@@ -45,12 +55,16 @@ function FilterStrip({ selectedId, disabled, onSelect, filters = CAMERA_FILTERS 
         <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[styles.cardName, selected && { color: theme.text }]}>{filter.name}</Text>
       </Pressable>;
     })}
+    {message ? <View style={styles.listMessage}>{message}</View> : null}
   </ScrollView>;
 }
 
 export function FilterControls({ settings, disabled, onSelect, onOpen }: {
   settings: CameraSettings; disabled: boolean; onSelect(id: CameraFilterId): void; onOpen(): void;
 }) {
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const favorites = useFilterFavorites();
+  const favoriteFilters = useFavoriteList(favorites.ids);
   const selected = CAMERA_FILTERS.find(filter => filter.id === settings.filterId);
   const presentation = filterPresentation[settings.filterId];
   return <View style={styles.controls}>
@@ -60,9 +74,22 @@ export function FilterControls({ settings, disabled, onSelect, onOpen }: {
         <Text numberOfLines={1} style={styles.name}>{selected?.name}</Text>
         {settings.filterId !== 'original' ? <Text style={[styles.value, { color: presentation.color }]}>{Math.round(settings.intensity * 100)}<Text style={styles.unit}>%</Text></Text> : null}
       </View>
-      <IconButton icon="sliders" label="필터 강도와 질감 조절" onPress={onOpen} disabled={disabled} />
+      <View style={styles.selectionActions}>
+        <FavoriteButton id={settings.filterId} disabled={disabled} />
+        <IconButton icon="sliders" label="필터 강도와 질감 조절" onPress={onOpen} disabled={disabled} />
+      </View>
     </View>
-    <FilterStrip selectedId={settings.filterId} disabled={disabled} onSelect={onSelect} />
+    <View style={styles.listRow}>
+      <View style={styles.listSwitch}>
+        <IconButton icon="favorites" label={favoritesOnly ? '전체 필터 보기' : '즐겨찾기만 보기'}
+          hint="목록만 바뀌고 현재 색감은 유지돼요." selected={favoritesOnly} disabled={disabled}
+          onPress={() => setFavoritesOnly(value => !value)} />
+      </View>
+      <FilterStrip filters={favoritesOnly ? favoriteFilters : CAMERA_FILTERS} favoriteIds={favorites.ids}
+        selectedId={settings.filterId} disabled={disabled} onSelect={onSelect}
+        message={favoritesOnly && (favorites.ids.length === 0 || favorites.phase === 'error')
+          ? <FavoritesMessage disabled={disabled} /> : undefined} />
+    </View>
   </View>;
 }
 
@@ -84,7 +111,10 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
 }) {
   const [effect, setEffect] = useState<EffectKey>('intensity');
   const [groupName, setGroupName] = useState('전체');
-  const group = FILTER_GROUPS.find(item => item.name === groupName)!;
+  const favorites = useFilterFavorites();
+  const favoriteFilters = useFavoriteList(favorites.ids);
+  const groups = useMemo(() => [FILTER_GROUPS[0]!, { name: '즐겨찾기', filters: favoriteFilters }, ...FILTER_GROUPS.slice(1)], [favoriteFilters]);
+  const group = groups.find(item => item.name === groupName)!;
   const selected = CAMERA_FILTERS.find(filter => filter.id === settings.filterId);
   const original = settings.filterId === 'original';
   const accent = filterPresentation[settings.filterId].color;
@@ -92,16 +122,22 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
   return <View style={styles.adjustment}>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.groups}
       accessibilityRole="tablist" accessibilityLabel="촬영 장면별 필터">
-      {FILTER_GROUPS.map(item => <Pressable key={item.name} accessibilityRole="tab"
-        accessibilityLabel={`${item.name}, ${item.filters.length}개`}
+      {groups.map(item => <Pressable key={item.name} accessibilityRole="tab"
+        accessibilityLabel={`${item.name}, ${item.name === '즐겨찾기' ? favorites.ids.length : item.filters.length}개`}
         accessibilityState={{ selected: groupName === item.name, disabled }} disabled={disabled}
         onPress={() => setGroupName(item.name)}
         style={({ pressed }) => [styles.group, groupName === item.name && styles.groupSelected, pressed && styles.pressed, disabled && styles.disabled]}>
+        {item.name === '즐겨찾기' ? <CameraIcon name="star" size={16} color={groupName === item.name ? theme.background : theme.light} /> : null}
         <Text style={[styles.groupName, groupName === item.name && styles.groupNameSelected]}>{item.name}</Text>
       </Pressable>)}
     </ScrollView>
-    <FilterStrip filters={group.filters} selectedId={settings.filterId} disabled={disabled} onSelect={onSelect} />
-    <Text style={styles.caption}>{selected?.name} · {selected?.caption}</Text>
+    <FilterStrip filters={group.filters} favoriteIds={favorites.ids} selectedId={settings.filterId} disabled={disabled} onSelect={onSelect}
+      message={groupName === '즐겨찾기' && (favorites.ids.length === 0 || favorites.phase === 'error')
+        ? <FavoritesMessage disabled={disabled} /> : undefined} />
+    <View style={styles.captionRow}>
+      <Text style={[styles.caption, styles.captionText]}>{selected?.name} · {selected?.caption}</Text>
+      <FavoriteButton id={settings.filterId} disabled={disabled} />
+    </View>
     {!original ? <>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.effects}
         accessibilityRole="tablist" accessibilityLabel="조절할 효과">
@@ -160,14 +196,22 @@ const styles = StyleSheet.create({
   controls: { paddingBottom: 4 },
   selection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, height: 48 },
   selectionName: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  selectionActions: { flexDirection: 'row' },
+  listRow: { flexDirection: 'row', height: 96 }, listSwitch: { justifyContent: 'center', paddingRight: 6 },
+  stripViewport: { height: 96, flexGrow: 1, flexShrink: 1 },
+  listMessage: { justifyContent: 'center', width: 220, paddingHorizontal: 4 },
   name: { color: theme.text, fontSize: 15, fontWeight: '600', flexShrink: 1 },
   dot: { width: 5, height: 5, borderRadius: 3 }, value: { fontFamily: theme.mono, fontSize: 12 }, unit: { fontSize: 11 },
   strip: { gap: 8, paddingVertical: 3 }, card: { width: 72, gap: 5 },
   cardFrame: { height: 61, borderRadius: 12, borderWidth: 1.5, borderColor: 'transparent', padding: 3 },
   cardName: { color: theme.secondary, textAlign: 'center', fontSize: 11, lineHeight: 16, fontWeight: '500' },
   check: { width: 17, height: 17, borderRadius: 9, position: 'absolute', right: 0, bottom: -2, alignItems: 'center', justifyContent: 'center' },
+  favoriteMark: { position: 'absolute', top: 5, right: 5, width: 18, height: 18, borderRadius: 9,
+    backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' },
   adjustment: { gap: 16 }, caption: { color: theme.secondary, fontSize: 12, lineHeight: 18 },
-  groups: { gap: 6 }, group: { minHeight: 48, paddingHorizontal: 16, borderRadius: 24, justifyContent: 'center' },
+  captionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 }, captionText: { flex: 1 },
+  groups: { gap: 6 }, group: { minHeight: 48, paddingHorizontal: 16, borderRadius: 24, justifyContent: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: 6 },
   groupSelected: { backgroundColor: theme.text }, groupName: { color: theme.secondary, fontSize: 13, fontWeight: '600' },
   groupNameSelected: { color: theme.background },
   effects: { gap: 6 }, effect: { width: 66, minHeight: 70, borderRadius: 16, justifyContent: 'center', alignItems: 'center', gap: 8 },

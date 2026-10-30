@@ -28,7 +28,7 @@ export function validateSeedSemantics(seed: FilterSeed): readonly FilterSeedIssu
   }
 
   const filtersById = new Map<string, DraftFilter>();
-  const counts: Record<CollectionId, number> = { light: 0, time: 0, scene: 0, retro: 0 };
+  const counts: Record<CollectionId, number> = { light: 0, time: 0, scene: 0, retro: 0, portrait: 0, food: 0 };
   seed.filters.forEach((filter, index) => {
     const path = `/filters/${index}`;
     if (filtersById.has(filter.id)) {
@@ -64,7 +64,7 @@ export function validateSeedSemantics(seed: FilterSeed): readonly FilterSeedIssu
   });
 
   for (const id of COLLECTION_IDS) {
-    const expected = id === 'retro' ? 4 : 3;
+    const expected = id === 'retro' ? 4 : id === 'portrait' || id === 'food' ? 2 : 3;
     if (counts[id] !== expected) {
       report('collection-filter-count', '/filters', `${id} 컬렉션에는 필터가 정확히 ${expected}개 필요합니다.`);
     }

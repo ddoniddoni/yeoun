@@ -1,5 +1,13 @@
 # 02. 필터와 렌더링 계약
 
+## 2026-10-30 17종 큐레이션 (현재 카탈로그 계약)
+
+현재 제작/앱 연결 대상은 seed의 17종 전체와 identity다. `bundledDraftFilters`는 모든 seed look을 반환하며 JSON Schema/semantic count는 light3/time3/scene3/retro4/portrait2/food2다. 생성기 출력 경로와 mobile manifest parser도 portrait/food 접두사를 허용하되 고정된 ID/version/hash 전체 집합 검사를 유지한다.
+
+새 seed hash는 `0fb99cc4fd30cac0668d59a5c693a32c27459fefc255612556f81929d262f6e3`. 18 PNG와 동일 바이트의 .lut를 immutable 디렉터리에 생성하고 literal Metro registry로 연결했다. 기존 7종 authoring/default/version은 유지한다. 새로 다듬은 기존 미제작6종은 look0.2, 새 인물/푸드4종은 look0.1이다. renderer0.5/spatial0.4/authoring0.1과 shader·프레임 공유·export 순서는 유지한다.
+
+새 10종은 전역 RGB tint를 모두0으로 두고 tone curve/exposure/색상별 hue·채도로 성격을 구분한다. 중성 흰색을 분홍/녹색으로 덮지 않으며 새 인물/푸드는 작은 노출·톤 변화, 낮거나0인 입자/blur를 기본으로 한다. 이 설계는 피부 검출이나 저조도 복원이 아니다. [필터 구성](FILTER_CATALOG.md)에 장면별 사용 의도를 기록했다. 자산 생성은 색감/수치/GPU 검수 통과가 아니며 모든 자산은 draft다. 아래 대표3종·7종·미제작6종 설명은 이전 단계 기록이다.
+
 ## 2026-10-30 필름 0.6 색 응답 (현재 계약)
 
 필름 look만 0.6.0-draft로 변경한다. 전역 tint RGB=0, exposure0, saturation1.04, tone endpoints0.018/0.975이며 실제 값은 seed를 따른다. 중성 입력은 무채색으로 유지하고 색상 밴드만 기존 hue mask로 적용한다. shader/효과 순서 변경 없이 renderer0.5/spatial0.4를 유지한다. 날짜와 입자800/0.075 규칙도 유지한다. 아래 과거 버전보다 우선한다.

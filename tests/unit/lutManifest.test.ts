@@ -1,8 +1,17 @@
-import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/8f1d55b570a4cd626d2c64fe5fdc702b1431e62e97da933a5315b25c12c67a46/filter-manifest.json';
+import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/0fb99cc4fd30cac0668d59a5c693a32c27459fefc255612556f81929d262f6e3/filter-manifest.json';
 import { parseLutManifest } from '../../src/rendering/assets/lutManifest';
+import { CAMERA_FILTERS, cameraSettings } from '../../src/domain/filters/cameraSettings';
 
 const expected = { sourceSeedSha256: manifest.sourceSeedSha256,
   lookVersions: new Map(manifest.assets.map(asset => [asset.filterId, asset.lookVersion])) };
+
+test('the shipped manifest contains every selectable look at its exact camera version', () => {
+  const lookVersions = new Map<string, string>([['identity', '0.1.0-draft']]);
+  for (const filter of CAMERA_FILTERS) {
+    if (filter.id !== 'original') lookVersions.set(filter.id, cameraSettings(filter.id).lookVersion);
+  }
+  expect(parseLutManifest(manifest, { ...expected, lookVersions }).assets).toHaveLength(18);
+});
 
 test('mixed look revisions remain pinned per filter instead of accepting any supported version', () => {
   const parsed = parseLutManifest(manifest, expected);

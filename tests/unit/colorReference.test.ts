@@ -249,3 +249,33 @@ test('film keeps the neutral ramp neutral with deep blacks and separated highlig
   expect(transform([1, 1, 1])[0]).toBeGreaterThan(0.95);
   expect(transform([0.18, 0.18, 0.18])[0]).toBeLessThan(0.18);
 });
+
+const CURATED_ADDITIONS = [
+  'light-milk', 'light-spring', 'time-diary', 'time-night', 'scene-rain', 'scene-ending',
+  'portrait-clear', 'portrait-peach', 'food-table', 'food-cafe',
+];
+
+test.each(CURATED_ADDITIONS)('%s preserves the neutral axis without a colored veil', id => {
+  const result = createFilterSeedValidator(schema)(seed);
+  if (!result.ok) throw new Error('Invalid authoring seed');
+  const filter = result.data.filters.find(item => item.id === id)!;
+  const transform = createAuthoringTransform(filter.authoring);
+  let previous = -1;
+  for (let step = 0; step <= 100; step += 1) {
+    const gray = step / 100;
+    const output = transform([gray, gray, gray]);
+    expect(output[0]).toBeCloseTo(output[1], 12);
+    expect(output[1]).toBeCloseTo(output[2], 12);
+    expect(output[0]).toBeGreaterThanOrEqual(previous);
+    previous = output[0];
+  }
+  expect(transform([0, 0, 0])[0]).toBeLessThan(0.05);
+  expect(transform([1, 1, 1])[0]).toBeGreaterThan(0.95);
+  // A few warm brown/peach samples guard against green/blue crossover, not skin quality approval.
+  const warmSamples: readonly Rgb[] = [[0.33, 0.2, 0.15], [0.62, 0.4, 0.28], [0.9, 0.73, 0.63]];
+  for (const input of warmSamples) {
+    const output = transform(input);
+    expect(output[0]).toBeGreaterThan(output[1]);
+    expect(output[1]).toBeGreaterThan(output[2]);
+  }
+});

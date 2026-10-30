@@ -1,13 +1,13 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/8f1d55b570a4cd626d2c64fe5fdc702b1431e62e97da933a5315b25c12c67a46/filter-manifest.json';
+import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/0fb99cc4fd30cac0668d59a5c693a32c27459fefc255612556f81929d262f6e3/filter-manifest.json';
 import { createBundledDraftLutLoader, loadDraftLutPipeline } from '../../src/rendering/adapters/bundledLutLoader';
 import { createLutAtlas } from '../../src/rendering/reference/lutAtlas';
 
 // Metro's actual .lut packaging and native decode are separate device checks.
 jest.mock('../../src/rendering/assets/bundledLuts', () => {
-  const source = require('../../assets/lut-drafts/lut-authoring-0.1.0/8f1d55b570a4cd626d2c64fe5fdc702b1431e62e97da933a5315b25c12c67a46/filter-manifest.json');
+  const source = require('../../assets/lut-drafts/lut-authoring-0.1.0/0fb99cc4fd30cac0668d59a5c693a32c27459fefc255612556f81929d262f6e3/filter-manifest.json');
   return {
     bundledLutManifest: source,
     bundledLutExpectation: { sourceSeedSha256: source.sourceSeedSha256,

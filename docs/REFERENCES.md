@@ -371,3 +371,9 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 - [Kodak Gold 200 공식 기술자료](https://imaging.kodakalaris.com/sites/default/files/files/resources/E7022_Gold_200.pdf): 일광/전자 플래시용 컬러 네거티브와 입자/선명도 특성. 자료가 전역 녹색 필터를 제시하는 것은 아니다.
 - [The Darkroom Gold 200 실제 스캔](https://thedarkroom.com/film/gold-200/): 갤러리의 [35mm 야외 커플](https://thedarkroom.com/app/uploads/2019/07/Gold200-E7-000336830003-679x1024.jpg), [120 인물](https://thedarkroom.com/app/uploads/2019/07/Gold-200-P67-000418530006-Edit-979x1200.jpg)을 임시 폴더에서 직접 열었다. 피부와 흰옷, 녹색 배경, 어두운 옷/반사 부분의 분리를 관찰했다. 포맷/조명/스캔이 다르므로 동일한 입자량이나 노출의 측정 근거로 사용하지 않는다.
 - 무채색 보존/전역 tint 제거/명암과 hue band 수치는 이 프로젝트의 표현 선택이며 필름 stock의 정밀 에뮬레이션이 아니다. 외부 이미지는 앱/저장소에 포함하지 않았다. 최종 사용자 색감 승인 대기.
+
+## S45. 제품형 카메라 UI/UX — 2026-10-30
+
+- Stitch `7812018568704993424`의 카메라 화면 `6882efed6e4a40ba8cb3d0e9e99948ff`: 연결 get_screen/download_file로 실제 PNG를 재확인했다. 차콜 팔레트/큰 뷰파인더/하단 촬영 위계를 참고하고 미구현 가져오기/빛 가이드는 노출하지 않았다.
+- [React Native 0.83 Pressable](https://reactnative.dev/docs/0.83/pressable): disabled, 눌림 피드백과 press in/out 구분. 접근성 웹 페이지는 조회 timeout으로 근거에서 제외하고 설치0.83.10 `ViewAccessibility.d.ts`의 tab/radio/adjustable/checked/selected와 Pressable 기존 계약을 확인했다.
+- 기존 React19.2.0/RN0.83.10의 View/Text/ScrollView/Switch/ActivityIndicator를 재사용한다. 새 패키지/아이콘 폰트/외부 사진 없음. 자체 선형 아이콘과 팔레트 아트는 화면용이며 사진 처리에는 쓰이지 않는다.

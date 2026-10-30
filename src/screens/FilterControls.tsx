@@ -1,59 +1,74 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
-import { CAMERA_COLLECTIONS, CAMERA_FILTERS, type CameraFilterId, type CameraSettings } from '../domain/filters/cameraSettings';
+import { CAMERA_FILTERS, type CameraFilterId, type CameraSettings } from '../domain/filters/cameraSettings';
 import type { RetroAmount } from '../domain/filters/retroControls';
-import { CameraAction } from './CameraControls';
+import { CameraIcon, type CameraIconName } from './CameraIcon';
+import { IconButton } from './CameraControls';
+import { FilterSwatch } from './FilterSwatch';
 import { cameraTheme as theme, filterPresentation } from './cameraTheme';
 
-export function FilterControls({ settings, disabled, onSelect, onOpen }: {
-  settings: CameraSettings; disabled: boolean;
-  onSelect(id: CameraFilterId): void; onOpen(): void;
+function FilterStrip({ selectedId, disabled, onSelect }: {
+  selectedId: CameraFilterId; disabled: boolean; onSelect(id: CameraFilterId): void;
 }) {
-  const percent = Math.round(settings.intensity * 100);
-  const original = settings.filterId === 'original';
+  const scroll = useRef<ScrollView>(null);
+  const viewport = useRef(0);
+  const revealSelected = () => {
+    const index = CAMERA_FILTERS.findIndex(filter => filter.id === selectedId);
+    scroll.current?.scrollTo({ x: Math.max(0, index * 80 - (viewport.current - 72) / 2), animated: false });
+  };
+  useEffect(() => {
+    const index = CAMERA_FILTERS.findIndex(filter => filter.id === selectedId);
+    scroll.current?.scrollTo({ x: Math.max(0, index * 80 - (viewport.current - 72) / 2), animated: false });
+  }, [selectedId]);
+  return <ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator={false}
+    contentContainerStyle={styles.strip} accessibilityRole="radiogroup" accessibilityLabel="필터 선택"
+    onLayout={event => { viewport.current = event.nativeEvent.layout.width; revealSelected(); }}
+    onContentSizeChange={revealSelected}>
+    {CAMERA_FILTERS.map(filter => {
+      const selected = selectedId === filter.id;
+      const color = filterPresentation[filter.id].color;
+      return <Pressable key={filter.id} accessibilityRole="radio" accessibilityLabel={`${filter.name}, ${filter.caption}`}
+        accessibilityState={{ checked: selected, disabled }} disabled={disabled}
+        onPress={() => { if (!selected) onSelect(filter.id); }}
+        style={({ pressed }) => [styles.card, pressed && styles.pressed, disabled && styles.disabled]}>
+        <View style={[styles.cardFrame, selected && { borderColor: color }]}>
+          <FilterSwatch id={filter.id} />
+          {selected ? <View style={[styles.check, { backgroundColor: color }]}>
+            <CameraIcon name="check" size={11} color={theme.background} />
+          </View> : null}
+        </View>
+        <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[styles.cardName, selected && { color: theme.text }]}>{filter.name}</Text>
+      </Pressable>;
+    })}
+  </ScrollView>;
+}
+
+export function FilterControls({ settings, disabled, onSelect, onOpen }: {
+  settings: CameraSettings; disabled: boolean; onSelect(id: CameraFilterId): void; onOpen(): void;
+}) {
   const selected = CAMERA_FILTERS.find(filter => filter.id === settings.filterId);
-  const accent = filterPresentation[settings.filterId].color;
+  const presentation = filterPresentation[settings.filterId];
   return <View style={styles.controls}>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-      {CAMERA_COLLECTIONS.map(collection => {
-        const active = collection.ids.includes(settings.filterId);
-        const first = collection.ids[0]!;
-        const presentation = filterPresentation[active ? settings.filterId : first];
-        return <Pressable key={collection.name} accessibilityRole="tab"
-          accessibilityLabel={`${collection.name}, 색감 ${collection.ids.length}개`}
-          accessibilityState={{ selected: active, disabled }} disabled={disabled} onPress={() => {
-            if (!active) onSelect(first);
-          }}
-          style={({ pressed }) => [styles.tab, active && { borderBottomColor: presentation.color },
-            pressed && styles.pressed, disabled && styles.disabled]}>
-          <Text style={[styles.tabText, active && styles.activeText]}>{collection.name}</Text>
-        </Pressable>;
-      })}
-    </ScrollView>
     <View style={styles.selection}>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${selected?.name}, 필터 선택과 조절 열기`}
-        disabled={disabled} accessibilityState={{ disabled }} onPress={onOpen}
-        style={({ pressed }) => [styles.selectionButton, pressed && styles.pressed, disabled && styles.disabled]}>
-        <View style={[styles.dot, { backgroundColor: accent }]} />
+      <View style={styles.selectionName}>
+        <View style={[styles.dot, { backgroundColor: presentation.color }]} />
         <Text numberOfLines={1} style={styles.name}>{selected?.name}</Text>
-        <Text numberOfLines={1} style={[styles.percent, { color: accent }]}>{original ? '' : `${percent}%`}</Text>
-        <Text style={styles.chevron}>⌄</Text>
-      </Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel="색감 조절 열기" disabled={disabled}
-        accessibilityState={{ disabled }} onPress={onOpen}
-        style={({ pressed }) => [styles.adjustButton, pressed && styles.pressed, disabled && styles.disabled]}>
-        <Text style={styles.adjustText}>조절</Text>
-      </Pressable>
+        {settings.filterId !== 'original' ? <Text style={[styles.value, { color: presentation.color }]}>{Math.round(settings.intensity * 100)}<Text style={styles.unit}>%</Text></Text> : null}
+      </View>
+      <IconButton icon="sliders" label="필터 강도와 질감 조절" onPress={onOpen} disabled={disabled} />
     </View>
+    <FilterStrip selectedId={settings.filterId} disabled={disabled} onSelect={onSelect} />
   </View>;
 }
 
-const TEXTURE_CONTROLS: readonly { key: 'grain' | 'bloom' | RetroAmount; label: string }[] = [
-  { key: 'grain', label: '필름 입자' }, { key: 'bloom', label: '빛 번짐' },
-  { key: 'vignette', label: '가장자리 어둡게' }, { key: 'halation', label: '붉은 빛 번짐' },
-  { key: 'softness', label: '소프트 포커스' }, { key: 'sharpness', label: '윤곽 선명도' },
-  { key: 'digitalNoise', label: '디지털 노이즈' },
-  { key: 'lightLeak', label: '빛샘' }, { key: 'dust', label: '먼지' },
+type EffectKey = 'intensity' | 'grain' | 'bloom' | RetroAmount;
+const EFFECTS: readonly { key: EffectKey; label: string; icon: CameraIconName }[] = [
+  { key: 'intensity', label: '강도', icon: 'sliders' },
+  { key: 'grain', label: '입자', icon: 'grain' }, { key: 'bloom', label: '빛 번짐', icon: 'bloom' },
+  { key: 'softness', label: '부드러움', icon: 'softness' }, { key: 'vignette', label: '비네팅', icon: 'vignette' },
+  { key: 'halation', label: '붉은 번짐', icon: 'sun' }, { key: 'sharpness', label: '선명도', icon: 'focus' },
+  { key: 'digitalNoise', label: '디카 입자', icon: 'grid' },
+  { key: 'lightLeak', label: '빛샘', icon: 'flash' }, { key: 'dust', label: '먼지', icon: 'grain' },
 ];
 
 export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensity, onTexture, onDateStamp, onReset }: {
@@ -62,50 +77,36 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
   onTexture(control: 'grain' | 'bloom' | RetroAmount, value: number): void;
   onDateStamp(enabled: boolean): void; onReset(): void;
 }) {
-  const [texturesOpen, setTexturesOpen] = useState(false);
+  const [effect, setEffect] = useState<EffectKey>('intensity');
   const original = settings.filterId === 'original';
   const accent = filterPresentation[settings.filterId].color;
+  const activeEffect = EFFECTS.find(item => item.key === effect)!;
   return <View style={styles.adjustment}>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterList}
-      accessibilityRole="radiogroup" accessibilityLabel="촬영 색감">
-      {CAMERA_FILTERS.map(filter => {
-        const selected = settings.filterId === filter.id;
-        const color = filterPresentation[filter.id].color;
-        return <Pressable key={filter.id} accessibilityRole="radio" accessibilityLabel={`${filter.name}, ${filter.caption}`}
-          accessibilityState={{ checked: selected, disabled }} disabled={disabled} onPress={() => onSelect(filter.id)}
-          style={({ pressed }) => [styles.filterOption, selected && { borderColor: color }, pressed && styles.pressed,
-            disabled && styles.disabled]}>
-          <View style={[styles.dot, { backgroundColor: color }]} />
-          <Text style={styles.optionName}>{filter.name}</Text>
-          {selected ? <Text style={{ color }}>✓</Text> : null}
-        </Pressable>;
-      })}
-    </ScrollView>
+    <FilterStrip selectedId={settings.filterId} disabled={disabled} onSelect={onSelect} />
     <Text style={styles.caption}>{CAMERA_FILTERS.find(filter => filter.id === settings.filterId)?.caption}</Text>
-    {settings.dateStamp && settings.intensity > 0 ? <Text style={styles.caption}>
-      날짜 도장 켜짐 · 오른쪽 아래에 촬영한 날을 남겨요.
-    </Text> : null}
     {!original ? <>
-      <EffectAmount label="필터 강도" value={settings.intensity} disabled={disabled} accent={accent} onChange={onIntensity} />
-      <Pressable accessibilityRole="button" accessibilityLabel="질감과 레트로 효과"
-        accessibilityState={{ expanded: texturesOpen }} onPress={() => setTexturesOpen(value => !value)}
-        style={styles.effectsToggle}><Text style={styles.optionName}>질감과 레트로 효과</Text>
-        <Text style={styles.chevron}>{texturesOpen ? '−' : '+'}</Text></Pressable>
-      {texturesOpen ? <>
-        {TEXTURE_CONTROLS.map(control => <EffectAmount key={control.key} label={control.label}
-          value={settings[control.key]} disabled={disabled} accent={accent}
-          onChange={value => onTexture(control.key, value)} />)}
-        <View style={styles.dateRow}>
-          <View style={styles.description}><Text style={styles.optionName}>날짜 도장</Text>
-            <Text style={styles.caption}>촬영한 날을 사진 오른쪽 아래에 남겨요.</Text></View>
-          <Switch accessibilityLabel="날짜 도장" disabled={disabled} value={settings.dateStamp}
-            onValueChange={onDateStamp} trackColor={{ false: theme.line, true: accent }} />
-        </View>
-        <Text style={styles.caption}>필름은 날짜 도장이 기본으로 켜져 있어요. 날짜·빛샘·먼지를 켜면 저장한 사진에도 남아요.</Text>
-      </> : null}
-      {settings.intensity === 0 ? <Text style={styles.caption}>강도가 0%라 모든 효과가 보이지 않아요. 조절값은 유지돼요.</Text> : null}
-      <CameraAction label="필터 기본값으로 초기화" disabled={disabled} onPress={onReset} />
-    </> : null}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.effects}
+        accessibilityRole="tablist" accessibilityLabel="조절할 효과">
+        {EFFECTS.map(item => <Pressable key={item.key} accessibilityRole="tab" accessibilityLabel={item.label}
+          accessibilityState={{ selected: effect === item.key, disabled }} disabled={disabled} onPress={() => setEffect(item.key)}
+          style={({ pressed }) => [styles.effect, effect === item.key && styles.effectSelected, pressed && styles.pressed, disabled && styles.disabled]}>
+          <CameraIcon name={item.icon} color={effect === item.key ? accent : theme.secondary} size={22} />
+          <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[styles.effectName, effect === item.key && { color: accent }]}>{item.label}</Text>
+        </Pressable>)}
+      </ScrollView>
+      <EffectAmount label={activeEffect.label} value={settings[effect]} disabled={disabled} accent={accent}
+        onChange={value => effect === 'intensity' ? onIntensity(value) : onTexture(effect, value)} />
+      <View style={styles.footer}>
+        <CameraIcon name="calendar" size={20} color={settings.dateStamp ? accent : theme.secondary} />
+        <Text style={styles.dateLabel}>날짜 도장</Text>
+        <Switch accessibilityLabel="촬영 날짜 도장" disabled={disabled} value={settings.dateStamp}
+          onValueChange={onDateStamp} trackColor={{ false: theme.line, true: accent }} />
+        <View style={styles.divider} />
+        <IconButton icon="reset" label="현재 필터 기본값으로 초기화" disabled={disabled} onPress={onReset} />
+      </View>
+      {settings.intensity === 0 ? <Text style={styles.caption}>강도 0% · 날짜를 포함한 모든 효과가 꺼져 있어요.</Text>
+        : settings.dateStamp ? <Text style={styles.caption}>촬영한 날짜가 저장 사진에도 남아요.</Text> : null}
+    </> : <Text style={styles.caption}>필터를 고르면 강도와 질감을 조절할 수 있어요.</Text>}
   </View>;
 }
 
@@ -117,47 +118,47 @@ function EffectAmount({ label, value, disabled, accent, onChange }: {
     if (!disabled) onChange(Math.max(0, Math.min(100, percent + delta)) / 100);
   };
   return <View style={styles.amount}>
-    <View accessible accessibilityRole="adjustable" accessibilityLabel={label}
-      accessibilityValue={{ min: 0, max: 100, now: percent, text: `${percent}%` }} accessibilityState={{ disabled }}
-      accessibilityActions={[{ name: 'increment', label: '10% 높이기' }, { name: 'decrement', label: '10% 낮추기' }]}
-      onAccessibilityAction={event => {
-        if (event.nativeEvent.actionName === 'increment') change(10);
-        if (event.nativeEvent.actionName === 'decrement') change(-10);
-      }} style={styles.meter}>
-      <View style={styles.nameRow}><Text style={styles.caption}>{label}</Text><Text style={[styles.value, { color: accent }]}>{percent}%</Text></View>
-      <View style={styles.track}><View style={[styles.fill, { width: `${percent}%`, backgroundColor: accent }]} /></View>
-    </View>
-    <View style={styles.stepControls}>
-      <CameraAction label="− 10%" accessibilityLabel={`${label} 10% 낮추기`} disabled={disabled || percent === 0} onPress={() => change(-10)} />
-      <CameraAction label="+ 10%" accessibilityLabel={`${label} 10% 높이기`} disabled={disabled || percent === 100} onPress={() => change(10)} />
+    <View style={styles.amountHeading}><Text style={styles.amountLabel}>{label}</Text>
+      <Text style={[styles.amountValue, { color: accent }]}>{percent}<Text style={styles.unit}> %</Text></Text></View>
+    <View style={styles.amountRow}>
+      <IconButton icon="minus" label={`${label} 10% 낮추기`} disabled={disabled || percent === 0} onPress={() => change(-10)} />
+      <View accessible accessibilityRole="adjustable" accessibilityLabel={label}
+        accessibilityValue={{ min: 0, max: 100, now: percent, text: `${percent}%` }} accessibilityState={{ disabled }}
+        accessibilityActions={[{ name: 'increment', label: '10% 높이기' }, { name: 'decrement', label: '10% 낮추기' }]}
+        onAccessibilityAction={event => {
+          if (event.nativeEvent.actionName === 'increment') change(10);
+          if (event.nativeEvent.actionName === 'decrement') change(-10);
+        }} style={styles.meter}>
+        <View style={styles.track}><View style={[styles.fill, { width: `${percent}%`, backgroundColor: accent }]} /></View>
+        <View style={styles.ticks}>{[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(tick => <View key={tick}
+          style={[styles.tick, tick % 5 === 0 && styles.majorTick]} />)}</View>
+      </View>
+      <IconButton icon="plus" label={`${label} 10% 높이기`} disabled={disabled || percent === 100} onPress={() => change(10)} />
     </View>
   </View>;
 }
 
 const styles = StyleSheet.create({
-  controls: { gap: 8 }, tabs: { flexGrow: 1, gap: 28, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.line },
-  tab: { minWidth: 48, minHeight: 48, borderBottomWidth: 2,
-    borderBottomColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
-  tabText: { color: theme.secondary, fontSize: 16 }, activeText: { color: theme.text, fontWeight: '600' },
-  selection: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 },
-  selectionButton: { flex: 1, minHeight: 48, flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 12, paddingVertical: 8, gap: 8, backgroundColor: theme.inset, borderWidth: 1, borderColor: theme.line, borderRadius: 3 },
-  description: { flex: 1, gap: 4 }, nameRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
-  name: { color: theme.text, fontSize: 18, fontWeight: '500', flex: 1 },
-  optionName: { color: theme.text, fontSize: 17, fontWeight: '500' }, chevron: { color: theme.secondary, marginLeft: 'auto', fontSize: 18 },
-  dot: { width: 6, height: 6, borderRadius: 3 }, percent: { fontFamily: theme.mono, fontSize: 13 },
-  caption: { color: theme.secondary, fontSize: 13, lineHeight: 20 },
-  adjustButton: { minHeight: 48, minWidth: 60, padding: 12, borderWidth: 1,
-    borderColor: theme.line, borderRadius: 3, alignItems: 'center', justifyContent: 'center' },
-  adjustText: { color: theme.text, fontSize: 14 },
-  adjustment: { gap: 20 }, filterList: { flexDirection: 'row', gap: 8 },
-  effectsToggle: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.line, paddingVertical: 12 },
-  dateRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  filterOption: { minHeight: 56, maxWidth: 240, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderWidth: 1, borderColor: theme.line, borderRadius: 4 },
-  amount: { gap: 12 }, meter: { gap: 8 }, value: { fontFamily: theme.mono, fontSize: 24 },
-  track: { height: 3, backgroundColor: theme.line }, fill: { height: 3 },
-  stepControls: { flexDirection: 'row', justifyContent: 'space-between', gap: 16 },
-  pressed: { opacity: 0.7 }, disabled: { opacity: 0.4 },
+  controls: { paddingBottom: 4 },
+  selection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, height: 48 },
+  selectionName: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  name: { color: theme.text, fontSize: 15, fontWeight: '600', flexShrink: 1 },
+  dot: { width: 5, height: 5, borderRadius: 3 }, value: { fontFamily: theme.mono, fontSize: 12 }, unit: { fontSize: 11 },
+  strip: { gap: 8, paddingVertical: 3 }, card: { width: 72, gap: 5 },
+  cardFrame: { height: 61, borderRadius: 12, borderWidth: 1.5, borderColor: 'transparent', padding: 3 },
+  cardName: { color: theme.secondary, textAlign: 'center', fontSize: 11, lineHeight: 16, fontWeight: '500' },
+  check: { width: 17, height: 17, borderRadius: 9, position: 'absolute', right: 0, bottom: -2, alignItems: 'center', justifyContent: 'center' },
+  adjustment: { gap: 16 }, caption: { color: theme.secondary, fontSize: 12, lineHeight: 18 },
+  effects: { gap: 6 }, effect: { width: 66, minHeight: 70, borderRadius: 16, justifyContent: 'center', alignItems: 'center', gap: 8 },
+  effectSelected: { backgroundColor: theme.inset }, effectName: { color: theme.secondary, fontSize: 11 },
+  amount: { borderRadius: 18, padding: 12, backgroundColor: theme.inset, gap: 4 },
+  amountHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10, minHeight: 30 },
+  amountLabel: { color: theme.text, fontSize: 14, fontWeight: '500' }, amountValue: { fontFamily: theme.mono, fontSize: 22 },
+  amountRow: { flexDirection: 'row', alignItems: 'center', gap: 4 }, meter: { flex: 1, minHeight: 48, justifyContent: 'center', gap: 7 },
+  track: { height: 3, backgroundColor: theme.line, borderRadius: 2 }, fill: { height: 3, borderRadius: 2 },
+  ticks: { flexDirection: 'row', justifyContent: 'space-between' }, tick: { width: 1, height: 3, backgroundColor: theme.line },
+  majorTick: { height: 6, backgroundColor: theme.secondary },
+  footer: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48 },
+  dateLabel: { color: theme.text, fontSize: 14, flex: 1 }, divider: { width: 1, height: 20, backgroundColor: theme.line },
+  pressed: { opacity: 0.65 }, disabled: { opacity: 0.4 },
 });

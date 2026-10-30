@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IconButton } from './CameraControls';
 import { cameraTheme as theme } from './cameraTheme';
 
 /** A control surface over the live preview; it never owns or restarts the camera. */
@@ -19,10 +20,7 @@ export function CameraSheet({ title, children, onClose }: {
         <View style={styles.handle} />
         <View style={styles.heading}>
           <Text accessibilityRole="header" style={styles.title}>{title}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={`${title} 닫기`} onPress={onClose}
-            style={({ pressed }) => [styles.close, pressed && styles.pressed]}>
-            <Text style={styles.closeText}>닫기 ×</Text>
-          </Pressable>
+          <IconButton icon="close" label={`${title} 닫기`} onPress={onClose} />
         </View>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>{children}</ScrollView>
       </View>
@@ -33,11 +31,9 @@ export function CameraSheet({ title, children, onClose }: {
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
   sheet: { width: '100%', backgroundColor: theme.surface, borderTopWidth: 1, borderColor: theme.line,
-    borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  handle: { alignSelf: 'center', width: 32, height: 3, backgroundColor: theme.line, marginTop: 10, borderRadius: 2 },
-  heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 8 },
+    borderTopLeftRadius: 28, borderTopRightRadius: 28 },
+  handle: { alignSelf: 'center', width: 32, height: 4, backgroundColor: theme.line, marginTop: 10, borderRadius: 2 },
+  heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 12 },
   title: { color: theme.text, fontSize: 20, fontWeight: '600', flexShrink: 1 },
-  close: { minWidth: 56, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
-  closeText: { color: theme.secondary, fontSize: 14 }, content: { gap: 20, paddingBottom: 12 },
-  pressed: { opacity: 0.6 },
+  content: { gap: 20, paddingBottom: 12 },
 });

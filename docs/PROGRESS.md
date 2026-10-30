@@ -1,6 +1,18 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-30 필름 전역 색조 제거
+## 현재 상태 — 2026-10-30 아이콘 중심 카메라 제품 UI
+
+- 요청: 다음 기능보다 실제 제품 같은 필터 앱 디자인, 텍스트 대신 적절한 아이콘. clean develop `ddee8a5`에서 fetch/FF 후 `feature/camera-product-design` 생성. 기존 Metro를 중지하고 작업. frontend-design 지침과 Stitch 프로젝트7812018568704993424의 실제 카메라 PNG를 읽고 화면 위계를 재설계했다. 원격 디자인 쓰기 없음.
+- 구현: 메인 텍스트 컬렉션/선택 버튼을 원본+7개 팔레트 카드로 통합, 선택 테두리/체크/가로 자동 노출. 큰 3:4 뷰파인더와 고정 셔터, 자체 선형 아이콘의 플래시/격자/설정/비교/전후면. 플래시는 off-auto-on 순환, 격자는 기본 꺼짐. 카메라 설정은 톱니바퀴와 필터 조절 슬라이더로 구분. `CameraIcon`/`FilterSwatch`는 memo/native View 아트로 새 패키지·폰트·GPU Canvas 없이 구성했다. 카드 그림은 실제 필터 사진 썸네일이 아니다.
+- 패널: 가로 필터 카드→효과 아이콘→선택한 한 효과의 수치/± 계기→날짜/초기화. 10개 효과/기존10%단위/adjustable 접근성 유지. 촬영 설정은 격자·플래시 세그먼트·중앙 초점·노출 ±/초기화. 비교는 누르기와 유지 핀, 중요 안내 유지. 기본 터치48pt/셔터80pt, 장식 아이콘 접근성 숨김과 한국어 버튼 label/hint/state.
+- 결과: 헤더 뒤로/편집 취소, 사진 중심, 하단 고정 저장 및 실제 saved 후 다음 촬영. 편집 열기 시 편집 영역으로 스크롤, 취소/적용 시 사진 복귀. 저장 실패/권한/재시도·미저장 사진 버리기 확인·중복 작업 잠금과 controller 저장 성공 판정은 유지. 기존 촬영·LUT·필름0.6/디카0.3·shader·프레임 자원/공유·의존성·native·권한은 변경하지 않았다.
+- 변경 파일: 신규 `src/screens/CameraIcon.tsx`, `FilterSwatch.tsx`; 기존 CameraAssistControls/CameraControls/CameraMeteringControls/CameraResultScreen/CameraSheet/FilterControls/M0CameraScreen/OriginalComparisonControls/ResultFilterEditor/ResultPhotoComparison; README, 제품/계획/검수/STITCH_DESIGN/REFERENCES/PROGRESS.
+- 실행/관찰: `git diff --check` exit0. 첫 devicectl launch는 connection reset(error4000)으로 실패, list devices available 확인 및 사용자 연결·잠금 해제 후 재시도 launch 성공. Metro `EXPO_NO_TELEMETRY=1 EXPO_NO_DEPENDENCY_VALIDATION=1 npm start -- --lan --port 8081`, JS bundle665ms/1528modules, 후면1178×1572/up/yuv-420-8-bit-full/mirrorfalse 프레임. 기존 UIKit callback/appearance/NO_COLOR 및 세션 중 다수 frame-was-late 경고를 관측했으며 FPS/성능 합격을 주장하지 않는다.
+- 시각 확인: `devicectl device capture screenshot` exit0의1179×2556 PNG 3장(`/private/tmp/yeoun-product-camera.png`, `yeoun-product-filter-panel.png`=촬영 설정, `yeoun-product-look-panel.png`=나의 색감)을 직접 읽었다. 큰 카메라/카드/셔터, 두 설정 패널 배치가 렌더링되었다. 두 진입 아이콘의 혼동을 첫 패널 확인에서 발견하여 상단을 톱니바퀴로 수정, 다음 캡처에 반영 확인. 카메라 영역은 검게 보였으며 실제 색감·사진 결과 증거는 아니다. PNG는 임시 폴더에만 보관하고 커밋하지 않는다.
+- **NOT_RUN — 사용자 지시:** lint/typecheck/Jest/react-doctor/별도 자산 검사/native build/Android. UI를 그대로 따라가는 테스트는 추가하지 않았다. **미확인:** 결과/저장 화면 캡처와 실제 저장 왕복, 전 기능 조작/큰 글자·작은 화면·접근성, 실제 성능. 기존 G0/G1/G2 미통과와 필름 색감 승인 대기 유지.
+- Git Flow: UI 관련 파일만 commit/push/develop PR·merge·동기화. 전환 중 Metro를 멈추고 최종 develop에서 다시 켜 이전의 임시 resolver 문제를 피한다. 실제 최종 통합 상태는 PR/Git 이력을 따른다. 다음 기능을 자동 시작하지 않는다.
+
+## 이전 기록 — 2026-10-30 필름 전역 색조 제거
 
 - 요청: 필름이 색 셀로판처럼 보인다는 피드백과 실제 필름 감성 재조사/재적용. 깨끗한 develop `e9c38be`에서 최신 fetch/FF 후 `fix/neutral-film-color-response` 생성. 테스트 보류와 개발 후 Git Flow 상시 승인 유지.
 - 조사: Kodak Gold 200 공식 E7022 기술자료와 The Darkroom 실제 스캔 갤러리를 읽었다. Gold200-E7-000336830003(야외 커플) 및 Gold-200-P67-000418530006-Edit(인물)을 임시 폴더에서 직접 관찰했다. 피부/흰옷/어둠이 분리되어 있어 참고 사진의 녹색 배경을 전역 색조로 해석한 이전 방향을 수정했다. 정확한 출처/관찰 한계는 REFERENCES S44. 외부 사진을 앱/저장소에 넣지 않았다.

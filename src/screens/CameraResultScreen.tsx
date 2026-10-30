@@ -45,7 +45,7 @@ export function CameraResultScreen({ state, output, settings, foreground, return
       <View style={styles.header}>
         <IconButton icon={editorOpen ? 'close' : 'back'} label={editorOpen ? '편집 취소' : '카메라로 돌아가기'} disabled={locked} onPress={requestReturn} />
         <Text accessibilityRole="header" style={styles.title}>{editorOpen ? '색감 편집' : '남겨진 순간'}</Text>
-        <View style={styles.headerStatus}>{saved ? <CameraIcon name="check" size={22} color={theme.light} /> : null}</View>
+        <View style={styles.headerStatus}>{saved ? <CameraIcon name="check" size={22} color={theme.accent} /> : null}</View>
       </View>
       <ScrollView ref={scroll} style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.filterRow}>
@@ -92,7 +92,8 @@ const styles = StyleSheet.create({
   title: { color: theme.text, fontSize: 16, fontWeight: '600', flexShrink: 1 },
   filterRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, minHeight: 24 },
   dot: { width: 5, height: 5, borderRadius: 3 }, filterName: { color: theme.text, fontSize: 14, flexShrink: 1 },
-  panel: { gap: 10, paddingHorizontal: 24, paddingVertical: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.line },
+  panel: { gap: 10, paddingHorizontal: 24, paddingVertical: 14, backgroundColor: theme.surface,
+    borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.line },
   status: { color: theme.secondary, textAlign: 'center', fontSize: 12, lineHeight: 18 },
   error: { color: theme.error, fontSize: 13, lineHeight: 20 },
   fileInfo: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 },

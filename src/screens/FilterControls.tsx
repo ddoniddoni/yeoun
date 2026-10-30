@@ -40,19 +40,19 @@ function FilterStrip({ selectedId, disabled, onSelect, filters = CAMERA_FILTERS,
     {filters.map(filter => {
       const selected = selectedId === filter.id;
       const favorite = isFavoriteFilterId(filter.id) && favoriteIds.includes(filter.id);
-      const color = filterPresentation[filter.id].color;
+      const { color, wash } = filterPresentation[filter.id];
       return <Pressable key={filter.id} accessibilityRole="radio" accessibilityLabel={`${filter.name}${favorite ? ', 즐겨찾기' : ''}, ${filter.caption}`}
         accessibilityState={{ checked: selected, disabled }} disabled={disabled}
         onPress={() => { if (!selected) onSelect(filter.id); }}
         style={({ pressed }) => [styles.card, pressed && styles.pressed, disabled && styles.disabled]}>
-        <View style={[styles.cardFrame, selected && { borderColor: color }]}>
+        <View style={[styles.cardFrame, selected && { borderColor: color, backgroundColor: wash }]}>
           <FilterSwatch id={filter.id} />
-          {favorite ? <View style={styles.favoriteMark}><CameraIcon name="star" size={11} color={theme.light} /></View> : null}
+          {favorite ? <View style={styles.favoriteMark}><CameraIcon name="star" size={11} color={theme.accent} /></View> : null}
           {selected ? <View style={[styles.check, { backgroundColor: color }]}>
-            <CameraIcon name="check" size={11} color={theme.background} />
+            <CameraIcon name="check" size={11} color={theme.onAccent} />
           </View> : null}
         </View>
-        <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[styles.cardName, selected && { color: theme.text }]}>{filter.name}</Text>
+        <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[styles.cardName, selected && { color, fontWeight: '700' }]}>{filter.name}</Text>
       </Pressable>;
     })}
     {message ? <View style={styles.listMessage}>{message}</View> : null}
@@ -72,7 +72,9 @@ export function FilterControls({ settings, disabled, onSelect, onOpen }: {
       <View style={styles.selectionName}>
         <View style={[styles.dot, { backgroundColor: presentation.color }]} />
         <Text numberOfLines={1} style={styles.name}>{selected?.name}</Text>
-        {settings.filterId !== 'original' ? <Text style={[styles.value, { color: presentation.color }]}>{Math.round(settings.intensity * 100)}<Text style={styles.unit}>%</Text></Text> : null}
+        {settings.filterId !== 'original' ? <View style={[styles.intensityPill, { backgroundColor: presentation.wash }]}>
+          <Text style={[styles.value, { color: presentation.color }]}>{Math.round(settings.intensity * 100)}<Text style={styles.unit}>%</Text></Text>
+        </View> : null}
       </View>
       <View style={styles.selectionActions}>
         <FavoriteButton id={settings.filterId} disabled={disabled} />
@@ -117,7 +119,7 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
   const group = groups.find(item => item.name === groupName)!;
   const selected = CAMERA_FILTERS.find(filter => filter.id === settings.filterId);
   const original = settings.filterId === 'original';
-  const accent = filterPresentation[settings.filterId].color;
+  const { color: accent, wash } = filterPresentation[settings.filterId];
   const activeEffect = EFFECTS.find(item => item.key === effect)!;
   return <View style={styles.adjustment}>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.groups}
@@ -127,7 +129,7 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
         accessibilityState={{ selected: groupName === item.name, disabled }} disabled={disabled}
         onPress={() => setGroupName(item.name)}
         style={({ pressed }) => [styles.group, groupName === item.name && styles.groupSelected, pressed && styles.pressed, disabled && styles.disabled]}>
-        {item.name === '즐겨찾기' ? <CameraIcon name="star" size={16} color={groupName === item.name ? theme.background : theme.light} /> : null}
+        {item.name === '즐겨찾기' ? <CameraIcon name="star" size={16} color={theme.accent} /> : null}
         <Text style={[styles.groupName, groupName === item.name && styles.groupNameSelected]}>{item.name}</Text>
       </Pressable>)}
     </ScrollView>
@@ -143,7 +145,7 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
         accessibilityRole="tablist" accessibilityLabel="조절할 효과">
         {EFFECTS.map(item => <Pressable key={item.key} accessibilityRole="tab" accessibilityLabel={item.label}
           accessibilityState={{ selected: effect === item.key, disabled }} disabled={disabled} onPress={() => setEffect(item.key)}
-          style={({ pressed }) => [styles.effect, effect === item.key && styles.effectSelected, pressed && styles.pressed, disabled && styles.disabled]}>
+          style={({ pressed }) => [styles.effect, effect === item.key && { backgroundColor: wash, borderColor: accent }, pressed && styles.pressed, disabled && styles.disabled]}>
           <CameraIcon name={item.icon} color={effect === item.key ? accent : theme.secondary} size={22} />
           <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[styles.effectName, effect === item.key && { color: accent }]}>{item.label}</Text>
         </Pressable>)}
@@ -154,7 +156,8 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
         <CameraIcon name="calendar" size={20} color={settings.dateStamp ? accent : theme.secondary} />
         <Text style={styles.dateLabel}>날짜 도장</Text>
         <Switch accessibilityLabel="촬영 날짜 도장" disabled={disabled} value={settings.dateStamp}
-          onValueChange={onDateStamp} trackColor={{ false: theme.line, true: accent }} />
+          onValueChange={onDateStamp} thumbColor={theme.surface}
+          ios_backgroundColor={theme.line} trackColor={{ false: theme.line, true: accent }} />
         <View style={styles.divider} />
         <IconButton icon="reset" label="현재 필터 기본값으로 초기화" disabled={disabled} onPress={onReset} />
       </View>
@@ -195,32 +198,34 @@ function EffectAmount({ label, value, disabled, accent, onChange }: {
 const styles = StyleSheet.create({
   controls: { paddingBottom: 4 },
   selection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, height: 48 },
-  selectionName: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  selectionName: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 },
   selectionActions: { flexDirection: 'row' },
   listRow: { flexDirection: 'row', height: 96 }, listSwitch: { justifyContent: 'center', paddingRight: 6 },
   stripViewport: { height: 96, flexGrow: 1, flexShrink: 1 },
   listMessage: { justifyContent: 'center', width: 220, paddingHorizontal: 4 },
   name: { color: theme.text, fontSize: 15, fontWeight: '600', flexShrink: 1 },
-  dot: { width: 5, height: 5, borderRadius: 3 }, value: { fontFamily: theme.mono, fontSize: 12 }, unit: { fontSize: 11 },
+  dot: { width: 6, height: 6, borderRadius: 3 }, value: { fontFamily: theme.mono, fontSize: 12 }, unit: { fontSize: 11 },
+  intensityPill: { borderRadius: 10, paddingHorizontal: 7, paddingVertical: 4, flexShrink: 0 },
   strip: { gap: 8, paddingVertical: 3 }, card: { width: 72, gap: 5 },
-  cardFrame: { height: 61, borderRadius: 12, borderWidth: 1.5, borderColor: 'transparent', padding: 3 },
+  cardFrame: { height: 61, borderRadius: 14, borderWidth: 1.5, borderColor: theme.line, backgroundColor: theme.surface, padding: 3 },
   cardName: { color: theme.secondary, textAlign: 'center', fontSize: 11, lineHeight: 16, fontWeight: '500' },
   check: { width: 17, height: 17, borderRadius: 9, position: 'absolute', right: 0, bottom: -2, alignItems: 'center', justifyContent: 'center' },
   favoriteMark: { position: 'absolute', top: 5, right: 5, width: 18, height: 18, borderRadius: 9,
-    backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' },
+    backgroundColor: theme.surface, alignItems: 'center', justifyContent: 'center' },
   adjustment: { gap: 16 }, caption: { color: theme.secondary, fontSize: 12, lineHeight: 18 },
   captionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 }, captionText: { flex: 1 },
   groups: { gap: 6 }, group: { minHeight: 48, paddingHorizontal: 16, borderRadius: 24, justifyContent: 'center',
-    flexDirection: 'row', alignItems: 'center', gap: 6 },
-  groupSelected: { backgroundColor: theme.text }, groupName: { color: theme.secondary, fontSize: 13, fontWeight: '600' },
-  groupNameSelected: { color: theme.background },
-  effects: { gap: 6 }, effect: { width: 66, minHeight: 70, borderRadius: 16, justifyContent: 'center', alignItems: 'center', gap: 8 },
-  effectSelected: { backgroundColor: theme.inset }, effectName: { color: theme.secondary, fontSize: 11 },
+    flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: theme.line },
+  groupSelected: { backgroundColor: theme.accentSoft, borderColor: theme.accent }, groupName: { color: theme.secondary, fontSize: 13, fontWeight: '600' },
+  groupNameSelected: { color: theme.accent },
+  effects: { gap: 6 }, effect: { width: 66, minHeight: 70, borderRadius: 18, justifyContent: 'center', alignItems: 'center', gap: 8,
+    borderWidth: 1, borderColor: 'transparent' },
+  effectName: { color: theme.secondary, fontSize: 11 },
   amount: { borderRadius: 18, padding: 12, backgroundColor: theme.inset, gap: 4 },
   amountHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10, minHeight: 30 },
   amountLabel: { color: theme.text, fontSize: 14, fontWeight: '500' }, amountValue: { fontFamily: theme.mono, fontSize: 22 },
   amountRow: { flexDirection: 'row', alignItems: 'center', gap: 4 }, meter: { flex: 1, minHeight: 48, justifyContent: 'center', gap: 7 },
-  track: { height: 3, backgroundColor: theme.line, borderRadius: 2 }, fill: { height: 3, borderRadius: 2 },
+  track: { height: 5, backgroundColor: theme.line, borderRadius: 3 }, fill: { height: 5, borderRadius: 3 },
   ticks: { flexDirection: 'row', justifyContent: 'space-between' }, tick: { width: 1, height: 3, backgroundColor: theme.line },
   majorTick: { height: 6, backgroundColor: theme.secondary },
   footer: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48 },

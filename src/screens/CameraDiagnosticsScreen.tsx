@@ -5,6 +5,7 @@ import type { CameraSettings } from '../domain/filters/cameraSettings';
 import { runGpuProbe } from '../rendering/adapters/gpuProbe';
 import { SPATIAL_BACKEND_VERSION } from '../rendering/shaders/spatial';
 import { LUT_SKIA_BACKEND_VERSION } from '../rendering/shaders/lut';
+import { cameraTheme as theme } from './cameraTheme';
 
 export function CameraDiagnosticsScreen({ frameInfo, settings, grainSeed, filterPhase, cameraError, canRun, onClose }: {
   frameInfo: string; settings: CameraSettings; grainSeed: number; filterPhase: string; cameraError?: string;
@@ -51,10 +52,10 @@ export function CameraDiagnosticsScreen({ frameInfo, settings, grainSeed, filter
   </Modal>;
 }
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: '#171717' }, content: { padding: 20, gap: 20 },
-  title: { color: '#F4F1EA', fontSize: 24, fontWeight: '600' },
-  heading: { color: '#F4F1EA', fontSize: 18, fontWeight: '600' },
-  text: { color: '#F4F1EA', fontSize: 16, lineHeight: 24 },
-  info: { color: '#BDB8B0', fontSize: 14, lineHeight: 22 },
-  section: { gap: 10 }, error: { color: '#F3A5A5', fontSize: 14 },
+  page: { flex: 1, backgroundColor: theme.background }, content: { padding: 20, gap: 20 },
+  title: { color: theme.text, fontSize: 24, fontWeight: '600' },
+  heading: { color: theme.text, fontSize: 18, fontWeight: '600' },
+  text: { color: theme.text, fontSize: 16, lineHeight: 24 },
+  info: { color: theme.secondary, fontSize: 14, lineHeight: 22 },
+  section: { gap: 10 }, error: { color: theme.error, fontSize: 14 },
 });

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Linking, Pressable, ScrollView, StatusBar, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { AppState, Linking, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useCameraDevice, useCameraPermission, usePhotoOutput } from 'react-native-vision-camera';
 import { CaptureController, type CaptureState } from '../domain/capture/controller';
 import { selectedFlashMode, type FlashSelection } from '../domain/capture/flash';
@@ -22,7 +22,7 @@ import { CameraAssistControls, CameraGrid } from './CameraAssistControls';
 import { CameraMeteringControls, FocusTarget } from './CameraMeteringControls';
 import { OriginalComparisonControls } from './OriginalComparisonControls';
 import { usePreviewComparison } from './usePreviewComparison';
-import { cameraTheme as theme, filterPresentation } from './cameraTheme';
+import { cameraTheme as theme } from './cameraTheme';
 const PHOTO_SIZE = { width: 4032, height: 3024 };
 const LABELS: Record<CaptureState['phase'], string> = {
   idle: '오늘의 빛을, 오래 남을 색으로.', capturing: '순간을 담고 있어요', rendering: '사진에 색감을 입히고 있어요',
@@ -99,7 +99,6 @@ export function M0CameraScreen() {
   const shutterStatus = busy ? 'processing' : captureUnavailable || currentFilterStatus?.phase === 'error'
     ? 'unavailable' : filterReady ? 'ready' : 'preparing';
   const meteringDisabled = assistDisabled || comparison.active;
-  const accent = filterPresentation[settings.filterId].color;
   const selectFilter = (id: CameraFilterId) => {
     setSettings(cameraSettings(id)); setFilterRevision(value => value + 1);
   };
@@ -124,7 +123,6 @@ export function M0CameraScreen() {
     : `${metering.unit === 'step' ? '노출' : 'EV'} ${metering.exposure > 0 ? '+' : ''}${metering.unit === 'step'
       ? `${metering.exposure} 단계` : metering.exposure.toFixed(1)}`;
   return <>
-    <StatusBar barStyle="light-content" />
     <View style={styles.page} accessibilityElementsHidden={controlsHidden}
       importantForAccessibility={controlsHidden ? 'no-hide-descendants' : 'auto'}>
       <View style={styles.header}>
@@ -139,12 +137,12 @@ export function M0CameraScreen() {
             }} />
           <Pressable accessibilityRole="switch" accessibilityLabel="격자 안내선"
             accessibilityState={{ checked: grid, disabled: assistDisabled }} disabled={assistDisabled}
-            onPress={() => setGrid(value => !value)} style={({ pressed }) => [styles.toolbarAction, pressed && styles.pressed,
+            onPress={() => setGrid(value => !value)} style={({ pressed }) => [styles.toolbarAction, grid && styles.toolbarSelected, pressed && styles.pressed,
               assistDisabled && styles.disabled]}>
-            <CameraIcon name="grid" size={21} color={grid ? theme.light : theme.secondary} />
+            <CameraIcon name="grid" size={21} color={grid ? theme.accent : theme.secondary} />
           </Pressable>
         </View>
-        <Text accessibilityRole="header" accessibilityLabel="여운" style={styles.brand}>yeoun<Text style={{ color: accent }}>.</Text></Text>
+        <Text accessibilityRole="header" accessibilityLabel="여운" style={styles.brand}>yeoun<Text style={{ color: theme.shutter }}>.</Text></Text>
         <View style={[styles.toolbarGroup, styles.toolbarEnd]}>
           <IconButton icon="settings" label="촬영 설정" disabled={settingsDisabled} onPress={() => setPanel('camera')} />
         </View>
@@ -220,8 +218,8 @@ export function M0CameraScreen() {
           accessibilityState={{ checked: comparison.pinned, disabled: !comparisonAvailable }} disabled={!comparisonAvailable}
           onPress={comparison.toggle} style={({ pressed }) => [styles.sideControl, pressed && styles.pressed,
             !comparisonAvailable && styles.disabled, comparison.active && styles.selected]}>
-          <CameraIcon name="compare" size={26} color={comparison.active ? theme.light : theme.text} />
-          {comparison.active ? <View style={[styles.activeDot, { backgroundColor: theme.light }]} /> : null}
+          <CameraIcon name="compare" size={26} color={comparison.active ? theme.accent : theme.text} />
+          {comparison.active ? <View style={[styles.activeDot, { backgroundColor: theme.accent }]} /> : null}
         </Pressable>
         <ShutterButton status={shutterStatus} onPress={() => {
           const exposure = preview.current?.captureExposure();
@@ -309,18 +307,19 @@ const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.background }, body: { flex: 1 }, content: { flexGrow: 1 },
   header: { paddingHorizontal: 8, minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   toolbarGroup: { width: 96, flexDirection: 'row', alignItems: 'center' }, toolbarEnd: { justifyContent: 'flex-end' },
-  toolbarAction: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-  brand: { color: theme.text, fontSize: 23, fontWeight: '600', letterSpacing: -1, flexShrink: 1 },
-  viewfinderArea: { flex: 1, minHeight: 260, backgroundColor: '#111111', marginHorizontal: 8, borderRadius: 16, overflow: 'hidden' },
+  toolbarAction: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  toolbarSelected: { backgroundColor: theme.accentSoft },
+  brand: { color: theme.text, fontSize: 25, fontWeight: '700', letterSpacing: -1.3, flexShrink: 1 },
+  viewfinderArea: { flex: 1, minHeight: 260, backgroundColor: theme.inset, marginHorizontal: 8, borderRadius: 22, overflow: 'hidden' },
   previewCenter: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   frameLabel: { position: 'absolute', left: 12, right: 12, top: 12, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  badge: { color: theme.text, backgroundColor: 'rgba(23,23,23,0.65)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6,
+  badge: { color: theme.onPhoto, backgroundColor: theme.photoOverlay, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
     fontFamily: theme.mono, fontSize: 10, letterSpacing: 1 },
   filterNotice: { position: 'absolute', left: 12, right: 12, bottom: 16, alignItems: 'center' },
-  filterNoticeText: { color: theme.text, fontSize: 12, lineHeight: 18, textAlign: 'center',
-    backgroundColor: 'rgba(23,23,23,0.85)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 4 },
+  filterNoticeText: { color: theme.onPhoto, fontSize: 12, lineHeight: 18, textAlign: 'center',
+    backgroundColor: theme.photoOverlay, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
   filterError: { minHeight: 48, justifyContent: 'center' },
-  viewfinder: { backgroundColor: theme.inset, overflow: 'hidden' },
+  viewfinder: { backgroundColor: theme.photoMatte, overflow: 'hidden' },
   emptyFrame: { width: '100%', padding: 24, gap: 16, justifyContent: 'center', backgroundColor: theme.inset },
   welcome: { color: theme.text, fontSize: 23, lineHeight: 32, fontWeight: '500' },
   text: { color: theme.secondary, fontSize: 15, lineHeight: 24 },
@@ -329,9 +328,10 @@ const styles = StyleSheet.create({
   notice: { paddingVertical: 12, minHeight: 48, gap: 12 },
   error: { color: theme.error, fontSize: 14, lineHeight: 22 },
   captureRow: { paddingHorizontal: 34, paddingTop: 8, paddingBottom: 4, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  sideControl: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: 28, backgroundColor: theme.inset },
+  sideControl: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: 28,
+    backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.line },
   activeDot: { position: 'absolute', bottom: 5, width: 3, height: 3, borderRadius: 2 },
-  selected: { borderWidth: 1, borderColor: theme.light },
+  selected: { borderColor: theme.accent, backgroundColor: theme.accentSoft },
   captureStatus: { color: theme.secondary, fontSize: 11, textAlign: 'center', paddingHorizontal: 16, lineHeight: 14, paddingBottom: 0 },
   pressed: { opacity: 0.7 }, disabled: { opacity: 0.4 },
 });

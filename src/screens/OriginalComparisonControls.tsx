@@ -19,7 +19,7 @@ export function OriginalComparisonControls({ active, pinned, disabled, ready, on
         accessibilityHint="미리보기만 바뀌어요. 끄면 선택한 색감으로 돌아가요."
         accessibilityState={{ checked: pinned, disabled }} disabled={disabled} onPress={onToggle}
         style={[styles.button, styles.pin, pinned && styles.selected, disabled && styles.disabled]}>
-        <CameraIcon name="pin" size={21} color={pinned ? theme.light : theme.secondary} />
+        <CameraIcon name="pin" size={21} color={pinned ? theme.accent : theme.secondary} />
       </Pressable>
     </View>
     <Text accessibilityLiveRegion="polite" style={styles.note}>{active
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
   button: { minHeight: 48, minWidth: 48, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', gap: 8,
     justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: theme.line, borderRadius: 14 },
   pin: { width: 48, flexGrow: 0 },
-  hold: { flexGrow: 1 }, selected: { borderColor: theme.text, backgroundColor: theme.surface },
+  hold: { flexGrow: 1 }, selected: { borderColor: theme.accent, backgroundColor: theme.accentSoft },
   label: { color: theme.text, fontSize: 13, textAlign: 'center' },
   note: { color: theme.secondary, fontSize: 12, lineHeight: 18 }, disabled: { opacity: 0.4 },
 });

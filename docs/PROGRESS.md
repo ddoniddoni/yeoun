@@ -12,7 +12,8 @@
 - **NOT_RUN:** lint/typecheck/Jest/react-doctor/별도 seed·자산 검사/JS·native build. 신규 테스트는 요청 순서/취소/캐시 상한을 기록한 소스이며 실행 결과가 없다. **HUMAN_REVIEW_PENDING:** 세 룩 최종 색감, 실제 버튼 깜빡임 수정 확인, 촬영/저장 일치. Android·장시간 성능·실패/복귀는 미확인. 기존 G0/G1/G2 미통과 유지.
 - 앱 전달: 사용자 앱 확인 요청을 이어서 `EXPO_NO_TELEMETRY=1 EXPO_NO_DEPENDENCY_VALIDATION=1 npm start -- --lan --port 8081` 실행. `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun devicectl device process launch --device 00008120-001C39112250A01E --terminate-existing --console --payload-url 'exp+yeoun-camera://expo-development-client/?url=http%3A%2F%2F192.168.45.117%3A8081' dev.ddoni.yeouncamera`로 기존 개발 앱 PID26356 실행. Metro iOS Bundled598ms/1538modules 및 후면1178×1572/up/yuv-420-8-bit-full/mirrorfalse 프레임 로그 확인. 기존 UIKit callback/appearance·DevTools fallback/NO_COLOR 경고가 있었으며 실제 색감/촬영 버튼은 사용자 응답 대기다. 이는 개발 중 JS 전달이며 별도 번들 검사/native 빌드는 실행하지 않았다.
 - 소스/diff 확인: `git diff --check` exit0. 새로운 테스트 실행 없이 요청 취소/수명, 설정과 manifest/version 연결, 촬영 준비 조건을 소스로 검토했다.
-- 다음: 사용자 피드백을 받으며 승인된 Git Flow(작업 branch push/PR/develop 병합·동기화)를 완료한다. 새 기능/자동 검사로 범위를 넓히지 않는다.
+- Git Flow: 명시 파일 stage, `git diff --cached --check` exit0, 기능 commit `62a0ce7`, `git push -u origin fix/filter-preview-transitions`와 develop 대상 [PR #29](https://github.com/ddoniddoni/yeoun/pull/29) 생성 exit0. 이 기록을 포함해 PR 병합·develop fetch/FF/push·원격 일치 확인 후 develop에서 마친다. 실제 최종 상태는 PR/Git 이력을 따른다.
+- 다음: 사용자의 촬영 버튼·세 룩 피드백을 기다린다. 개발 서버는 확인용으로 유지하며 새 기능/자동 검사로 범위를 넓히지 않는다.
 
 ## 이전 기록 — 2026-10-30 실제 사진 기반 필터 고도화
 

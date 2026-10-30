@@ -10,7 +10,8 @@
 - 변경: App provider 연결, domain filters/favorites, storage/favoritesRepository, screens FilterFavorites/FilterControls/CameraIcon, package/lock, unit favorites 테스트 소스, README·제품·기술·계획·검수·REFERENCES·PROGRESS. 테스트 소스는 store 요청 순서/확정 상태/실패 재조회/구독 정리와 ID/순서 규칙을 다룬다. UI 구현을 그대로 복제하는 테스트는 추가하지 않았다.
 - **NOT_RUN:** lint/typecheck/Jest/react-doctor/별도 자산 검사/JS·native build/Pod install/prebuild/iOS·Android 실행·재실행 보존/UI·접근성·SQLite migration·성능. 기존 G0~G3 미통과 유지. 새 native SQLite 모듈 때문에 다음 기기 확인 전에 개발 앱 재빌드가 필요하다. 이번에는 사용자의 테스트 보류를 검사 요구보다 우선했다.
 - 소스 검토: UI 구독 범위/기존 설정·request key 분리, 초기 hydration/쓰기 중 잠금, 빠른 중복 탭을 실패 팝업과 구분하는 saved/ignored/failed 결과, 실패 후 DB 재조회, 원본·현재 선택 보존, exclusive transaction의 commit/rollback/statement 정리와 schema 상향 거부를 읽었다. `git diff --check` exit0. 미존재 optional 폴더/추정 파일 경로 조회는 실제 rg 경로로 보완했다. 이것은 lint/typecheck/SQLite 실행/UI 확인의 대체 통과 증거가 아니다.
-- 다음: 상시 승인된 Git Flow로 commit/push/develop PR·merge·동기화하고 develop에서 마친다. 기기 확인은 사용자 요청 때 재개하며 다음 기능은 자동 시작하지 않는다.
+- Git Flow: 명시 파일 stage와 `git diff --cached --check` exit0, 기능 commit `d358a1c`, `git push -u origin feature/filter-favorites` 및 [PR #31](https://github.com/ddoniddoni/yeoun/pull/31)(base develop) 생성 exit0. 이 기록을 포함해 PR을 병합하고 develop fetch/FF/push와 원격 일치를 확인한 뒤 develop에서 마친다. 실제 최종 상태는 PR/Git 이력을 따른다.
+- 다음: 사용자 요청 때 SQLite 포함 개발 앱을 다시 빌드한 후 즐겨찾기 재실행 보존·화면·실패 복구를 확인한다. Metro는 종료 상태로 두며 기기 확인이나 다음 기능을 자동 시작하지 않는다.
 
 ## 이전 기록 — 2026-10-30 실내 필터 후속 확인
 

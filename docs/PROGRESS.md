@@ -7,9 +7,9 @@
 - 사진 위 토큰을 분리해 격자·모서리·EV/로딩·결과 배지는 흰색/중성 반투명 검정, 초점은 옅은 노랑을 사용한다. UI 색과 필터 수치/LUT/촬영·고해상도 저장 경로를 분리했다. 기존3:4 계산,96pt 목록/72pt 카드/8pt 간격,48pt 조작,80pt 셔터·준비 상태 차단 로직은 유지한다.
 - 설정: 루트 StatusBar를 dark-content, app.json의 userInterfaceStyle을 light로 변경. 생성 native 파일/권한/의존성 변경 없음. 다음 기기 확인 전 SQLite 모듈과 appearance를 포함한 개발 앱 재빌드가 필요하며 이번에는 실행하지 않았다.
 - 변경: App.tsx/app.json, screens의 theme·controls·assist·metering·sheet·favorites·swatch·main·result·comparison·diagnostics 13개 파일, README/제품/계획/검수/STITCH_DESIGN/PROGRESS. 필터 자산/domain/storage/renderer 변경 없음.
-- 소스 검토: 전체 스타일 diff, 사진 overlay/원본 비교/초점/선택 상태 색, 고정 레이아웃·CameraPreview key/props·request key 보존을 읽었다. 설치된 RN Switch.d.ts의 thumbColor/ios_backgroundColor 확인. 구 테마 참조와 하드코딩 색을 rg로 조사하고 `git diff --check`를 실행했다. 문서 패치의 제목 불일치는 실제 제목을 읽고 재적용했다.
+- 소스 검토: 전체 스타일 diff, 사진 overlay/원본 비교/초점/선택 상태 색, 고정 레이아웃·CameraPreview key/props·request key 보존을 읽었다. 설치된 RN Switch.d.ts의 thumbColor/ios_backgroundColor 확인. 구 테마 참조와 하드코딩 색을 rg로 조사하고 `git diff --check` exit0. 문서 패치의 제목 불일치는 실제 제목을 읽고 재적용했다.
 - **NOT_RUN:** lint/typecheck/Jest/react-doctor/자산 검사/JS·native build/prebuild/앱 실행/화면 캡처/실기기·접근성·성능. 소스 검토는 렌더링/미적 승인이 아니며 G0~G3 미통과 유지. 화면을 그대로 복제하는 테스트는 추가하지 않았다. Metro/기기를 새로 실행하지 않았다.
-- Git Flow: 이 작업 파일만 명시적으로 stage해 commit/push/develop PR 생성·병합·동기화하고 develop에서 마친다. 실제 최종 상태는 PR/Git 이력으로 확인한다.
+- Git Flow: 명시 파일 stage와 `git diff --cached --check` exit0, 구현 commit `6eff853`, `git push -u origin feature/bright-camera-design` 및 [PR #32](https://github.com/ddoniddoni/yeoun/pull/32)(base develop) 생성 exit0. 이 기록을 포함해 PR 병합 후 develop fetch/FF/push·원격 일치를 확인하고 develop에서 마친다. 실제 최종 통합 상태는 PR/Git 이력으로 확인한다.
 - 다음: 사용자 요청 때 밝은 화면과 즐겨찾기 재실행 보존을 기기에서 확인한다. 다른 기능은 자동 시작하지 않는다.
 
 ## 이전 기록 — 2026-10-30 필터 즐겨찾기

@@ -11,6 +11,7 @@
 - 변경 파일: seed/schema; domain filters bundledDraftFilters/cameraSettings/types/validateSeedSemantics; scripts/lib/lutAssets; rendering assets bundledLuts/lutManifest; screens FilterControls/FilterSwatch/cameraTheme; 위 새 hash 자산; unit filterSeed/cameraSettings/colorReference/lutManifest와 integration lutAssets/lutSampling/lutLoader/bundledLutLoader 테스트 소스; README, 제품/엔진/계획/검수/REFERENCES/PROGRESS와 신규 FILTER_CATALOG. 새 의존성/lockfile/native/권한 변경 없음.
 - 테스트 소스만 작성/수정:17종 노출/seed/default/version 연결, 구버전 거부,18종 manifest 범위·각기 다른 자산 checksum, 전체 LUT 격자의 analytic 대응, 새10종 중성 램프/따뜻한 색 교차 방지. 이것은 실행 결과나 피부/감성 품질 승인 근거가 아니다.
 - **NOT_RUN — 사용자 지시:** lint/typecheck/Jest/react-doctor/별도 seed·자산 검사/JS 및 native build/iOS·Android 실행. 이번17종 UI/색감/저장/성능과 기존 G0/G1/G2 미검증 유지. **HUMAN_REVIEW_PENDING:** 같은 원본 사진에서 피부 밝기별 표현, 흰색·음식·하늘 계조, 야간 노이즈, 룩 간 체감 차이, 프리뷰/고해상도 저장 일치. 단순 이름 변경이나 생성 성공을 색감 합격으로 표시하지 않는다.
+- Git Flow: 명시 파일 stage와 `git diff --cached --check` exit0, 기능 commit `5ec000c`, 작업 브랜치 push, [PR #27](https://github.com/ddoniddoni/yeoun/pull/27) 생성 성공. 대상 develop/병합 가능 상태를 조회했다. 이 기록을 포함해 병합·동기화하며 최종 상태는 PR/Git 이력을 따른다.
 - 다음: 사용자가 요청할 때 장면별 원본/50%/기본/100% 비교와 저장 검수를 재개한다. 세 분위기 개발/다음 기능을 자동 시작하지 않는다. 상시 Git Flow로 관련 변경만 commit/push/develop PR·merge·동기화하며 develop에서 마친다. 이번에는 Metro/앱을 다시 열지 않는다. 최종 통합은 PR/Git 이력을 따른다.
 
 ## 이전 기록 — 2026-10-30 아이콘 중심 카메라 제품 UI

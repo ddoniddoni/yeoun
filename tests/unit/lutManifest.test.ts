@@ -1,4 +1,4 @@
-import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/0fb99cc4fd30cac0668d59a5c693a32c27459fefc255612556f81929d262f6e3/filter-manifest.json';
+import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/1836f20cbc08b2791bc3ba296e68a5f7914450059b60a231dbb6f37febdd681e/filter-manifest.json';
 import { parseLutManifest } from '../../src/rendering/assets/lutManifest';
 import { CAMERA_FILTERS, cameraSettings } from '../../src/domain/filters/cameraSettings';
 

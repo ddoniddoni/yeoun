@@ -1,6 +1,21 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-30 장면별 필터 17종
+## 현재 상태 — 2026-10-30 실제 사진 기반 필터 고도화
+
+- 요청: 실제 제품처럼 필터가 예쁜지 다시 확인하고 고도화. 사용자 요청 범위를 로컬 사진 기반 색감 검수로 설명하고 진행했다. 자동 검사/빌드/실기기 보류는 유지. clean develop `ed3fd5c`(PR #27)에서 fetch/FF 후 `feature/filter-color-refinement` 생성 exit0. Metro·앱·카메라는 실행하지 않았다.
+- 근거 사진: Unsplash 무료 사진7장(인물3·음식·카페·풍경·야경)의 원본 페이지/라이선스를 확인하고 다운로드. 최초 Python urllib 요청은401로 실패했으며 공개 페이지를 curl로 읽고 공개 이미지 URL 다운로드 성공. 사진·파생 이미지·출처 manifest는 ignored private-fixtures/artifacts/local에만 보관했다. 외부 사진을 번들/커밋하거나 사용자 사진을 업로드하지 않았다. 출처/한계는 REFERENCES S47와 FILTER_COLOR_REVIEW.
+- 시각 도구: 신규 `scripts/render-filter-review.mjs`는 기존 CanvasKit0.40 소프트웨어 surface에서 앱의 실제 LUT PNG/Alpha8 planes, LUT/bright/blur/spatial SkSL, crop/Bloom geometry와 grainStyle을 사용한다. 앱 셰이더 직접 import를 위해 spatial→retro 상대 경로에 .ts를 명시했다. 새 의존성/lockfile 변경 없음. upright SDR PNG 결과이며 native/GPU/촬영/JPEG 검증이 아니다.
+- 실제 실행: 첫1200px 렌더는 일부 출력 후 비용 때문에 해당 작업 프로세스만 TERM 종료했다. 이후 `node scripts/render-filter-review.mjs --fixtures private-fixtures/color-review-2026-10-30/all-sources.json --out artifacts/local/filter-review-before-600 --font '/System/Library/Fonts/Supplemental/Arial.ttf'` exit0, 수정 후 out을 filter-review-after-600으로 바꿔 exit0. 두 실행 모두17종+원본×7사진=126개별 PNG/7비교판. 모든 전후 비교판을 직접 읽었다. 개정10종을 --filters로 제한하고 strength-sources.json(인물/음식/풍경), --max-edge400 --strength0.5/1로 각각 실행해33 PNG/3비교판씩 exit0,6비교판 직접 관찰. 기본/강도 출력의 해상도 차이를 정량 질감 비교로 해석하지 않는다. 기존 MODULE_TYPELESS_PACKAGE_JSON 경고 유지.
+- 관찰과 조정: 로즈의 분홍 접시·창문, 여행의 밝고 청록인 흰색/하늘, 오후/여름의 누런 전역 tint를 제거. 밝은 룩10종 EV0과 중간톤 curve로 상단 채널의 조기 포화를 줄이고 인물·여행·카페를 구분했다. 우윳빛 아침/봄의 공기0.3, 오후/여름/로즈/여행/인물2/푸드2는0.2. 카페는 파랑/초록 절제·갈색 유지·Bloom0, 여행은 푸른 하늘, 피치는 좁은 주황 hue 이동과 주변 채도 절제. 나머지7종 LUT/default 유지. 수정 전후 흰색 편향 감소와 여행 하늘/카페 명암 차이를 관찰했다. 사진가의 원본 보정·조명은 미상이며 최종 사용자 취향 승인을 대체하지 않는다.
+- 발견한 날짜 오류: 기존 실제 shader의261030 입력이26.10.40으로 표시. systematic-debugging 지침에 따라 자리수 식만 분리해 CanvasKit 픽셀을 관측: pow 경로[2,6,1,0,4,0], 상수 제수 경로[2,6,1,0,3,0]. 근사 pow를100000/10000/1000/100/10/1 제수로 교체. 실제 필름 사진의26.10.30과 동일 stampMask 확대판의26.10.30/27.01.01/28.02.29/99.12.31을 직접 읽었다. renderer0.6/spatial0.5로 변경. 날짜 uniform/현지 날짜 수집/촬영 snapshot/위치·색·토글 계약은 유지한다. native에서의 재현/수정 확인은 아니다.
+- 자산 생성: `npm run generate:luts` exit0, seed hash `1836f20cbc08b2791bc3ba296e68a5f7914450059b60a231dbb6f37febdd681e`의18 PNG/manifest 생성. 같은 바이트 .lut18개와 literal registry/기대 version을 갱신했다. 필름 SHA443d25a7…/디카 SHA f4f34d73… 유지, 과거 hash 자산 보존. authoring0.1 유지. 생성의 내부 입력 처리를 별도 테스트 통과로 보고하지 않는다.
+- 변경: seed, cameraSettings(renderer/로즈 caption), bundledLuts, retro/spatial shader, 새 hash 자산, 로컬 검수 스크립트; unit cameraSettings/colorReference/lutManifest와 integration lutLoader/bundledLutLoader의 버전/자산 import 소스; README/엔진/검수/카탈로그/REFERENCES/PROGRESS 및 신규 FILTER_COLOR_REVIEW. 기존 중성축 사례를 개정된 이전4종까지 확장하고 밝은 입력의 서로 다른 값이 합쳐지지 않는 단조성 기대를 소스로 기록했다. 테스트 실행 없음.
+- 로컬 전달물: `artifacts/local/filter-refinement-overview.png`는 원본/이전/개정4룩을 같은 사진으로 합친 비교표다. 첫 합성의 캔버스 높이가 부족해 마지막 행이 잘려 높이를 늘린 뒤 전체가 보이는2010px 산출물을 다시 직접 읽었다. `date-stamp-review.png`는 날짜4종 확대판. 이 이미지는 생성형 예시가 아닌 실제 필터 출력이며 커밋하지 않는다.
+- 소스 검토: 실제 preview/export의 LUT강도/최종master1회·uniform순서·crop/Bloom geometry와 도구의 일치 범위를 읽었다. 기존 native 자원 수명/프레임 공유/GPU 캐시/권한 변경 없음. `git diff --check` exit0. verification 지침은 이번 승인된 사진 비교와 소스/diff 확인에 적용하고 보류된 검사 실행 요구는 사용자 지시를 우선한다.
+- **NOT_RUN:** lint/typecheck/Jest/react-doctor/별도 seed·자산 검사/JS·native build/iOS·Android 실행/성능·고해상도 저장. 기존 G0/G1/G2 미통과 유지. **HUMAN_REVIEW_PENDING:** 최종 사용자 색감 승인, 실제 촬영/프리뷰와 저장 일치, 저조도 노이즈·꽃/분홍 건물 등 추가 장면. 사진 비교 수행과 출시 합격을 구분한다.
+- Git Flow: 최초 stage는 sandbox index.lock 쓰기 제한으로 실패, 승인된 Git 작업 권한으로 동일 명시 파일 stage 성공. `git diff --cached --check` exit0, 기능 commit `52cb592`, 작업 브랜치 push 및 [PR #28](https://github.com/ddoniddoni/yeoun/pull/28) 생성 exit0. 이 기록을 포함해 develop 병합·동기화하며 develop에서 마친다. 실제 최종 상태는 PR/Git 이력을 따른다. 다음 기능·기기 실행을 자동 시작하지 않는다.
+
+## 이전 기록 — 2026-10-30 장면별 필터 17종
 
 - 요청: 한 장 세 분위기는 보류하고 Analog Paris·Tokyo/Foodie/SODA 등을 조사해 실사용 필터를 더 구성. 이번 기기 테스트는 하지 않는다고 명시했다. clean develop `4d190cd`(PR #26)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/curated-filter-collection` exit0. 이전 Metro 세션을 Ctrl-C로 종료했고 이번에는 재시작/앱 실행/캡처를 하지 않는다.
 - 조사: 공식 App Store 소개와 실제 마케팅 이미지4종을 ego-browser TaskSpace3에서 직접 관찰하고 조사용 탭을 종료했다. Foodie의 LINE 공식 초기 자료는 역사 근거로만 사용. 파리의 분홍/청록, 도쿄의 차분한 도시와 포인트색, 음식/카페별 색, 인물의 정돈된 톤을 독자 수치로 해석했다. 동일 원본 경쟁 앱 비교/프리셋 추출은 하지 않았으며 타 앱 이미지/사용자 사진은 앱 자산·외부 업로드에 쓰지 않았다. 근거/한계는 REFERENCES S46와 FILTER_CATALOG.

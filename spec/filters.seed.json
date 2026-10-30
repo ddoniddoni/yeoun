@@ -60,33 +60,33 @@
       "collection": "light",
       "name": "오후 네 시",
       "caption": "따뜻한 빛, 맑은 그림자",
-      "lookVersion": "0.1.0-draft",
+      "lookVersion": "0.2.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.15,
-        "saturation": 0.96,
+        "exposureEv": 0,
+        "saturation": 0.98,
         "toneCurve": [
           [
             0,
-            0.01
+            0.008
           ],
           [
             0.18,
-            0.19
+            0.175
           ],
           [
             0.4,
-            0.42
+            0.43
           ],
           [
             0.65,
-            0.68
+            0.7
           ],
           [
             0.85,
-            0.88
+            0.885
           ],
           [
             1,
@@ -94,44 +94,44 @@
           ]
         ],
         "shadowTintRgb": [
-          0.003,
-          0.001,
-          -0.003
+          0,
+          0,
+          0
         ],
         "highlightTintRgb": [
-          0.014,
-          0.008,
-          -0.008
+          0,
+          0,
+          0
         ],
         "hueBands": [
           {
-            "centerDeg": 60,
-            "halfWidthDeg": 45,
-            "shiftDeg": -3,
-            "saturationMultiplier": 0.97
+            "centerDeg": 40,
+            "halfWidthDeg": 30,
+            "shiftDeg": -4,
+            "saturationMultiplier": 1.04
           },
           {
             "centerDeg": 120,
             "halfWidthDeg": 45,
-            "shiftDeg": -4,
-            "saturationMultiplier": 0.9
+            "shiftDeg": -6,
+            "saturationMultiplier": 0.86
           },
           {
-            "centerDeg": 30,
-            "halfWidthDeg": 25,
-            "shiftDeg": 0,
-            "saturationMultiplier": 0.97
+            "centerDeg": 220,
+            "halfWidthDeg": 42,
+            "shiftDeg": -3,
+            "saturationMultiplier": 0.88
           }
         ]
       },
       "defaults": {
         "intensity": 0.8,
         "grain": 0.06,
-        "bloom": 0.1
+        "bloom": 0.05
       },
       "notes": [
-        "흰 접시가 노랗게 물들지 않도록 검수",
-        "피부 계열의 주황색 과장 억제"
+        "흰 옷/접시의 노란 덮개를 제거. 황금색 피사체와 차분한 초록/파랑, 남아 있는 어둠으로 오후의 따뜻함을 만든다.",
+        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
       ]
     },
     {
@@ -139,33 +139,33 @@
       "collection": "light",
       "name": "우윳빛 아침",
       "caption": "부드러운 아침빛, 깨끗한 흰색",
-      "lookVersion": "0.2.0-draft",
+      "lookVersion": "0.3.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.12,
-        "saturation": 0.9,
+        "exposureEv": 0,
+        "saturation": 0.88,
         "toneCurve": [
           [
             0,
-            0.022
+            0.025
           ],
           [
             0.18,
-            0.215
+            0.23
           ],
           [
             0.4,
-            0.465
+            0.49
           ],
           [
             0.65,
-            0.71
+            0.725
           ],
           [
             0.85,
-            0.89
+            0.895
           ],
           [
             1,
@@ -206,7 +206,7 @@
       "defaults": {
         "intensity": 0.8,
         "grain": 0,
-        "bloom": 0.04,
+        "bloom": 0.025,
         "vignette": 0,
         "halation": 0,
         "sharpness": 0,
@@ -217,8 +217,8 @@
         "dateStamp": false
       },
       "notes": [
-        "창가 인물·흰 셔츠·밝은 실내용. 무채색 틴트 없이 중간 밝기를 열고 검정은 남긴다.",
-        "전역 노출 상승이 있으므로 강한 역광에서는 강도를 낮춘다. 피부 미백·얼굴 보정 기능이 아니다."
+        "창가 인물용 열린 중간톤과 낮은 채도. 하이라이트를 조기에 자르는 노출 상승 없이 부드러운 명암을 만든다.",
+        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
       ]
     },
     {
@@ -226,12 +226,12 @@
       "collection": "light",
       "name": "봄의 공기",
       "caption": "꽃의 분홍, 싱그러운 연두",
-      "lookVersion": "0.2.0-draft",
+      "lookVersion": "0.3.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.06,
+        "exposureEv": 0,
         "saturation": 0.98,
         "toneCurve": [
           [
@@ -240,19 +240,19 @@
           ],
           [
             0.18,
-            0.19
+            0.195
           ],
           [
             0.4,
-            0.435
+            0.445
           ],
           [
             0.65,
-            0.69
+            0.695
           ],
           [
             0.85,
-            0.875
+            0.88
           ],
           [
             1,
@@ -311,7 +311,7 @@
       },
       "notes": [
         "Analog Paris 공식 예시의 꽃·도시 분홍과 초록 분리에서 착안한 독자 색감.",
-        "흰색을 분홍으로 덮지 않고 원래 색이 있는 영역의 hue/saturation만 이동한다."
+        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
       ]
     },
     {
@@ -319,84 +319,84 @@
       "collection": "time",
       "name": "여름방학",
       "caption": "햇살과 바다를 닮은 필름색",
-      "lookVersion": "0.1.0-draft",
+      "lookVersion": "0.2.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.05,
+        "exposureEv": 0,
         "saturation": 1.06,
         "toneCurve": [
           [
             0,
-            0.02
+            0.012
           ],
           [
             0.18,
-            0.17
+            0.155
           ],
           [
             0.4,
-            0.4
+            0.405
           ],
           [
             0.65,
-            0.69
+            0.7
           ],
           [
             0.85,
-            0.9
+            0.885
           ],
           [
             1,
-            0.99
+            0.985
           ]
         ],
         "shadowTintRgb": [
-          0.007,
-          0.008,
-          -0.005
+          0,
+          0,
+          0
         ],
         "highlightTintRgb": [
-          0.015,
-          0.008,
-          -0.008
+          0,
+          0,
+          0
         ],
         "hueBands": [
           {
             "centerDeg": 60,
-            "halfWidthDeg": 45,
+            "halfWidthDeg": 40,
             "shiftDeg": -3,
             "saturationMultiplier": 1.04
           },
           {
             "centerDeg": 0,
-            "halfWidthDeg": 30,
+            "halfWidthDeg": 28,
             "shiftDeg": 0,
-            "saturationMultiplier": 1.03
+            "saturationMultiplier": 1.02
           },
           {
             "centerDeg": 120,
-            "halfWidthDeg": 45,
+            "halfWidthDeg": 42,
             "shiftDeg": -10,
             "saturationMultiplier": 0.82
           },
           {
             "centerDeg": 220,
             "halfWidthDeg": 45,
-            "shiftDeg": -10,
-            "saturationMultiplier": 0.94
+            "shiftDeg": -12,
+            "saturationMultiplier": 0.96
           }
         ]
       },
       "defaults": {
         "intensity": 0.8,
         "grain": 0.22,
-        "bloom": 0.06
+        "bloom": 0.04
       },
       "notes": [
-        "밝고 생동감 있는 빈티지",
-        "하늘과 피부 경계를 함께 검수"
+        "노란 전역 틴트 없이 선명한 햇빛/청록 바다와 깊은 명암. 부드러운 맑은 여행과 다른 생동감 있는 여행 룩.",
+        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
       ]
     },
     {
@@ -1010,18 +1010,18 @@
       "id": "retro-rose",
       "collection": "retro",
       "name": "로즈 데이",
-      "caption": "분홍빛 하이라이트와 청록빛 거리",
-      "lookVersion": "0.1.0-draft",
+      "caption": "맑은 흰빛, 로즈빛 색감과 청록빛 거리",
+      "lookVersion": "0.2.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.16,
+        "exposureEv": 0,
         "saturation": 0.94,
         "toneCurve": [
           [
             0,
-            0.015
+            0.018
           ],
           [
             0.18,
@@ -1029,93 +1029,7 @@
           ],
           [
             0.4,
-            0.455
-          ],
-          [
-            0.6,
-            0.66
-          ],
-          [
-            0.82,
-            0.86
-          ],
-          [
-            1,
-            0.99
-          ]
-        ],
-        "shadowTintRgb": [
-          -0.012,
-          0.012,
-          0.018
-        ],
-        "highlightTintRgb": [
-          0.028,
-          -0.012,
-          0.012
-        ],
-        "hueBands": [
-          {
-            "centerDeg": 220,
-            "halfWidthDeg": 45,
-            "shiftDeg": -16,
-            "saturationMultiplier": 1.03
-          },
-          {
-            "centerDeg": 340,
-            "halfWidthDeg": 45,
-            "shiftDeg": 7,
-            "saturationMultiplier": 1.08
-          },
-          {
-            "centerDeg": 110,
-            "halfWidthDeg": 45,
-            "shiftDeg": -12,
-            "saturationMultiplier": 0.8
-          }
-        ]
-      },
-      "defaults": {
-        "intensity": 0.8,
-        "grain": 0.03,
-        "bloom": 0.12,
-        "vignette": 0,
-        "halation": 0,
-        "sharpness": 0,
-        "digitalNoise": 0,
-        "lightLeak": 0,
-        "dust": 0,
-        "dateStamp": false
-      },
-      "notes": [
-        "여운 자체 제작 초안. 특정 필름·카메라·앱의 정밀 복제가 아님.",
-        "피부, 흰색, 하늘, 실내와 야간의 실제 사진으로 색감 승인 필요."
-      ]
-    },
-    {
-      "id": "retro-travel",
-      "collection": "retro",
-      "name": "맑은 여행",
-      "caption": "맑은 하늘색, 가벼운 햇빛과 부드러운 명암",
-      "lookVersion": "0.1.0-draft",
-      "status": "design-draft",
-      "lut": null,
-      "authoring": {
-        "colorSpace": "srgb-encoded",
-        "exposureEv": 0.22,
-        "saturation": 0.9,
-        "toneCurve": [
-          [
-            0,
-            0.03
-          ],
-          [
-            0.18,
-            0.235
-          ],
-          [
-            0.4,
-            0.475
+            0.46
           ],
           [
             0.6,
@@ -1123,48 +1037,48 @@
           ],
           [
             0.82,
-            0.86
+            0.88
           ],
           [
             1,
-            0.985
+            0.99
           ]
         ],
         "shadowTintRgb": [
-          0.002,
-          0.012,
-          0.024
+          0,
+          0,
+          0
         ],
         "highlightTintRgb": [
-          0.012,
-          0.012,
-          -0.008
+          0,
+          0,
+          0
         ],
         "hueBands": [
           {
             "centerDeg": 220,
             "halfWidthDeg": 45,
+            "shiftDeg": -16,
+            "saturationMultiplier": 1.04
+          },
+          {
+            "centerDeg": 345,
+            "halfWidthDeg": 32,
             "shiftDeg": -8,
-            "saturationMultiplier": 1.05
+            "saturationMultiplier": 1.1
           },
           {
             "centerDeg": 110,
-            "halfWidthDeg": 45,
-            "shiftDeg": -8,
-            "saturationMultiplier": 0.88
-          },
-          {
-            "centerDeg": 340,
-            "halfWidthDeg": 45,
-            "shiftDeg": 3,
-            "saturationMultiplier": 0.98
+            "halfWidthDeg": 42,
+            "shiftDeg": -13,
+            "saturationMultiplier": 0.78
           }
         ]
       },
       "defaults": {
         "intensity": 0.8,
-        "grain": 0.08,
-        "bloom": 0.06,
+        "grain": 0.03,
+        "bloom": 0.05,
         "vignette": 0,
         "halation": 0,
         "sharpness": 0,
@@ -1174,8 +1088,94 @@
         "dateStamp": false
       },
       "notes": [
-        "여운 자체 제작 초안. 특정 필름·카메라·앱의 정밀 복제가 아님.",
-        "피부, 흰색, 하늘, 실내와 야간의 실제 사진으로 색감 승인 필요."
+        "흰 접시가 분홍빛으로 물들던 전역 틴트 제거. 원래 색이 있는 분홍/빨강과 청록 거리만 선택적으로 강조한다.",
+        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
+      ]
+    },
+    {
+      "id": "retro-travel",
+      "collection": "retro",
+      "name": "맑은 여행",
+      "caption": "맑은 하늘색, 가벼운 햇빛과 부드러운 명암",
+      "lookVersion": "0.2.0-draft",
+      "status": "design-draft",
+      "lut": null,
+      "authoring": {
+        "colorSpace": "srgb-encoded",
+        "exposureEv": 0,
+        "saturation": 0.95,
+        "toneCurve": [
+          [
+            0,
+            0.012
+          ],
+          [
+            0.18,
+            0.195
+          ],
+          [
+            0.4,
+            0.44
+          ],
+          [
+            0.6,
+            0.67
+          ],
+          [
+            0.82,
+            0.865
+          ],
+          [
+            1,
+            0.995
+          ]
+        ],
+        "shadowTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "highlightTintRgb": [
+          0,
+          0,
+          0
+        ],
+        "hueBands": [
+          {
+            "centerDeg": 210,
+            "halfWidthDeg": 40,
+            "shiftDeg": 9,
+            "saturationMultiplier": 1.12
+          },
+          {
+            "centerDeg": 110,
+            "halfWidthDeg": 42,
+            "shiftDeg": -3,
+            "saturationMultiplier": 0.9
+          },
+          {
+            "centerDeg": 340,
+            "halfWidthDeg": 35,
+            "shiftDeg": 0,
+            "saturationMultiplier": 0.98
+          }
+        ]
+      },
+      "defaults": {
+        "intensity": 0.8,
+        "grain": 0.08,
+        "bloom": 0.03,
+        "vignette": 0,
+        "halation": 0,
+        "sharpness": 0,
+        "digitalNoise": 0,
+        "lightLeak": 0,
+        "dust": 0,
+        "dateStamp": false
+      },
+      "notes": [
+        "청록빛 흰색과 지나친 밝기 상승을 줄이고 하늘의 푸른색을 분리. 여름방학보다 깨끗하고 가벼운 여행 색감.",
+        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
       ]
     },
     {
@@ -1183,12 +1183,12 @@
       "collection": "portrait",
       "name": "맑은 얼굴",
       "caption": "맑은 피부 톤, 또렷한 눈빛",
-      "lookVersion": "0.1.0-draft",
+      "lookVersion": "0.2.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.07,
+        "exposureEv": 0,
         "saturation": 0.98,
         "toneCurve": [
           [
@@ -1201,15 +1201,15 @@
           ],
           [
             0.4,
-            0.43
+            0.445
           ],
           [
             0.65,
-            0.68
+            0.695
           ],
           [
             0.85,
-            0.87
+            0.88
           ],
           [
             1,
@@ -1268,7 +1268,7 @@
       },
       "notes": [
         "SODA 공식 인물/일상 예시의 정돈된 밝기와 편안한 색을 참고한 독자 LUT.",
-        "피부 계열의 과한 주황/빨강을 절제하되 어두운 피부를 특정 밝기로 맞추지 않는다. 피부 인식·미백·리터칭·얼굴 변형 없음."
+        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
       ]
     },
     {
@@ -1276,13 +1276,13 @@
       "collection": "portrait",
       "name": "피치 스킨",
       "caption": "은은한 복숭아빛, 부드러운 인물",
-      "lookVersion": "0.1.0-draft",
+      "lookVersion": "0.2.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.05,
-        "saturation": 0.96,
+        "exposureEv": 0,
+        "saturation": 0.94,
         "toneCurve": [
           [
             0,
@@ -1294,15 +1294,15 @@
           ],
           [
             0.4,
-            0.445
+            0.45
           ],
           [
             0.65,
-            0.69
+            0.7
           ],
           [
             0.85,
-            0.875
+            0.88
           ],
           [
             1,
@@ -1322,27 +1322,27 @@
         "hueBands": [
           {
             "centerDeg": 28,
-            "halfWidthDeg": 28,
-            "shiftDeg": -4,
+            "halfWidthDeg": 25,
+            "shiftDeg": -6,
             "saturationMultiplier": 1.04
           },
           {
             "centerDeg": 355,
             "halfWidthDeg": 22,
             "shiftDeg": 0,
-            "saturationMultiplier": 0.95
+            "saturationMultiplier": 0.92
           },
           {
             "centerDeg": 115,
             "halfWidthDeg": 42,
             "shiftDeg": -5,
-            "saturationMultiplier": 0.88
+            "saturationMultiplier": 0.82
           },
           {
             "centerDeg": 220,
             "halfWidthDeg": 42,
             "shiftDeg": -3,
-            "saturationMultiplier": 0.9
+            "saturationMultiplier": 0.82
           }
         ]
       },
@@ -1361,7 +1361,7 @@
       },
       "notes": [
         "주황 계열을 살짝 붉은 복숭아색으로 이동하고 주변 초록/파랑의 채도를 낮춘다.",
-        "흰 벽은 중성으로 유지한다. 얼굴이 아닌 같은 색의 사물에도 적용되며 피부 보정 기능이 아니다."
+        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
       ]
     },
     {
@@ -1369,12 +1369,12 @@
       "collection": "food",
       "name": "오늘의 식탁",
       "caption": "맛있는 빨강, 신선한 초록",
-      "lookVersion": "0.1.0-draft",
+      "lookVersion": "0.2.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.03,
+        "exposureEv": 0,
         "saturation": 1.04,
         "toneCurve": [
           [
@@ -1383,7 +1383,7 @@
           ],
           [
             0.18,
-            0.165
+            0.16
           ],
           [
             0.4,
@@ -1454,7 +1454,7 @@
       },
       "notes": [
         "Foodie의 음식별 색감 방향을 참고한 식탁용. 토마토·소스와 잎채소의 색을 선택적으로 살린다.",
-        "흰 접시·수저의 중성색을 유지하고 음식 질감을 흐리는 Bloom/softness/입자는 기본 0."
+        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
       ]
     },
     {
@@ -1462,37 +1462,37 @@
       "collection": "food",
       "name": "크림 라떼",
       "caption": "크림빛 디저트, 포근한 카페",
-      "lookVersion": "0.1.0-draft",
+      "lookVersion": "0.2.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
-        "exposureEv": 0.02,
-        "saturation": 0.93,
+        "exposureEv": 0,
+        "saturation": 0.9,
         "toneCurve": [
           [
             0,
-            0.02
+            0.028
           ],
           [
             0.18,
-            0.195
+            0.18
           ],
           [
             0.4,
-            0.44
+            0.42
           ],
           [
             0.65,
-            0.675
+            0.66
           ],
           [
             0.85,
-            0.855
+            0.84
           ],
           [
             1,
-            0.98
+            0.975
           ]
         ],
         "shadowTintRgb": [
@@ -1508,34 +1508,34 @@
         "hueBands": [
           {
             "centerDeg": 36,
-            "halfWidthDeg": 32,
+            "halfWidthDeg": 30,
             "shiftDeg": -3,
-            "saturationMultiplier": 1.13
+            "saturationMultiplier": 1.18
           },
           {
             "centerDeg": 350,
             "halfWidthDeg": 26,
             "shiftDeg": -1,
-            "saturationMultiplier": 1.04
+            "saturationMultiplier": 1.02
           },
           {
             "centerDeg": 112,
             "halfWidthDeg": 45,
             "shiftDeg": -9,
-            "saturationMultiplier": 0.79
+            "saturationMultiplier": 0.66
           },
           {
             "centerDeg": 218,
             "halfWidthDeg": 42,
             "shiftDeg": -3,
-            "saturationMultiplier": 0.77
+            "saturationMultiplier": 0.55
           }
         ]
       },
       "defaults": {
         "intensity": 0.85,
         "grain": 0,
-        "bloom": 0.02,
+        "bloom": 0,
         "vignette": 0,
         "halation": 0,
         "sharpness": 0,
@@ -1546,8 +1546,8 @@
         "dateStamp": false
       },
       "notes": [
-        "Foodie 공식 레시피 예시의 커피·와플·베이지 실내에서 착안. 갈색/황금색을 살리고 파랑/초록은 낮춘다.",
-        "전체 흰색을 노랗게 바꾸는 효과 없이 재료 색의 상대적 따뜻함으로 카페 무드를 만든다."
+        "빵/커피의 갈색과 황금색은 남기고 파랑/초록은 더 절제한다. 밝고 선명한 오늘의 식탁과 구분되는 차분한 명암. 흐림 없이 음식 질감을 유지한다.",
+        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
       ]
     }
   ]

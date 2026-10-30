@@ -2,7 +2,7 @@ import filterSeed from '../../../spec/filters.seed.json';
 import type { RenderSettings } from './types';
 import { NO_RETRO, RETRO_AMOUNTS, type RetroControls } from './retroControls';
 
-export const CAMERA_RENDER_VERSION = 'lut-camera-0.5.0';
+export const CAMERA_RENDER_VERSION = 'lut-camera-0.6.0';
 export const CAMERA_FILTERS = [
   { id: 'original', name: '원본', caption: '색감 효과 없이' },
   { id: 'light-afternoon', name: '오후 네 시', caption: '따뜻한 빛, 맑은 그림자' },
@@ -14,7 +14,7 @@ export const CAMERA_FILTERS = [
   { id: 'food-cafe', name: '크림 라떼', caption: '크림빛 디저트, 포근한 카페' },
   { id: 'time-summer', name: '여름방학', caption: '햇살과 바다를 닮은 필름색' },
   { id: 'retro-travel', name: '맑은 여행', caption: '맑은 하늘색, 가벼운 햇빛과 부드러운 명암' },
-  { id: 'retro-rose', name: '로즈 데이', caption: '분홍빛 하이라이트와 청록빛 거리' },
+  { id: 'retro-rose', name: '로즈 데이', caption: '맑은 흰빛, 로즈빛 색감과 청록빛 거리' },
   { id: 'time-diary', name: '오래된 일기', caption: '바랜 초록, 담백한 종이색' },
   { id: 'retro-film', name: '플래시 필름', caption: '깊은 명암, 자연스러운 색과 거친 입자 · 날짜 도장' },
   { id: 'retro-digital', name: '소프트 디카', caption: '뽀얀 흰빛, 차분한 색과 부드러운 포커스' },

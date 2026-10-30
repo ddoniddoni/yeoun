@@ -250,12 +250,13 @@ test('film keeps the neutral ramp neutral with deep blacks and separated highlig
   expect(transform([0.18, 0.18, 0.18])[0]).toBeLessThan(0.18);
 });
 
-const CURATED_ADDITIONS = [
+const NEUTRAL_LOOKS = [
+  'light-afternoon', 'time-summer', 'retro-rose', 'retro-travel',
   'light-milk', 'light-spring', 'time-diary', 'time-night', 'scene-rain', 'scene-ending',
   'portrait-clear', 'portrait-peach', 'food-table', 'food-cafe',
 ];
 
-test.each(CURATED_ADDITIONS)('%s preserves the neutral axis without a colored veil', id => {
+test.each(NEUTRAL_LOOKS)('%s preserves the neutral axis without a colored veil', id => {
   const result = createFilterSeedValidator(schema)(seed);
   if (!result.ok) throw new Error('Invalid authoring seed');
   const filter = result.data.filters.find(item => item.id === id)!;
@@ -266,7 +267,8 @@ test.each(CURATED_ADDITIONS)('%s preserves the neutral axis without a colored ve
     const output = transform([gray, gray, gray]);
     expect(output[0]).toBeCloseTo(output[1], 12);
     expect(output[1]).toBeCloseTo(output[2], 12);
-    expect(output[0]).toBeGreaterThanOrEqual(previous);
+    // Distinct near-white inputs must not collapse to the same exposure-clipped white.
+    expect(output[0]).toBeGreaterThan(previous);
     previous = output[0];
   }
   expect(transform([0, 0, 0])[0]).toBeLessThan(0.05);

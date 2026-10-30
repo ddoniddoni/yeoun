@@ -1,6 +1,14 @@
 # 02. 필터와 렌더링 계약
 
-## 2026-10-30 17종 큐레이션 (현재 카탈로그 계약)
+## 2026-10-30 사진 검수 개정 (현재 계약)
+
+현재17종 중10종의 색감을 실제 사진 비교 후 개정했다. 새 hash `1836f20cbc08b2791bc3ba296e68a5f7914450059b60a231dbb6f37febdd681e`, 우윳빛 아침/봄의 공기 look0.3, 오후 네 시/여름방학/로즈 데이/맑은 여행/인물2종/푸드2종 look0.2다. 나머지7종 LUT/default 유지. 이번10종은 EV0과 중간톤 곡선으로 밝기를 조절하며 tint0으로 흰색을 보존한다. 상세 관찰과 버전은 [사진 검수 기록](FILTER_COLOR_REVIEW.md), 사용 장면은 [카탈로그](FILTER_CATALOG.md)를 따른다.
+
+날짜는 데스크톱 실제 shader 출력에서261030→26.10.40 오류를 관측했다. 근삿값 pow를 제거하고100000/10000/1000/100/10/1 상수 제수로 숫자를 추출한다. uniform 순서/기기 현지 날짜/촬영 snapshot/위치·색·날짜 토글은 유지한다. renderer `lut-camera-0.6.0` / spatial `grain-bloom-retro-0.5.0`; authoring0.1과 효과 순서는 유지한다. 모든 runtime 설정은 현재 renderer와 ID별 정확한 lookVersion을 요구하며 과거 버전을 암묵 변환하지 않는다.
+
+CanvasKit0.40 소프트웨어에서 앱 LUT/SkSL로 기본 강도17종×7사진의 전후를 관찰했다. native GPU/촬영/저장 JPEG 검증과 최종 사용자 색감 승인은 남아 있다. 아래 이전 기록의 버전과 제작 수치보다 이 문단과 현재 seed가 우선한다.
+
+## 2026-10-30 17종 큐레이션 (최초 연결 기록)
 
 현재 제작/앱 연결 대상은 seed의 17종 전체와 identity다. `bundledDraftFilters`는 모든 seed look을 반환하며 JSON Schema/semantic count는 light3/time3/scene3/retro4/portrait2/food2다. 생성기 출력 경로와 mobile manifest parser도 portrait/food 접두사를 허용하되 고정된 ID/version/hash 전체 집합 검사를 유지한다.
 
@@ -8,7 +16,7 @@
 
 새 10종은 전역 RGB tint를 모두0으로 두고 tone curve/exposure/색상별 hue·채도로 성격을 구분한다. 중성 흰색을 분홍/녹색으로 덮지 않으며 새 인물/푸드는 작은 노출·톤 변화, 낮거나0인 입자/blur를 기본으로 한다. 이 설계는 피부 검출이나 저조도 복원이 아니다. [필터 구성](FILTER_CATALOG.md)에 장면별 사용 의도를 기록했다. 자산 생성은 색감/수치/GPU 검수 통과가 아니며 모든 자산은 draft다. 아래 대표3종·7종·미제작6종 설명은 이전 단계 기록이다.
 
-## 2026-10-30 필름 0.6 색 응답 (현재 계약)
+## 2026-10-30 필름 0.6 색 응답 (색상 계약 유지)
 
 필름 look만 0.6.0-draft로 변경한다. 전역 tint RGB=0, exposure0, saturation1.04, tone endpoints0.018/0.975이며 실제 값은 seed를 따른다. 중성 입력은 무채색으로 유지하고 색상 밴드만 기존 hue mask로 적용한다. shader/효과 순서 변경 없이 renderer0.5/spatial0.4를 유지한다. 날짜와 입자800/0.075 규칙도 유지한다. 아래 과거 버전보다 우선한다.
 

@@ -15,13 +15,30 @@ test('every curated seed look is selectable with matching copy, defaults and exa
   }
 });
 
-test.each(['light-milk', 'light-spring', 'time-diary', 'time-night', 'scene-rain', 'scene-ending'] as const)(
+test.each(['time-diary', 'time-night', 'scene-rain', 'scene-ending'] as const)(
   'rejects the unbundled old authoring version for %s', id => {
     const settings = cameraSettings(id);
     expect(settings.lookVersion).toBe('0.2.0-draft');
     expect(() => copyCameraSettings({ ...settings, lookVersion: '0.1.0-draft' })).toThrow();
   },
 );
+
+test.each([
+  ['light-milk', '0.3.0-draft', '0.2.0-draft'],
+  ['light-spring', '0.3.0-draft', '0.2.0-draft'],
+  ['light-afternoon', '0.2.0-draft', '0.1.0-draft'],
+  ['time-summer', '0.2.0-draft', '0.1.0-draft'],
+  ['retro-rose', '0.2.0-draft', '0.1.0-draft'],
+  ['retro-travel', '0.2.0-draft', '0.1.0-draft'],
+  ['portrait-clear', '0.2.0-draft', '0.1.0-draft'],
+  ['portrait-peach', '0.2.0-draft', '0.1.0-draft'],
+  ['food-table', '0.2.0-draft', '0.1.0-draft'],
+  ['food-cafe', '0.2.0-draft', '0.1.0-draft'],
+] as const)('pins the photo-reviewed revision for %s', (id, version, previousVersion) => {
+  const settings = cameraSettings(id);
+  expect(settings.lookVersion).toBe(version);
+  expect(() => copyCameraSettings({ ...settings, lookVersion: previousVersion })).toThrow();
+});
 
 test('original bypasses style and defaults come from the selected look while explicit zero is preserved', () => {
   expect(cameraSettings('original').intensity).toBe(0);
@@ -31,7 +48,7 @@ test('original bypasses style and defaults come from the selected look while exp
   expect(cameraSettings('retro-digital', 0).intensity).toBe(0);
 });
 
-test('revised film and digital looks require their exact new version without changing other looks', () => {
+test('film and digital retain their revisions and reject unsupported look versions', () => {
   for (const id of ['retro-film', 'retro-digital'] as const) {
     const settings = cameraSettings(id);
     expect(settings.lookVersion).toBe(id === 'retro-film' ? '0.6.0-draft' : '0.3.0-draft');
@@ -40,7 +57,7 @@ test('revised film and digital looks require their exact new version without cha
     expect(() => copyCameraSettings({ ...settings, lookVersion: '0.1.0-draft' })).toThrow();
     expect(cameraSettingsKey(settings)).not.toBe(cameraSettingsKey({ ...settings, lookVersion: '0.1.0-draft' }));
   }
-  for (const id of ['original', 'light-afternoon', 'time-summer', 'scene-dawn', 'retro-rose', 'retro-travel'] as const) {
+  for (const id of ['original', 'scene-dawn'] as const) {
     const settings = cameraSettings(id);
     expect(settings.lookVersion).toBe('0.1.0-draft');
     expect(() => copyCameraSettings({ ...settings, lookVersion: '0.2.0-draft' })).toThrow();
@@ -50,7 +67,7 @@ test('revised film and digital looks require their exact new version without cha
 test('unsupported versions and invalid strengths cannot silently render', () => {
   const source = cameraSettings('scene-dawn');
   expect(() => copyCameraSettings({ ...source, lookVersion: 'future' })).toThrow();
-  expect(() => copyCameraSettings({ ...source, rendererVersion: 'lut-camera-0.4.0' as typeof source.rendererVersion })).toThrow();
+  expect(() => copyCameraSettings({ ...source, rendererVersion: 'lut-camera-0.5.0' as typeof source.rendererVersion })).toThrow();
   for (const value of [NaN, Infinity, -0.1, 1.1]) {
     expect(() => copyCameraSettings({ ...source, grain: value })).toThrow();
     expect(() => copyCameraSettings({ ...source, bloom: value })).toThrow();

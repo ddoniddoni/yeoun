@@ -38,8 +38,8 @@ export function FavoriteButton({ id, disabled }: { id: CameraFilterId; disabled:
       if (favorites.phase === 'error') showError();
       else void favorites.toggle(id).then(result => { if (result === 'failed') showError(); });
     }} style={({ pressed }) => [styles.button, selected && styles.selected, pressed && styles.pressed, locked && styles.disabled]}>
-    {busy ? <ActivityIndicator size="small" color={theme.light} />
-      : <CameraIcon name="star" color={selected ? theme.light : theme.secondary} />}
+    {busy ? <ActivityIndicator size="small" color={theme.accent} />
+      : <CameraIcon name="star" color={selected ? theme.accent : theme.secondary} />}
     {selected ? <View style={styles.selectedDot} /> : null}
   </Pressable>;
 }
@@ -54,15 +54,15 @@ export function FavoritesMessage({ disabled }: { disabled: boolean }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={`${favorites.error} 다시 불러오기`}
     disabled={disabled} accessibilityState={{ disabled }} onPress={() => { void favorites.reload(); }}
     style={({ pressed }) => [styles.retry, pressed && styles.pressed, disabled && styles.disabled]}>
-    <CameraIcon name="reset" size={18} color={theme.light} />
+    <CameraIcon name="reset" size={18} color={theme.accent} />
     <Text maxFontSizeMultiplier={1.4} style={styles.message}>즐겨찾기를 불러오지 못했어요{ '\n' }눌러서 다시 불러오기</Text>
   </Pressable>;
 }
 
 const styles = StyleSheet.create({
   button: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  selected: { backgroundColor: theme.surface },
-  selectedDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: theme.light, position: 'absolute', bottom: 5 },
+  selected: { backgroundColor: theme.accentSoft },
+  selectedDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: theme.accent, position: 'absolute', bottom: 5 },
   message: { color: theme.secondary, fontSize: 12, lineHeight: 18, flexShrink: 1, maxWidth: 230 },
   retry: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, maxWidth: 230 },
   pressed: { opacity: 0.65 }, disabled: { opacity: 0.4 },

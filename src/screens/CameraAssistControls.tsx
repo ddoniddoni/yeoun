@@ -16,7 +16,8 @@ export function CameraAssistControls({ grid, flashMode, hasFlash, disabled, onGr
       <CameraIcon name="grid" color={theme.secondary} size={21} />
       <Text style={styles.label}>격자 안내선</Text>
       <Switch accessibilityLabel="3×3 격자 안내선" accessibilityHint="저장 사진에는 표시되지 않아요."
-        disabled={disabled} value={grid} onValueChange={onGrid} trackColor={{ false: theme.line, true: theme.light }} />
+        disabled={disabled} value={grid} onValueChange={onGrid} thumbColor={theme.surface}
+        ios_backgroundColor={theme.line} trackColor={{ false: theme.line, true: theme.accent }} />
     </View>
     <View style={styles.settingRow}>
       <CameraIcon name="flash" color={theme.secondary} size={21} />
@@ -27,8 +28,8 @@ export function CameraAssistControls({ grid, flashMode, hasFlash, disabled, onGr
           disabled={disabled || !hasFlash} onPress={() => onFlash(mode)}
           style={({ pressed }) => [styles.button, flashMode === mode && styles.selected,
             pressed && styles.pressed, (disabled || !hasFlash) && styles.disabled]}>
-          {mode === 'auto' ? <Text style={[styles.auto, flashMode === mode && { color: theme.light }]}>A</Text>
-            : <CameraIcon name={mode === 'off' ? 'flashOff' : 'flash'} size={20} color={flashMode === mode ? theme.light : theme.secondary} />}
+          {mode === 'auto' ? <Text style={[styles.auto, flashMode === mode && { color: theme.accent }]}>A</Text>
+            : <CameraIcon name={mode === 'off' ? 'flashOff' : 'flash'} size={20} color={flashMode === mode ? theme.accent : theme.secondary} />}
         </Pressable>)}
       </View>
     </View>
@@ -55,9 +56,9 @@ const styles = StyleSheet.create({
   label: { color: theme.text, fontSize: 14, flex: 1 },
   segmented: { flexDirection: 'row', padding: 3, borderRadius: 16, backgroundColor: theme.inset },
   button: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 13 },
-  selected: { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.line },
+  selected: { backgroundColor: theme.accentSoft, borderWidth: 1, borderColor: theme.accent },
   auto: { color: theme.secondary, fontSize: 15, fontFamily: theme.mono },
   note: { color: theme.secondary, fontSize: 12, lineHeight: 18 }, disabled: { opacity: 0.4 }, pressed: { opacity: 0.65 },
-  vertical: { position: 'absolute', top: 0, bottom: 0, width: StyleSheet.hairlineWidth, backgroundColor: theme.text, opacity: 0.4 },
-  horizontal: { position: 'absolute', left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: theme.text, opacity: 0.4 },
+  vertical: { position: 'absolute', top: 0, bottom: 0, width: StyleSheet.hairlineWidth, backgroundColor: theme.onPhoto, opacity: 0.4 },
+  horizontal: { position: 'absolute', left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: theme.onPhoto, opacity: 0.4 },
 });

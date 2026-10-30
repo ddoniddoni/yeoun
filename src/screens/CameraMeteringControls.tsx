@@ -59,8 +59,8 @@ const styles = StyleSheet.create({
   label: { color: theme.text, fontSize: 14, flex: 1 },
   exposure: { backgroundColor: theme.inset, padding: 12, borderRadius: 18 },
   unit: { color: theme.secondary, fontSize: 12 },
-  value: { color: theme.light, fontSize: 26, fontFamily: theme.mono, flex: 1, textAlign: 'center' },
+  value: { color: theme.accent, fontSize: 26, fontFamily: theme.mono, flex: 1, textAlign: 'center' },
   note: { color: theme.secondary, fontSize: 12, lineHeight: 18, flexShrink: 1 }, error: { color: theme.error, fontSize: 13 },
   target: { position: 'absolute', width: 40, height: 40, marginLeft: -20, marginTop: -20,
-    borderWidth: 1, borderColor: theme.light, borderRadius: 4 },
+    borderWidth: 1, borderColor: theme.focus, borderRadius: 4 },
 });

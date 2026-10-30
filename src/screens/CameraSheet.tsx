@@ -29,11 +29,11 @@ export function CameraSheet({ title, children, onClose }: {
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: theme.scrim },
   sheet: { width: '100%', backgroundColor: theme.surface, borderTopWidth: 1, borderColor: theme.line,
-    borderTopLeftRadius: 28, borderTopRightRadius: 28 },
-  handle: { alignSelf: 'center', width: 32, height: 4, backgroundColor: theme.line, marginTop: 10, borderRadius: 2 },
+    borderTopLeftRadius: 32, borderTopRightRadius: 32 },
+  handle: { alignSelf: 'center', width: 36, height: 4, backgroundColor: theme.line, marginTop: 10, borderRadius: 2 },
   heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 12 },
-  title: { color: theme.text, fontSize: 20, fontWeight: '600', flexShrink: 1 },
+  title: { color: theme.text, fontSize: 22, fontWeight: '700', letterSpacing: -0.5, flexShrink: 1 },
   content: { gap: 20, paddingBottom: 12 },
 });

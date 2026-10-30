@@ -1,6 +1,18 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-30 필터 즐겨찾기
+## 현재 상태 — 2026-10-30 밝은 카메라 디자인
+
+- 요청: “디자인을 더 예쁘게…너무 칙칙해”. clean develop `e184f41`(PR #31)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/bright-camera-design` 각각 exit0. 기존 사용자 변경 없음. 기기 테스트 보류와 개발 후 Git Flow 상시 승인 유지.
+- 구현: 크림/화이트 바탕, 코랄 원형 셔터/로고 점/저장 버튼, 선명한 파스텔 팔레트 카드, 선택 강도 배지와 탭/효과/즐겨찾기의 옅은 배경·진한 표시. 촬영/권한·오류/촬영 설정/나의 색감/결과·편집/개발 진단의 공통 테마를 갱신했다. frontend-design 지침을 적용했으며 새 패키지/이미지/폰트는 없다.
+- 사진 위 토큰을 분리해 격자·모서리·EV/로딩·결과 배지는 흰색/중성 반투명 검정, 초점은 옅은 노랑을 사용한다. UI 색과 필터 수치/LUT/촬영·고해상도 저장 경로를 분리했다. 기존3:4 계산,96pt 목록/72pt 카드/8pt 간격,48pt 조작,80pt 셔터·준비 상태 차단 로직은 유지한다.
+- 설정: 루트 StatusBar를 dark-content, app.json의 userInterfaceStyle을 light로 변경. 생성 native 파일/권한/의존성 변경 없음. 다음 기기 확인 전 SQLite 모듈과 appearance를 포함한 개발 앱 재빌드가 필요하며 이번에는 실행하지 않았다.
+- 변경: App.tsx/app.json, screens의 theme·controls·assist·metering·sheet·favorites·swatch·main·result·comparison·diagnostics 13개 파일, README/제품/계획/검수/STITCH_DESIGN/PROGRESS. 필터 자산/domain/storage/renderer 변경 없음.
+- 소스 검토: 전체 스타일 diff, 사진 overlay/원본 비교/초점/선택 상태 색, 고정 레이아웃·CameraPreview key/props·request key 보존을 읽었다. 설치된 RN Switch.d.ts의 thumbColor/ios_backgroundColor 확인. 구 테마 참조와 하드코딩 색을 rg로 조사하고 `git diff --check` exit0. 문서 패치의 제목 불일치는 실제 제목을 읽고 재적용했다.
+- **NOT_RUN:** lint/typecheck/Jest/react-doctor/자산 검사/JS·native build/prebuild/앱 실행/화면 캡처/실기기·접근성·성능. 소스 검토는 렌더링/미적 승인이 아니며 G0~G3 미통과 유지. 화면을 그대로 복제하는 테스트는 추가하지 않았다. Metro/기기를 새로 실행하지 않았다.
+- Git Flow: 명시 파일 stage와 `git diff --cached --check` exit0, 구현 commit `6eff853`, `git push -u origin feature/bright-camera-design` 및 [PR #32](https://github.com/ddoniddoni/yeoun/pull/32)(base develop) 생성 exit0. 이 기록을 포함해 PR 병합 후 develop fetch/FF/push·원격 일치를 확인하고 develop에서 마친다. 실제 최종 통합 상태는 PR/Git 이력으로 확인한다.
+- 다음: 사용자 요청 때 밝은 화면과 즐겨찾기 재실행 보존을 기기에서 확인한다. 다른 기능은 자동 시작하지 않는다.
+
+## 이전 기록 — 2026-10-30 필터 즐겨찾기
 
 - 요청: 다음 작은 작업인 즐겨찾기 진행, 기기 테스트는 나중. clean develop `3f8ba61`(PR #30)에서 fetch/FF 후 `feature/filter-favorites` 생성 exit0. 기존 사용자 변경 없음. 이전 Metro 세션66911을 Ctrl-C로 종료(exit0)해 수정이 기기에 자동 전달되지 않게 했다. 앱 재실행/캡처/사진 렌더/기기 조작은 이번에 하지 않았다.
 - 범위: 이름 옆 별 등록/해제, 카드별 작은 별, 메인 별·목록 아이콘의 전체/즐겨찾기 전환, 나의 색감·결과 재편집의 즐겨찾기 탭. 등록 순서 유지, 원본은 저장하지 않고 모아보기 앞에 항상 제공한다. 선택 항목을 해제하거나 목록을 바꿔도 현재 색감/강도/질감/노출과 결과 편집 draft는 유지한다. 개인 레시피·가져오기·촬영 설정 영구 기억은 미구현이며 세 분위기는 계속 보류한다.

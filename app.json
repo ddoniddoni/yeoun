@@ -4,7 +4,7 @@
     "slug": "yeoun-camera",
     "version": "0.0.1",
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "dev.ddoni.yeouncamera",
       "supportsTablet": false,

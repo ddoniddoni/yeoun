@@ -26,10 +26,15 @@ export function IconButton({ icon, label, hint, onPress, disabled = false, selec
   </Pressable>;
 }
 
-export function ShutterButton({ disabled, busy, onPress }: { disabled: boolean; busy: boolean; onPress(): void }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={busy ? '사진 처리 중' : '사진 촬영'}
-    accessibilityState={{ disabled, busy }} disabled={disabled} onPress={onPress}
-    style={({ pressed }) => [styles.shutterRing, pressed && styles.pressed, disabled && styles.disabled]}>
+export function ShutterButton({ status, onPress }: {
+  status: 'ready' | 'preparing' | 'unavailable' | 'processing'; onPress(): void;
+}) {
+  const disabled = status !== 'ready';
+  const busy = status === 'processing';
+  // Preparing a selected look must block capture without flashing the shutter gray/white.
+  return <Pressable accessibilityRole="button" accessibilityLabel={busy ? '사진 처리 중' : status === 'preparing' ? '색감 준비 중' : '사진 촬영'}
+    accessibilityState={{ disabled, busy: busy || status === 'preparing' }} disabled={disabled} onPress={onPress}
+    style={({ pressed }) => [styles.shutterRing, pressed && styles.pressed, (status === 'unavailable' || busy) && styles.disabled]}>
     <View style={styles.shutterCore}>{busy ? <ActivityIndicator color={theme.background} /> : null}</View>
   </Pressable>;
 }

@@ -93,8 +93,11 @@ export function M0CameraScreen() {
   const filterRequestKey = comparison.requestKey;
   const currentFilterStatus = filterStatus?.key === filterRequestKey ? filterStatus : undefined;
   const filterReady = currentFilterStatus?.phase === 'ready';
-  const shutterDisabled = !permission.hasPermission || !device || !ready || !filterReady ||
+  const captureUnavailable = !permission.hasPermission || !device || !ready ||
     !foreground || !!cameraError || busy || !canCapture || overlayOpen || returning || comparison.active || !metering.ready || metering.busy || panel !== undefined;
+  const shutterDisabled = captureUnavailable || !filterReady;
+  const shutterStatus = busy ? 'processing' : captureUnavailable || currentFilterStatus?.phase === 'error'
+    ? 'unavailable' : filterReady ? 'ready' : 'preparing';
   const meteringDisabled = assistDisabled || comparison.active;
   const accent = filterPresentation[settings.filterId].color;
   const selectFilter = (id: CameraFilterId) => {
@@ -220,7 +223,7 @@ export function M0CameraScreen() {
           <CameraIcon name="compare" size={26} color={comparison.active ? theme.light : theme.text} />
           {comparison.active ? <View style={[styles.activeDot, { backgroundColor: theme.light }]} /> : null}
         </Pressable>
-        <ShutterButton disabled={shutterDisabled} busy={busy} onPress={() => {
+        <ShutterButton status={shutterStatus} onPress={() => {
           const exposure = preview.current?.captureExposure();
           if (!shutterDisabled && exposure) void controller.capture(settings, position, grainSeed, flashMode, exposure).then(() => {
             if (controller.state.phase === 'cancelled') setGrainSeed(createGrainSeed());

@@ -318,38 +318,38 @@
       "id": "time-summer",
       "collection": "time",
       "name": "여름방학",
-      "caption": "햇살과 바다를 닮은 필름색",
-      "lookVersion": "0.2.0-draft",
+      "caption": "진한 햇살, 따뜻한 색과 가벼운 입자",
+      "lookVersion": "0.3.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
         "exposureEv": 0,
-        "saturation": 1.06,
+        "saturation": 1.12,
         "toneCurve": [
           [
             0,
-            0.012
+            0.008
           ],
           [
             0.18,
-            0.155
+            0.13
           ],
           [
             0.4,
-            0.405
+            0.39
           ],
           [
             0.65,
-            0.7
+            0.68
           ],
           [
             0.85,
-            0.885
+            0.87
           ],
           [
             1,
-            0.985
+            0.98
           ]
         ],
         "shadowTintRgb": [
@@ -364,39 +364,39 @@
         ],
         "hueBands": [
           {
-            "centerDeg": 60,
-            "halfWidthDeg": 40,
+            "centerDeg": 55,
+            "halfWidthDeg": 32,
             "shiftDeg": -3,
-            "saturationMultiplier": 1.04
+            "saturationMultiplier": 1.06
           },
           {
-            "centerDeg": 0,
-            "halfWidthDeg": 28,
-            "shiftDeg": 0,
+            "centerDeg": 28,
+            "halfWidthDeg": 24,
+            "shiftDeg": 2,
             "saturationMultiplier": 1.02
           },
           {
             "centerDeg": 120,
             "halfWidthDeg": 42,
-            "shiftDeg": -10,
-            "saturationMultiplier": 0.82
+            "shiftDeg": -14,
+            "saturationMultiplier": 0.85
           },
           {
             "centerDeg": 220,
             "halfWidthDeg": 45,
-            "shiftDeg": -12,
-            "saturationMultiplier": 0.96
+            "shiftDeg": -14,
+            "saturationMultiplier": 1.1
           }
         ]
       },
       "defaults": {
-        "intensity": 0.8,
-        "grain": 0.22,
-        "bloom": 0.04
+        "intensity": 0.85,
+        "grain": 0.26,
+        "bloom": 0.025
       },
       "notes": [
-        "노란 전역 틴트 없이 선명한 햇빛/청록 바다와 깊은 명암. 부드러운 맑은 여행과 다른 생동감 있는 여행 룩.",
-        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
+        "사용자 피드백: 맑은 여행·로즈 데이와 구분이 약함. 세 룩 중 가장 진한 명암·따뜻한 노랑/초록·청록 바다·입자로 여름 스냅을 구분한다.",
+        "전역 tint/EV는0 유지. 흰색에 노란 막을 씌우지 않는다. 기본85%; 이미 대비/채도가 강한 원본에서는 강도를 낮춘다."
       ]
     },
     {
@@ -1010,34 +1010,34 @@
       "id": "retro-rose",
       "collection": "retro",
       "name": "로즈 데이",
-      "caption": "맑은 흰빛, 로즈빛 색감과 청록빛 거리",
-      "lookVersion": "0.2.0-draft",
+      "caption": "보송한 로즈빛, 부드러운 민트색",
+      "lookVersion": "0.3.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
         "exposureEv": 0,
-        "saturation": 0.94,
+        "saturation": 0.84,
         "toneCurve": [
           [
             0,
-            0.018
+            0.035
           ],
           [
             0.18,
-            0.21
+            0.24
           ],
           [
             0.4,
-            0.46
+            0.5
           ],
           [
             0.6,
-            0.675
+            0.72
           ],
           [
             0.82,
-            0.88
+            0.9
           ],
           [
             1,
@@ -1056,28 +1056,34 @@
         ],
         "hueBands": [
           {
-            "centerDeg": 220,
-            "halfWidthDeg": 45,
-            "shiftDeg": -16,
-            "saturationMultiplier": 1.04
+            "centerDeg": 350,
+            "halfWidthDeg": 30,
+            "shiftDeg": -12,
+            "saturationMultiplier": 1.02
           },
           {
-            "centerDeg": 345,
-            "halfWidthDeg": 32,
+            "centerDeg": 28,
+            "halfWidthDeg": 25,
             "shiftDeg": -8,
-            "saturationMultiplier": 1.1
+            "saturationMultiplier": 0.94
           },
           {
-            "centerDeg": 110,
+            "centerDeg": 130,
+            "halfWidthDeg": 48,
+            "shiftDeg": 18,
+            "saturationMultiplier": 0.62
+          },
+          {
+            "centerDeg": 215,
             "halfWidthDeg": 42,
-            "shiftDeg": -13,
-            "saturationMultiplier": 0.78
+            "shiftDeg": -10,
+            "saturationMultiplier": 0.86
           }
         ]
       },
       "defaults": {
-        "intensity": 0.8,
-        "grain": 0.03,
+        "intensity": 0.9,
+        "grain": 0.02,
         "bloom": 0.05,
         "vignette": 0,
         "halation": 0,
@@ -1088,42 +1094,42 @@
         "dateStamp": false
       },
       "notes": [
-        "흰 접시가 분홍빛으로 물들던 전역 틴트 제거. 원래 색이 있는 분홍/빨강과 청록 거리만 선택적으로 강조한다.",
-        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
+        "사용자 피드백으로 여름방학/맑은 여행과 분리. 낮은 명암과 채도의 파스텔, 주황의 로즈/복숭아 이동, 절제된 민트 초록으로 구분한다.",
+        "흰색과 검정은 중성으로 유지하며 전역 분홍 틴트를 추가하지 않는다. 원래 색이 있는 영역에만 hue band를 적용. 기본90%; 피부 인식/보정은 아니다."
       ]
     },
     {
       "id": "retro-travel",
       "collection": "retro",
       "name": "맑은 여행",
-      "caption": "맑은 하늘색, 가벼운 햇빛과 부드러운 명암",
-      "lookVersion": "0.2.0-draft",
+      "caption": "선명한 파랑, 맑고 깨끗한 여행색",
+      "lookVersion": "0.3.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
         "exposureEv": 0,
-        "saturation": 0.95,
+        "saturation": 1.0,
         "toneCurve": [
           [
             0,
-            0.012
+            0.008
           ],
           [
             0.18,
-            0.195
+            0.19
           ],
           [
             0.4,
-            0.44
+            0.46
           ],
           [
             0.6,
-            0.67
+            0.7
           ],
           [
             0.82,
-            0.865
+            0.89
           ],
           [
             1,
@@ -1144,27 +1150,27 @@
           {
             "centerDeg": 210,
             "halfWidthDeg": 40,
-            "shiftDeg": 9,
-            "saturationMultiplier": 1.12
+            "shiftDeg": 10,
+            "saturationMultiplier": 1.15
           },
           {
-            "centerDeg": 110,
+            "centerDeg": 115,
             "halfWidthDeg": 42,
-            "shiftDeg": -3,
-            "saturationMultiplier": 0.9
+            "shiftDeg": 3,
+            "saturationMultiplier": 0.98
           },
           {
-            "centerDeg": 340,
-            "halfWidthDeg": 35,
+            "centerDeg": 28,
+            "halfWidthDeg": 25,
             "shiftDeg": 0,
-            "saturationMultiplier": 0.98
+            "saturationMultiplier": 0.95
           }
         ]
       },
       "defaults": {
-        "intensity": 0.8,
-        "grain": 0.08,
-        "bloom": 0.03,
+        "intensity": 0.85,
+        "grain": 0,
+        "bloom": 0.015,
         "vignette": 0,
         "halation": 0,
         "sharpness": 0,
@@ -1174,8 +1180,8 @@
         "dateStamp": false
       },
       "notes": [
-        "청록빛 흰색과 지나친 밝기 상승을 줄이고 하늘의 푸른색을 분리. 여름방학보다 깨끗하고 가벼운 여행 색감.",
-        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
+        "사용자 피드백으로 여름방학의 진한 빈티지/로즈의 파스텔과 분리. 하늘은 선명한 파랑, 초록은 원래 색에 가깝게 두고 맑은 중간톤을 살린다.",
+        "입자0·번짐.015로 깨끗한 윤곽. 전역 tint/EV0과 중성 흰색 유지. 기본85%."
       ]
     },
     {

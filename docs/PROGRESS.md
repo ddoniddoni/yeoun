@@ -13,7 +13,7 @@
 - 로컬 전달물: `artifacts/local/filter-refinement-overview.png`는 원본/이전/개정4룩을 같은 사진으로 합친 비교표다. 첫 합성의 캔버스 높이가 부족해 마지막 행이 잘려 높이를 늘린 뒤 전체가 보이는2010px 산출물을 다시 직접 읽었다. `date-stamp-review.png`는 날짜4종 확대판. 이 이미지는 생성형 예시가 아닌 실제 필터 출력이며 커밋하지 않는다.
 - 소스 검토: 실제 preview/export의 LUT강도/최종master1회·uniform순서·crop/Bloom geometry와 도구의 일치 범위를 읽었다. 기존 native 자원 수명/프레임 공유/GPU 캐시/권한 변경 없음. `git diff --check` exit0. verification 지침은 이번 승인된 사진 비교와 소스/diff 확인에 적용하고 보류된 검사 실행 요구는 사용자 지시를 우선한다.
 - **NOT_RUN:** lint/typecheck/Jest/react-doctor/별도 seed·자산 검사/JS·native build/iOS·Android 실행/성능·고해상도 저장. 기존 G0/G1/G2 미통과 유지. **HUMAN_REVIEW_PENDING:** 최종 사용자 색감 승인, 실제 촬영/프리뷰와 저장 일치, 저조도 노이즈·꽃/분홍 건물 등 추가 장면. 사진 비교 수행과 출시 합격을 구분한다.
-- Git Flow: 관련 파일만 stage/commit/push/develop 대상 PR·merge·동기화하며 develop에서 마친다. 실제 최종 상태는 PR/Git 이력을 따른다. 다음 기능·기기 실행을 자동 시작하지 않는다.
+- Git Flow: 최초 stage는 sandbox index.lock 쓰기 제한으로 실패, 승인된 Git 작업 권한으로 동일 명시 파일 stage 성공. `git diff --cached --check` exit0, 기능 commit `52cb592`, 작업 브랜치 push 및 [PR #28](https://github.com/ddoniddoni/yeoun/pull/28) 생성 exit0. 이 기록을 포함해 develop 병합·동기화하며 develop에서 마친다. 실제 최종 상태는 PR/Git 이력을 따른다. 다음 기능·기기 실행을 자동 시작하지 않는다.
 
 ## 이전 기록 — 2026-10-30 장면별 필터 17종
 

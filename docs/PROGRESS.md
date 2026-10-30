@@ -1,6 +1,20 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-30 실제 사진 기반 필터 고도화
+## 현재 상태 — 2026-10-30 여행 3종 구분과 촬영 버튼 깜빡임
+
+- 요청: 앱에서 필터가 비슷하고 선택마다 깜빡임. 사용자가 대상은 여름방학·맑은 여행(답변 “맑은여름”)·로즈 데이, 위치는 하단 흰색 촬영 버튼이라고 명확히 했다. clean develop `05a1a6b`(PR #28)에서 fetch/FF 후 `fix/filter-preview-transitions` 생성. 기존 사용자 변경 없음. 기존 Metro를 종료하고 자산 제작 중 hot reload를 피했다.
+- 원인: M0CameraScreen의 !filterReady가 ShutterButton disabled로 연결되어 선택마다 opacity.4/1이 바뀌었다. 버튼 상태를 ready/preparing/unavailable/processing으로 분리해 준비 중 흰색을 유지한다. disabled/accessibility busy와 촬영 핸들러의 현재 request key ready 조건은 유지한다. native Camera remount/reconfigure가 원인이라고 단정하지 않았으며 CameraPreview는 변경하지 않았다.
+- 전환: useCameraLut의 loading 요청이 원본 우회 프레임을 만들고 강도/날짜/재선택 때 Alpha8 planes를 반복 준비했다. 새 previewLutPublisher는 이전 완성 요청으로 라이브를 유지하고 새 planes/settings를 함께 전달한다. 원본/0은 즉시 우회, 현재 오류는 명시적 fallback/촬영 금지, 취소·늦은 성공/실패는 무시한다. 최근3개 immutable raw ArrayBuffer planes만 RN에 캐시(약397KB), 종료 때 해제. 프레임/GPU는 캐시하지 않고 Worklets 역방향 payload 전달 없이 기존 GPU 수명/lock을 유지한다. hook 재개 때 이전 reportedId/failedId를 초기화한다.
+- 색감: 세 룩을0.3.0-draft로 개정. 여름85%는 깊은 명암/황록·청록/입자.26, 여행85%는 파랑/열린 명암/입자0·Bloom.015, 로즈90%는 낮은 채도/로즈·민트/열린 그림자다. 전역 tint/EV0과14종 정의/default, renderer0.6/spatial0.5/authoring0.1 유지. 앱 설명도 실제 방향으로 수정했다.
+- 제작: `npm run generate:luts` exit0(기존 MODULE_TYPELESS 경고). 새 hash `c0f1e92e3a92bcfa8945db7e8a720ad2d3a247fdc7d4af1451db17c06484e8a6`의18 PNG/manifest 생성 후 같은 바이트18 .lut와 literal registry를 연결했다. 이전 hash 자산 보존. 새 패키지/native 설정/권한 변경 없음.
+- 사진 관찰: `node scripts/render-filter-review.mjs --fixtures private-fixtures/color-review-2026-10-30/all-sources.json --out artifacts/local/filter-trio-refinement --font '/System/Library/Fonts/Supplemental/Arial.ttf' --filters time-summer,retro-travel,retro-rose` exit0. 원본+3종×기존 사진7장=28 PNG/7비교판 모두 직접 읽었다. 풍경의 청록/파랑/파스텔, 인물·빵의 진한 황금/깨끗한 밝기/로즈 명암 차이를 관찰했다. 흰 접시/창문에 전역 색 막은 추가하지 않았다. 사진은 ignored 로컬에만 보관. 소프트웨어 PNG 비교는 native GPU/촬영·저장·성능 증거가 아니다.
+- 변경 파일: seed/cameraSettings/bundledLuts/새 hash 자산, previewLutPublisher/useCameraLut, M0CameraScreen/CameraControls, publisher 요청 수명 회귀 테스트 소스와 기존4개 자산/version 기대 파일, 엔진/카탈로그/사진 검수/검수 목록/진행 기록. 설치된 VisionCamera/Skia callback/output 수명과 raw buffer 소유권을 소스로 읽었다.
+- **NOT_RUN:** lint/typecheck/Jest/react-doctor/별도 seed·자산 검사/JS·native build. 신규 테스트는 요청 순서/취소/캐시 상한을 기록한 소스이며 실행 결과가 없다. **HUMAN_REVIEW_PENDING:** 세 룩 최종 색감, 실제 버튼 깜빡임 수정 확인, 촬영/저장 일치. Android·장시간 성능·실패/복귀는 미확인. 기존 G0/G1/G2 미통과 유지.
+- 앱 전달: 사용자 앱 확인 요청을 이어서 `EXPO_NO_TELEMETRY=1 EXPO_NO_DEPENDENCY_VALIDATION=1 npm start -- --lan --port 8081` 실행. `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun devicectl device process launch --device 00008120-001C39112250A01E --terminate-existing --console --payload-url 'exp+yeoun-camera://expo-development-client/?url=http%3A%2F%2F192.168.45.117%3A8081' dev.ddoni.yeouncamera`로 기존 개발 앱 PID26356 실행. Metro iOS Bundled598ms/1538modules 및 후면1178×1572/up/yuv-420-8-bit-full/mirrorfalse 프레임 로그 확인. 기존 UIKit callback/appearance·DevTools fallback/NO_COLOR 경고가 있었으며 실제 색감/촬영 버튼은 사용자 응답 대기다. 이는 개발 중 JS 전달이며 별도 번들 검사/native 빌드는 실행하지 않았다.
+- 소스/diff 확인: `git diff --check` exit0. 새로운 테스트 실행 없이 요청 취소/수명, 설정과 manifest/version 연결, 촬영 준비 조건을 소스로 검토했다.
+- 다음: 사용자 피드백을 받으며 승인된 Git Flow(작업 branch push/PR/develop 병합·동기화)를 완료한다. 새 기능/자동 검사로 범위를 넓히지 않는다.
+
+## 이전 기록 — 2026-10-30 실제 사진 기반 필터 고도화
 
 - 요청: 실제 제품처럼 필터가 예쁜지 다시 확인하고 고도화. 사용자 요청 범위를 로컬 사진 기반 색감 검수로 설명하고 진행했다. 자동 검사/빌드/실기기 보류는 유지. clean develop `ed3fd5c`(PR #27)에서 fetch/FF 후 `feature/filter-color-refinement` 생성 exit0. Metro·앱·카메라는 실행하지 않았다.
 - 근거 사진: Unsplash 무료 사진7장(인물3·음식·카페·풍경·야경)의 원본 페이지/라이선스를 확인하고 다운로드. 최초 Python urllib 요청은401로 실패했으며 공개 페이지를 curl로 읽고 공개 이미지 URL 다운로드 성공. 사진·파생 이미지·출처 manifest는 ignored private-fixtures/artifacts/local에만 보관했다. 외부 사진을 번들/커밋하거나 사용자 사진을 업로드하지 않았다. 출처/한계는 REFERENCES S47와 FILTER_COLOR_REVIEW.

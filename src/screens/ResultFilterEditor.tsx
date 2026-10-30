@@ -22,8 +22,8 @@ export function ResultFilterEditor({ settings, disabled, applying, error, onAppl
     finally { submitting.current = false; }
   };
   return <View style={styles.panel}>
-    <Text accessibilityRole="header" style={styles.title}>이 순간의 색감 바꾸기</Text>
-    <Text style={styles.note}>위 사진은 마지막으로 적용한 모습이에요. 색감을 고른 뒤 적용하면 사진이 바뀌어요.</Text>
+    <Text accessibilityRole="header" style={styles.title}>이 순간의 색감</Text>
+    <Text style={styles.note}>필터를 고르고 적용해 주세요. 그전까지 사진은 유지돼요.</Text>
     <FilterAdjustmentPanel settings={draft} disabled={disabled}
       onSelect={id => { if (id !== draft.filterId) setDraft(cameraSettings(id)); }}
       onIntensity={intensity => setDraft(current => copyCameraSettings({ ...current, intensity }))}
@@ -34,14 +34,14 @@ export function ResultFilterEditor({ settings, disabled, applying, error, onAppl
     <Text accessibilityLiveRegion="polite" style={styles.note}>{applying
       ? '원본 사진에 새 색감을 적용하고 있어요…'
       : changed ? '선택한 설정을 적용하면 저장할 사진이 바뀌어요.' : '필터나 조절값을 바꾸어 보세요.'}</Text>
-    <CameraAction primary label={applying ? '색감 적용 중…' : attempted && error ? '선택한 색감 다시 적용' : '선택한 색감 적용'}
+    <CameraAction primary icon="check" label={applying ? '색감 적용 중…' : attempted && error ? '선택한 색감 다시 적용' : '선택한 색감 적용'}
       disabled={disabled || !changed} onPress={() => { void apply(); }} />
-    <CameraAction label="취소 · 현재 사진 유지" disabled={disabled} onPress={onClose} />
+    <CameraAction icon="close" label="편집 취소" disabled={disabled} onPress={onClose} />
   </View>;
 }
 
 const styles = StyleSheet.create({
-  panel: { gap: 16, padding: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.line },
+  panel: { gap: 16, padding: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.line, borderRadius: 20 },
   title: { color: theme.text, fontSize: 17, fontWeight: '500' },
   note: { color: theme.secondary, fontSize: 13, lineHeight: 20 },
   error: { color: theme.error, fontSize: 14, lineHeight: 22 },

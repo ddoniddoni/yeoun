@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { CaptureState, Output } from '../domain/capture/controller';
 import { initialComparison, updateComparison } from '../domain/filters/previewComparison';
 import { CameraAction, FrameCorners } from './CameraControls';
+import { CameraIcon } from './CameraIcon';
 import { cameraTheme as theme } from './cameraTheme';
 
 export function ResultPhotoComparison({ output, state, width, enabled, locked, filterName, onPrepare }: {
@@ -43,7 +44,7 @@ export function ResultPhotoComparison({ output, state, width, enabled, locked, f
     </View>
     {enabled ? <View style={styles.controls}>
       {!state.original ? <CameraAction
-        label={state.preparingOriginal ? '원본 비교 준비 중…' : state.originalError ? '원본 비교 다시 준비' : '촬영 원본과 비교하기'}
+        icon="compare" label={state.preparingOriginal ? '원본 준비 중…' : state.originalError ? '원본 비교 다시 시도' : '원본 비교'}
         disabled={locked} onPress={onPrepare} /> : failed ? <CameraAction label="비교 이미지 다시 열기"
         disabled={locked} onPress={() => setAttempt(value => value + 1)} /> : <View style={styles.row}>
         <Pressable accessibilityRole="button" accessibilityLabel="누르는 동안 촬영 원본 비교"
@@ -51,30 +52,31 @@ export function ResultPhotoComparison({ output, state, width, enabled, locked, f
           disabled={!available || pinned} accessibilityState={{ disabled: !available || pinned }}
           onPressIn={() => change('hold')} onPressOut={() => change('release')}
           style={[styles.button, (!available || pinned) && styles.disabled]}>
-          <Text style={styles.label}>눌러서 원본 비교</Text>
+          <CameraIcon name="compare" size={20} /><Text style={styles.label}>원본 비교</Text>
         </Pressable>
         <Pressable accessibilityRole="switch" accessibilityLabel="촬영 원본 보기 유지"
           accessibilityState={{ checked: pinned, disabled: !available }} disabled={!available}
-          onPress={() => change('toggle')} style={[styles.button, pinned && styles.selected, !available && styles.disabled]}>
-          <Text style={styles.label}>원본 유지 {pinned ? '켬' : '끔'}</Text>
+          onPress={() => change('toggle')} style={[styles.button, styles.pin, pinned && styles.selected, !available && styles.disabled]}>
+          <CameraIcon name="pin" size={21} color={pinned ? theme.light : theme.secondary} />
         </Pressable>
       </View>}
       <Text accessibilityLiveRegion="polite" style={styles.note}>
         {state.originalError ?? (failed ? '비교 이미지를 열지 못했어요. 저장할 사진은 유지돼요.'
           : state.original && !ready ? '비교 이미지를 불러오고 있어요…'
-          : active ? '원본 비교 중 · 저장하면 필터 결과가 저장돼요.' : '같은 구도의 원본과 비교해요. 저장할 색감은 유지돼요.')}
+          : active ? '원본 비교 중 · 저장하면 필터 결과가 저장돼요.' : state.original ? '누르는 동안 원본 · 핀을 누르면 비교 유지' : '원본과 같은 구도로 비교할 수 있어요.')}
       </Text>
     </View> : null}
   </View>;
 }
 
 const styles = StyleSheet.create({
-  group: { gap: 12 }, frame: { alignSelf: 'center', backgroundColor: theme.inset },
+  group: { gap: 12 }, frame: { alignSelf: 'center', backgroundColor: theme.inset, borderRadius: 12, overflow: 'hidden' },
   hidden: { opacity: 0 }, badge: { position: 'absolute', top: 16, left: 16, color: theme.text,
     backgroundColor: theme.background, paddingHorizontal: 10, paddingVertical: 6, fontSize: 12 },
   controls: { gap: 8 }, row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  button: { minHeight: 48, minWidth: 48, flexGrow: 1, padding: 12, justifyContent: 'center',
-    alignItems: 'center', borderWidth: 1, borderColor: theme.line, borderRadius: 6 },
+  button: { minHeight: 48, minWidth: 48, flexGrow: 1, flexDirection: 'row', gap: 8, padding: 12, justifyContent: 'center',
+    alignItems: 'center', borderWidth: 1, borderColor: theme.line, borderRadius: 14 },
+  pin: { width: 48, flexGrow: 0 },
   selected: { borderColor: theme.text, backgroundColor: theme.surface }, disabled: { opacity: 0.4 },
   label: { color: theme.text, fontSize: 13 }, note: { color: theme.secondary, fontSize: 12, lineHeight: 18 },
 });

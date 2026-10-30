@@ -386,3 +386,10 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 - [SODA 공식 App Store](https://apps.apple.com/us/app/soda-natural-beauty-camera/id1437880869): 인물용 필터/일상 필터 설명과 화면. AI/beauty/메이크업과 색 변환은 다른 기능이며 여운에 피부 인식·얼굴 보정을 추가하지 않는다.
 - [FILTER_CATALOG](FILTER_CATALOG.md)에 관찰/해석/독자 제작 수치를 구분했다. 동일 원본으로 경쟁 앱을 비교한 것이 아니고 마케팅 사진의 촬영·보정 조건은 모른다. 외부 이미지는 조사용 임시 폴더에만 두고 번들/커밋하지 않았다. 사용자 사진 전송 없음.
 - 기존 RN0.83.10/React19.2.0 ScrollView/Pressable/useCallback, 동일 LUT/Skia preview·export 계약을 재사용한다. 새 API/의존성/native/shader 도입 없음. 자동 검사/기기 실행/새 색감 시각 검수는 NOT_RUN이다.
+
+
+## S47. 실제 사진 비교와 날짜 raster — 2026-10-30
+
+- [Unsplash License](https://unsplash.com/license)와 각 원본 페이지의 무료 사용 표시를 확인했다. 7사진의 사진가/정확한 페이지/용도는 [FILTER_COLOR_REVIEW](FILTER_COLOR_REVIEW.md)에 기록한다. 원본·파생 이미지 모두 로컬 ignored 폴더에만 보관하고 사용자 사진 전송/번들/커밋을 하지 않았다.
+- [Skia CanvasKit 공식 설명](https://docs.skia.org/docs/user/modules/canvaskit/)과 [공식 변경 기록](https://github.com/google/skia/blob/main/modules/canvaskit/CHANGELOG.md), 설치0.40.0 node.example.js/types/index.d.ts의 RuntimeEffect/MakeImage/MakeSurface/readPixels/폰트/PNG API를 확인했다. 새 패키지를 설치하지 않고 기존 RN Skia의 transitive dependency를 사용한다.
+- 앱의 실제 LUT/Alpha8 plane·SkSL·geometry를 직접 읽는 로컬 제작 도구를 추가했다. 날짜 pow 오차는 이 환경에서 관측한 결과이며 Metal/Android에서 동일한 재현 또는 수정 검증을 주장하지 않는다. 실제 생성/관찰과 NOT_RUN 항목은 PROGRESS를 따른다.

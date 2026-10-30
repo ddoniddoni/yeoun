@@ -1,5 +1,5 @@
-import { RETRO_SKSL } from './retro';
-export const SPATIAL_BACKEND_VERSION = 'grain-bloom-retro-0.4.0';
+import { RETRO_SKSL } from './retro.ts';
+export const SPATIAL_BACKEND_VERSION = 'grain-bloom-retro-0.5.0';
 
 const COLOR = `
 float3 linearColor(half4 color) {

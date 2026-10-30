@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "status": "draft",
+  "renderContractVersion": "0.1.0",
+  "engineVersion": "lut-authoring-0.1.0",
+  "generatorVersion": "1.0.0",
+  "sourceSeedSha256": "1836f20cbc08b2791bc3ba296e68a5f7914450059b60a231dbb6f37febdd681e",
+  "encoder": {
+    "pngjs": "7.0.0",
+    "node": "26.4.0",
+    "zlib": "1.2.12"
+  },
+  "lutContract": {
+    "size": 33,
+    "tilesPerRow": 6,
+    "paddingPixels": 1,
+    "atlasWidth": 210,
+    "atlasHeight": 210,
+    "inputSpace": "srgb-encoded",
+    "outputSpace": "srgb-encoded",
+    "axisOrder": "r-fastest-g-next-b-slice",
+    "alpha": 1
+  },
+  "assets": [
+    {
+      "filterId": "identity",
+      "lookVersion": "0.1.0-draft",
+      "role": "identity",
+      "status": "draft",
+      "path": "luts/identity-5f6daa0568b6ae9153b1d8af6b88c716904e0eed03b7d10b71ec78c09ae32a7a.png",
+      "sha256": "5f6daa0568b6ae9153b1d8af6b88c716904e0eed03b7d10b71ec78c09ae32a7a"
+    },
+    {
+      "filterId": "light-afternoon",
+      "lookVersion": "0.2.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/light-afternoon-12ff730ffdb6a9c056bab574e534fa37d05ec6b10abc39bb70ec905a95511888.png",
+      "sha256": "12ff730ffdb6a9c056bab574e534fa37d05ec6b10abc39bb70ec905a95511888"
+    },
+    {
+      "filterId": "light-milk",
+      "lookVersion": "0.3.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/light-milk-be1f13c137448100412619c87e701a7e6051724c8585fb42f78a1829a7859426.png",
+      "sha256": "be1f13c137448100412619c87e701a7e6051724c8585fb42f78a1829a7859426"
+    },
+    {
+      "filterId": "light-spring",
+      "lookVersion": "0.3.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/light-spring-be946ab4254d2ecce82154e3c1f2a3910420846363b786ccd11e91b3dd71cfe9.png",
+      "sha256": "be946ab4254d2ecce82154e3c1f2a3910420846363b786ccd11e91b3dd71cfe9"
+    },
+    {
+      "filterId": "time-summer",
+      "lookVersion": "0.2.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/time-summer-fdf5df357fbd1719d41209a87aa920bea6a334c9b7182bf4e3dbac75677c3354.png",
+      "sha256": "fdf5df357fbd1719d41209a87aa920bea6a334c9b7182bf4e3dbac75677c3354"
+    },
+    {
+      "filterId": "time-diary",
+      "lookVersion": "0.2.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/time-diary-c6ff4b50a68bb7a41d7314954715fd3e47fdc41af05da56c346ae6fbd3c7eceb.png",
+      "sha256": "c6ff4b50a68bb7a41d7314954715fd3e47fdc41af05da56c346ae6fbd3c7eceb"
+    },
+    {
+      "filterId": "time-night",
+      "lookVersion": "0.2.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/time-night-55380bf9790a5b4b31180e6f85f1982f6405f6ff080873cf596a0c5c5fce865b.png",
+      "sha256": "55380bf9790a5b4b31180e6f85f1982f6405f6ff080873cf596a0c5c5fce865b"
+    },
+    {
+      "filterId": "scene-dawn",
+      "lookVersion": "0.1.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/scene-dawn-a5a38e22587bfcd5e2b45f4bf0ab04a492ad47cdf4c85e95a2db99fed7936490.png",
+      "sha256": "a5a38e22587bfcd5e2b45f4bf0ab04a492ad47cdf4c85e95a2db99fed7936490"
+    },
+    {
+      "filterId": "scene-rain",
+      "lookVersion": "0.2.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/scene-rain-65402c2274863d5fbe1f87f21b98428e6451b26282d2fe2112202ca902c026a2.png",
+      "sha256": "65402c2274863d5fbe1f87f21b98428e6451b26282d2fe2112202ca902c026a2"
+    },
+    {
+      "filterId": "scene-ending",
+      "lookVersion": "0.2.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/scene-ending-e03df795d91b08999ef3ff75e0e3237797467b84a229c47433d890939d89a2a8.png",
+      "sha256": "e03df795d91b08999ef3ff75e0e3237797467b84a229c47433d890939d89a2a8"
+    },
+    {
+      "filterId": "retro-film",
+      "lookVersion": "0.6.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/retro-film-443d25a734554282bc4300de67edd93e9665fdc7b1a107f30ad10f6cbb33d623.png",
+      "sha256": "443d25a734554282bc4300de67edd93e9665fdc7b1a107f30ad10f6cbb33d623"
+    },
+    {
+      "filterId": "retro-digital",
+      "lookVersion": "0.3.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/retro-digital-f4f34d739a5f44b42347d3133e6a2ceb806912cc4e0379a34d0f09f4d648bc74.png",
+      "sha256": "f4f34d739a5f44b42347d3133e6a2ceb806912cc4e0379a34d0f09f4d648bc74"
+    },
+    {
+      "filterId": "retro-rose",
+      "lookVersion": "0.2.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/retro-rose-36220029c13cca559336ecaf6852a6bd16930ce032373191a29ab68277b02073.png",
+      "sha256": "36220029c13cca559336ecaf6852a6bd16930ce032373191a29ab68277b02073"
+    },
+    {
+      "filterId": "retro-travel",
+      "lookVersion": "0.2.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/retro-travel-e88a86011a8f4a9e61da5543b99ff02159fe9dad45c1a38fa0396868587e043f.png",
+      "sha256": "e88a86011a8f4a9e61da5543b99ff02159fe9dad45c1a38fa0396868587e043f"
+    },
+    {
+      "filterId": "portrait-clear",
+      "lookVersion": "0.2.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/portrait-clear-6e7d657fc3f4ef241616e715941e8c2d016c27adf33ab85d9671c05885d9a47b.png",
+      "sha256": "6e7d657fc3f4ef241616e715941e8c2d016c27adf33ab85d9671c05885d9a47b"
+    },
+    {
+      "filterId": "portrait-peach",
+      "lookVersion": "0.2.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/portrait-peach-5a060248b59e369e4ebbcc79ee7566c9b4cf6920f598573ba1de8fe08d451798.png",
+      "sha256": "5a060248b59e369e4ebbcc79ee7566c9b4cf6920f598573ba1de8fe08d451798"
+    },
+    {
+      "filterId": "food-table",
+      "lookVersion": "0.2.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/food-table-0f266056128e288dcc5e7954995315692e3faac816ee0a345dc317c141a3d59e.png",
+      "sha256": "0f266056128e288dcc5e7954995315692e3faac816ee0a345dc317c141a3d59e"
+    },
+    {
+      "filterId": "food-cafe",
+      "lookVersion": "0.2.0-draft",
+      "role": "look",
+      "status": "draft",
+      "path": "luts/food-cafe-2af30d4d9653e704d1b86de370d71adb382ee8364004524e43a71a72dd1f9a34.png",
+      "sha256": "2af30d4d9653e704d1b86de370d71adb382ee8364004524e43a71a72dd1f9a34"
+    }
+  ]
+}

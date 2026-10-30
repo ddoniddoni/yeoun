@@ -115,7 +115,12 @@ float stampMask(float2 p) {
       result = max(result, stampBox(q, float2(0.28, 0.9), float2(0.045), aa));
     } else {
       int index = i - (i > 2 ? 1 : 0) - (i > 5 ? 1 : 0);
-      float digit = mod(floor(stampDate / pow(10.0, float(5 - index))), 10.0);
+      // pow is approximate in shader backends: pow(10, 1) can turn
+      // 261030 / 10 into a quotient above 26104 on the software raster path.
+      // Exact decimal divisors keep integer date extraction independent of pow.
+      float divisor = index == 0 ? 100000.0 : index == 1 ? 10000.0 :
+        index == 2 ? 1000.0 : index == 3 ? 100.0 : index == 4 ? 10.0 : 1.0;
+      float digit = mod(floor(stampDate / divisor), 10.0);
       result = max(result, digitMask(q, digit, aa));
     }
   }

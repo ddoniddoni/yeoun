@@ -7,6 +7,12 @@ import UniformTypeIdentifiers
 public class YeounPhotoImportModule: Module {
   public func definition() -> ModuleDefinition {
     Name("YeounPhotoImport")
+    AsyncFunction("recoveryDirectoryAsync") { () -> String in try RecoveryFiles.directory().absoluteString }
+    AsyncFunction("stashRecoveryFileAsync") { (uri: String, name: String) in try RecoveryFiles.stash(uri, name) }
+    AsyncFunction("restoreRecoveryFileAsync") { (name: String, bytes: Int, sha256: String, uri: String) in
+      try RecoveryFiles.restore(name, bytes, sha256, uri)
+    }
+    AsyncFunction("pruneRecoveryFilesAsync") { (keep: [String]) in try RecoveryFiles.prune(keep) }
     // Expo's module queue owns all decode/encode resources, never the UI/worklet runtime.
     AsyncFunction("prepareAsync") { (sourceUri: String, destinationUri: String) -> [String: Any] in
       try autoreleasepool { try self.prepare(sourceUri, destinationUri) }

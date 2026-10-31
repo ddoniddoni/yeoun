@@ -1,5 +1,17 @@
 # 05. 테스트, 성능과 출시 검수
 
+## 2026-10-31 편집 복구 확인 대기 — NOT_RUN
+
+사용자 요청 전에는 실행하지 않는다. 새 RecoveryFiles Swift/Kotlin 코드 및 기존 SQLite/ImagePicker/Sharing이 포함된 개발 앱 재빌드가 선행 조건이다. tests/integration/editRecoveryController·tests/unit/recoveryStore 소스는 상태/쓰기 순서와 실패 보존을 다루며 실제 디스크·DB·프로세스 종료 증거가 아니다.
+
+- 촬영/앨범 가져오기 → 결과 → 강제종료 → 재실행 → 이어서 편집. 색감·강도·입자·날짜·카메라 방향·가져온 전체 구도/축소 안내가 동일해야 한다. 재편집 후 여러 번 종료해 최초 필터가 아닌 마지막 적용 필터/출력이 복구되는지 확인한다. 비교는 필요할 때 재생성하고 저장·공유는 고해상도 현재 결과만 사용한다.
+- 첫 결과 보관 전, source copy 중, output copy/hash 중, SQLite commit 전/후, old output prune 중, edit/background/close 중 각각 종료한다. 완료된 이전 record의 두 파일은 유지되고 모호한 write-read 실패에서는 양쪽 후보를 보존해야 한다. commit 시작 후 background 결과 수용 정책과 UI 일관성을 확인한다.
+- saving-gallery journal 전/후, 권한 팝업 중, 실제 앨범 삽입 전/후, saved journal 전/후 종료한다. 복구 시 자동 save 호출 없음, 확인 전 편집/저장 차단, ‘없어요’ 선택 뒤 별도 저장 탭 필요, ‘이미 있어요’ 선택 시 저장 호출 없음. 권한 거부 뒤 설정→확인→재시도, 성공 후 journal만 실패했을 때 중복 저장 차단을 확인한다.
+- 최초 보관/재편집/저장 상태 갱신부터24시간 직전/경계/이후, 기기 시각 변경, 만료된 offer에서 이어서 선택, 시작 중 재시도/연타, 삭제 취소/확정/DB 실패를 확인한다. 앱이 꺼진 동안 정확한 시각에 삭제되는 기능은 아니다. gallery 자산·다른 cache·favorites DB는 변경하지 않아야 한다.
+- 원본/출력 소실·truncated file·checksum/bytes 불일치·손상 JSON·미지원 look/engine/backend/DB schema·disk full·DB 잠금. 새 record로 기존 사진을 덮어쓰거나 정상 복구로 표시하지 않아야 한다. retry 실패의 부분 working copy를 정리하고 보관본을 유지한다. 앱 업데이트의 sandbox 경로 변경에도 상대 파일명으로 접근해야 한다.
+- iOS backup 제외 resource flag, Android noBackupFilesDir와 SQLite sidecar 위치를 기기에서 확인한다. 파일명 경로 이탈·symlink·최대 크기·기존 대상 overwrite 거부, pending 작업 자원 해제, 사진 로그/추가 권한/외부 전송 없음, 오래된/부분 사본 정리와 실제 디스크 점유를 확인한다.
+- 작은 화면/큰 글자/VoiceOver/TalkBack의 복구 카드·삭제 확인·저장 확인, 결과 뒤 카메라 비활성, 반복 복구/편집/저장 시 메모리·IO 지연을 측정한다. 앱 데이터 삭제/앱 삭제 후 복구는 지원하지 않는다. G0~G5 미통과 유지.
+
 ## 2026-10-31 사진 공유 확인 대기 — NOT_RUN
 
 사용자 요청 전에는 실행하지 않는다. ImagePicker/YeounPhotoImport/SQLite 및 이번 ExpoSharing이 포함된 개발 앱 재빌드가 기기 검수의 선행 조건이다. controller·platform adapter·file retention 테스트 소스는 작성했으며 실행하지 않았다.

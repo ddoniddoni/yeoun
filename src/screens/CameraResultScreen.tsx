@@ -8,10 +8,11 @@ import { ResultPhotoComparison } from './ResultPhotoComparison';
 import { ResultFilterEditor } from './ResultFilterEditor';
 import { cameraTheme as theme, filterPresentation } from './cameraTheme';
 
-export function CameraResultScreen({ state, output, settings, foreground, returning, returnError, onSave, onShare, onReturn, onSettings, onPrepareOriginal, onEdit }: {
+export function CameraResultScreen({ state, output, settings, foreground, returning, returnError, onSave, onShare, onReturn, onSettings, onPrepareOriginal, onEdit, onResolveSave }: {
   state: CaptureState; output: Output; settings: CameraSettings; foreground: boolean;
   returning: boolean; returnError?: string; onSave(): void; onShare(): void; onReturn(): void; onSettings(): void; onPrepareOriginal(): void;
   onEdit(settings: CameraSettings): Promise<boolean>;
+  onResolveSave(saved: boolean): void;
 }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -24,7 +25,8 @@ export function CameraResultScreen({ state, output, settings, foreground, return
   };
   const saved = state.phase === 'saved';
   const saving = state.phase === 'saving-gallery';
-  const locked = saving || returning || !foreground || !!state.preparingOriginal || !!state.editing || !!state.sharing;
+  const uncertain = state.phase === 'save-uncertain';
+  const locked = saving || returning || !foreground || !!state.preparingOriginal || !!state.editing || !!state.sharing || !!state.resolvingSave;
   const filter = CAMERA_FILTERS.find(item => item.id === settings.filterId);
   const accent = filterPresentation[settings.filterId].color;
   const ratio = output.width / output.height;
@@ -63,7 +65,7 @@ export function CameraResultScreen({ state, output, settings, foreground, return
           scroll.current?.scrollTo({ y: event.nativeEvent.layout.y, animated: false });
         }}><ResultFilterEditor settings={settings} disabled={locked} applying={!!state.editing}
           error={state.editError} imported={!!state.imported} onApply={onEdit} onClose={closeEditor} /></View>
-          : !saved ? <CameraAction icon="sliders" label="색감 편집" disabled={locked}
+          : !saved && !uncertain ? <CameraAction icon="sliders" label="색감 편집" disabled={locked}
             onPress={() => { editorRevealed.current = false; setEditorOpen(true); }} /> : null}
         <View style={styles.fileInfo}>
           <Text style={styles.mono}>{output.width} × {output.height}</Text>
@@ -78,15 +80,19 @@ export function CameraResultScreen({ state, output, settings, foreground, return
       <View style={styles.panel}>
         <Text accessibilityLiveRegion="polite" style={styles.status}>
           {state.sharing ? '공유창에서 돌아오면 사진을 계속 볼 수 있어요.' : editorOpen ? '편집을 마치면 저장하거나 공유할 수 있어요.' : returning ? '카메라로 돌아가는 중' : saved ? '사진 앱에 저장했어요' : saving
-            ? '사진 앱에 저장하는 중…' : state.phase === 'failed' ? '저장하지 못했어요' : '사진을 저장하거나 공유할 수 있어요.'}
+            ? '사진 앱에 저장하는 중…' : uncertain ? '저장 중 작업이 중단됐어요. 사진 앱에 이 사진이 있는지 확인해 주세요.'
+              : state.phase === 'failed' ? '저장하지 못했어요' : '사진을 저장하거나 공유할 수 있어요.'}
         </Text>
         {state.message ? <Text accessibilityRole="alert" style={styles.error}>{state.message}</Text> : null}
         {state.shareError ? <Text accessibilityRole="alert" style={styles.error}>{state.shareError}</Text> : null}
         {returnError ? <Text accessibilityRole="alert" style={styles.error}>{returnError}</Text> : null}
-        {saved ? <CameraAction primary icon="camera" label="다음 순간 촬영" disabled={locked} onPress={requestReturn} />
+        {uncertain ? <>
+          <CameraAction primary icon="check" label="이미 저장되어 있어요" disabled={locked} onPress={() => onResolveSave(true)} />
+          <CameraAction label="아직 저장되지 않았어요" disabled={locked} onPress={() => onResolveSave(false)} />
+        </> : saved ? <CameraAction primary icon="camera" label="다음 순간 촬영" disabled={locked} onPress={requestReturn} />
           : <CameraAction primary icon="download" label={saving ? '저장 중…' : state.phase === 'failed' ? '다시 저장' : '사진 저장'}
             disabled={locked || editorOpen} onPress={onSave} />}
-        {state.phase === 'failed' ? <CameraAction label="저장 권한 설정" disabled={locked} onPress={onSettings} /> : null}
+        {state.phase === 'failed' || uncertain ? <CameraAction label="저장 권한 설정" disabled={locked} onPress={onSettings} /> : null}
       </View>
     </SafeAreaView>
   </Modal>;

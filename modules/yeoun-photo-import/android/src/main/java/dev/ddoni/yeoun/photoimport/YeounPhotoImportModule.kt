@@ -22,11 +22,19 @@ import kotlin.math.sqrt
 class YeounPhotoImportModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("YeounPhotoImport")
+    AsyncFunction("recoveryDirectoryAsync") { recovery().directory().path }
+    AsyncFunction("stashRecoveryFileAsync") { uri: String, name: String -> recovery().stash(uri, name) }
+    AsyncFunction("restoreRecoveryFileAsync") { name: String, bytes: Long, sha256: String, uri: String ->
+      recovery().restore(name, bytes, sha256, uri)
+    }
+    AsyncFunction("pruneRecoveryFilesAsync") { keep: List<String> -> recovery().prune(keep) }
     // AsyncFunction's module queue owns bitmaps; nothing crosses the bridge but file metadata.
     AsyncFunction("prepareAsync") { sourceUri: String, destinationUri: String ->
       prepare(sourceUri, destinationUri)
     }
   }
+
+  private fun recovery() = RecoveryFiles(requireNotNull(appContext.reactContext))
 
   private fun boundedSize(width: Int, height: Int): Pair<Int, Int> {
     require(width > 0 && height > 0 && width <= 100_000 && height <= 100_000 &&

@@ -1,5 +1,19 @@
 # 03. 기술 설계와 구현 계약
 
+## 2026-10-31 마지막 적용 사진의 지속 보관
+
+기존 SQLite55.0.20·Crypto55.0.19와 로컬 YeounPhotoImport 모듈을 확장한다. 새 npm 패키지/권한은 없다. 아래 과거의 ‘세션 전용/복구 미구현’ 설명 중 **적용 결과가 완성된 사진**은 이 계약으로 대체한다. 미완성 첫 촬영/가져오기/렌더 작업 재개는 아직 구현하지 않는다.
+
+- `RecoveryFiles.swift/kt`: iOS Application Support/yeoun-recovery에 isExcludedFromBackup, Android noBackupFilesDir/yeoun-recovery. 기존 작업 cache/yeoun-m0·공유 cache/yeoun-shares·즐겨찾기 DB와 분리한다. Expo FileSystem에서 임의 저장 경로 권한을 가정하지 않고 native에서 copy/restore/prune한다. directory API는 iOS에서 공백 인코딩된 file URL, Android에서 절대 경로를 반환하며 SQLite native path 처리를 확인했다. [S51](REFERENCES.md#s51-편집-복구-파일과-journal--2026-10-31).
+- `recovery.db` schema1의 draft_checkpoint 단일 행, synchronous FULL, bind parameter UPSERT/DELETE. module singleton 연결과 promise queue로 startup/resume/checkpoint/save/discard를 직렬화한다. 새 DB migration은 명시 transaction이며 future DB version을 덮어쓰거나 지우지 않는다. 즐겨찾기 schema는 건드리지 않는다.
+- 사진은 source/output UUID 불변 파일, 각100MiB 이하로 복사하고 네이티브 스트리밍 SHA-256·size 비교 및 파일 sync를 마친 다음 JSON row를 commit한다. 원본은 같은 session ID 내에서 재사용한다. 출력 교체 성공 뒤에만 이전 파일과 orphan을 정리한다. write 오류 뒤 같은 payload가 읽히면 이미 commit된 것으로 수용한다. read-back도 실패하면 양쪽 파일을 남기며 현재 화면은 이전 결과를 유지할 수 있다. 재시작은 실제 journal을 따른다. 이 모호한 경우 기존 출력의 gallery 상태 쓰기는 URI/name 대조로 막는다.
+- JSON에는 상대 파일명·bytes/hash·치수·orientation/mirror·import metadata·마지막 적용 CameraSettings·최초 capture 날짜/seed/flash/exposure를 기록한다. schema/필터 ID/버전·0~1 수치·날짜·파일명·hash·크기를 검증하고 renderer/engine/look 및 seed manifest SHA/Skia backend fingerprint가 다르면 대체 렌더하지 않는다. 픽셀·Base64·원본 URI·GPU 객체를 저장하거나 JS로 전달하지 않는다.
+- 시작은 작업 cache만 지운 뒤 journal을 확인한다. 사용자 이어서 선택 후 양쪽 파일 SHA/size를 검증하고 새 작업 cache로 복사한다. 비교 축소본은 요청 시 재생성한다. restore 실패 시 부분 작업 사본만 정리하고 보관본은 유지한다. 첫 결과/편집의 checkpoint가 시작된 뒤 background가 되어도 commit된 결과를 일관되게 수용하며, 그 이전 렌더 중단은 후보를 버린다. controller.close는 작업 사본만 지우고 명시 discard만 journal 삭제→보관 파일 정리를 한다.
+- 갤러리 호출 **전** saving-gallery를 journal에 남긴다. 복구된 saving-gallery 및 native 저장 실패는 save-uncertain으로 열고 편집/재저장을 차단한다. 사용자 확인을 journal에 쓴 뒤 saved 또는 file-ready로 전환하며 자동 save는 없다. 실제 저장 성공 후 saved journal만 실패하면 현재 UI는 saved를 유지하고 재실행 시 다시 확인할 수 있음을 알린다. 저장 준비 중 controller가 닫히면 새 gallery 호출을 시작하지 않는다. 저장 권한 거부도 native save 함수의 실패이므로 보수적으로 사용자 확인을 거친다.
+- TTL은 마지막 checkpoint/저장 상태 기록부터24시간. 다음 시작에 유효하고 만료된 row를 삭제한 뒤 관리 JPEG만 정리한다. unknown version/손상 JSON/DB 읽기 실패에서는 자동 정리하지 않는다. 사용자가 명시 삭제하면 지원 DB schema 내 row와 관리 JPEG를 지울 수 있다. DB 불능/future schema는 보존하고 시작을 막는다. 청소 오류는 경로 없는 경고로 남기고 다음 기회에 재시도한다.
+
+네이티브 copy/hash/backup 제외·실제 DB durability·앱 강제종료·공간 부족·큰 파일 IO 지연은 NOT_RUN. 프로세스 종료 복구 설계이며 전원 손실·하드웨어 손상까지 검증한 내구성 보장이 아니다. 현재 모듈 API가 없는 이전 개발 앱은 준비 안내를 표시하므로 **새 native 코드를 포함한 재빌드**가 다음 기기 확인에 필요하다.
+
 ## 2026-10-31 공유 상태와 파일 수명
 
 허용 후보 `expo-sharing@55.0.25`를 exact 설치했다. Expo55.0.32 bundledNativeModules/SDK55 권장 버전과 npm metadata를 확인했고 MIT·unpacked263,269바이트(앱 용량 실측 아님), Expo/React/RN peer `*`다. config-plugins/config-types/plist 의존성은 기존 lock을 재사용하며 새 lock entry는 expo-sharing 하나다. install scripts/Pod/prebuild/build는 실행하지 않았다. 추가 runtime 권한, 사진 읽기 권한, incoming share extension·App Group·deep link·plugin 설정을 넣지 않았다. Android native package의 FileProvider는 exported=false와 URI 읽기 grant를 사용한다. [S50](REFERENCES.md#s50-결과-사진의-시스템-공유--2026-10-31).

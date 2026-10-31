@@ -11,7 +11,7 @@
 - 소스 검토: native/JS 파일 소유권·제한·방향·정지 대기·full/camera framing 분기·편집 날짜 기본값·optional native 실패 경계를 읽었다. 설치된 SDK headers와 ImagePicker fast-copy/fallback, Expo module/autolinking 소스, 공식 ImageDecoder/ExifInterface API를 확인했다. 기능 테스트 소스는 취소/연타/늦은 완료/재시도/편집/정지 timeout/전체 구도를 다루며 실행하지 않았다. frontend-design/React 지침을 UI 설계에 적용했다. 경로 추정에 실패한 소스 조회는 실제 경로·공식 문서로 보완했다.
 - **NOT_RUN:** lint/typecheck/Jest/react-doctor/자산 검사/JS·native build/prebuild/Pod install/기기 실행·화면 캡처/권한·HEIC·EXIF·사진 저장·메모리·접근성. 사용자 보류 지시를 일반 검사 요구보다 우선했다. 소스 검토는 실행 통과 증거가 아니며 G0~G5 미통과 유지. Metro·기기를 새로 실행하지 않았다.
 - 남은 제한: iOS picker의 Current 파일 복사 실패 시 upstream UIImage fallback이 있어 선택 과정 전체의 메모리 상한은 보장하지 않는다. decoder 지원/색공간/방향/반복 수명은 미검증이다. source는 세션 cache여서 앱 종료 후 편집 복구는 미구현이며 공유·레시피도 이번 범위가 아니다. 다음 요청 시 이전 SQLite와 ImagePicker·로컬 모듈을 포함해 개발 앱을 재빌드한 뒤 수동 검수한다.
-- Git Flow: 기능 브랜치의 관련 파일만 커밋·푸시하고 develop PR 생성/병합·fetch/FF/push 후 develop에서 마친다. 실제 명령 결과와 PR은 아래 완료 기록에 보완한다.
+- Git Flow: `git diff --check`와 명시33파일 stage 후 `git diff --cached --check` 각각 exit0. 기능 commit `3f826b9`, `git push -u origin feature/photo-library-import`, [PR #33](https://github.com/ddoniddoni/yeoun/pull/33)(base develop) 생성 exit0. 이 기록을 포함해 PR을 병합하고 develop fetch/FF/push·로컬/원격 커밋 일치와 clean을 확인한 뒤 develop에서 마친다. 실제 최종 통합 상태는 PR/Git 이력을 따른다.
 
 ## 이전 기록 — 2026-10-30 밝은 카메라 디자인
 

@@ -12,7 +12,7 @@
 - 소스 검토: 실제 설치 타입/콜백·FileProvider URI grant·FileSystem copy/list/write·기존 Crypto randomUUID, 파일 소유권·만료 정책·동시 입력 차단·에러 경계·UI 문구를 읽었다. `git diff --check` exit0. 공유 모듈의 추정 파일명 조회 실패는 실제 SharingNativeModule.ts로 보완했다. 검사 명령이나 앱을 실행하지 않았다.
 - **NOT_RUN:** lint/typecheck/Jest/react-doctor/자산 검사/JS·native build/prebuild/Pod install/기기 실행·화면 캡처/실제 공유·취소·수신 파일·권한·성능·접근성. Metro를 새로 실행하거나 사용자 사진을 실제로 전달하지 않았다. G0~G5 미통과 유지. 이전 ImagePicker/로컬 모듈/SQLite와 이번 ExpoSharing을 포함한 개발 앱 재빌드 후 요청된 기기 검수가 필요하다.
 - 한계: cache는 OS가 제거할 수 있고 수신 앱의 읽기/게시/압축 완료를 보장하지 않는다. native 응답 전 프로세스 종료 시 최초 보관 시각이 만료 기준이며, 기록 갱신 실패는 현재 프로세스에서 보호하고 이후에는 마지막 정상 기록을 따른다. Android native 시작 실패/재생성/재시도·iOS 공유 대상 내부 취소/오류 callback은 수동 확인 대상이다. 앱 종료 후 편집 복구는 미구현이고 다음 개발 후보다. 설정 기억/레시피는 자동 진행하지 않는다.
-- Git Flow: 관련 파일만 기능 브랜치에 커밋·푸시하고 develop PR 병합·fetch/FF/push 후 develop에서 마친다. 실제 PR·명령 결과는 후속 기록으로 보완한다.
+- Git Flow: `git diff --check`와 명시19파일 stage 뒤 `git diff --cached --check` 각각 exit0. 기능 commit `1f81fe4`, `git push -u origin feature/photo-sharing`, [PR #34](https://github.com/ddoniddoni/yeoun/pull/34)(base develop) 생성 exit0. 이 기록을 포함해 PR 병합 뒤 develop fetch/FF/push·로컬/원격 커밋 일치와 clean을 확인하고 develop에서 마친다. 최종 통합 상태는 PR/Git 이력을 따른다.
 
 ## 이전 기록 — 2026-10-31 앨범 사진 한 장 편집
 

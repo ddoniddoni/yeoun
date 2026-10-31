@@ -4,14 +4,13 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { CaptureState, Output } from '../domain/capture/controller';
 import { CAMERA_FILTERS, type CameraSettings } from '../domain/filters/cameraSettings';
 import { CameraAction, IconButton } from './CameraControls';
-import { CameraIcon } from './CameraIcon';
 import { ResultPhotoComparison } from './ResultPhotoComparison';
 import { ResultFilterEditor } from './ResultFilterEditor';
 import { cameraTheme as theme, filterPresentation } from './cameraTheme';
 
-export function CameraResultScreen({ state, output, settings, foreground, returning, returnError, onSave, onReturn, onSettings, onPrepareOriginal, onEdit }: {
+export function CameraResultScreen({ state, output, settings, foreground, returning, returnError, onSave, onShare, onReturn, onSettings, onPrepareOriginal, onEdit }: {
   state: CaptureState; output: Output; settings: CameraSettings; foreground: boolean;
-  returning: boolean; returnError?: string; onSave(): void; onReturn(): void; onSettings(): void; onPrepareOriginal(): void;
+  returning: boolean; returnError?: string; onSave(): void; onShare(): void; onReturn(): void; onSettings(): void; onPrepareOriginal(): void;
   onEdit(settings: CameraSettings): Promise<boolean>;
 }) {
   const { width, height } = useWindowDimensions();
@@ -25,7 +24,7 @@ export function CameraResultScreen({ state, output, settings, foreground, return
   };
   const saved = state.phase === 'saved';
   const saving = state.phase === 'saving-gallery';
-  const locked = saving || returning || !foreground || !!state.preparingOriginal || !!state.editing;
+  const locked = saving || returning || !foreground || !!state.preparingOriginal || !!state.editing || !!state.sharing;
   const filter = CAMERA_FILTERS.find(item => item.id === settings.filterId);
   const accent = filterPresentation[settings.filterId].color;
   const ratio = output.width / output.height;
@@ -35,7 +34,7 @@ export function CameraResultScreen({ state, output, settings, foreground, return
     if (locked) return;
     if (editorOpen) { closeEditor(); return; }
     if (saved) { onReturn(); return; }
-    Alert.alert('아직 저장하지 않은 사진이에요', '카메라로 돌아가면 이 임시 사진은 지워져요.', [
+    Alert.alert('사진 편집을 마칠까요?', '카메라로 돌아가면 이 임시 사진은 지워져요. 필요한 사진을 저장했는지 확인해 주세요.', [
       { text: '사진으로 돌아가기', style: 'cancel' },
       { text: '버리고 돌아가기', style: 'destructive', onPress: onReturn },
     ]);
@@ -45,7 +44,9 @@ export function CameraResultScreen({ state, output, settings, foreground, return
       <View style={styles.header}>
         <IconButton icon={editorOpen ? 'close' : 'back'} label={editorOpen ? '편집 취소' : '카메라로 돌아가기'} disabled={locked} onPress={requestReturn} />
         <Text accessibilityRole="header" style={styles.title}>{editorOpen ? '색감 편집' : state.imported ? '가져온 순간' : '남겨진 순간'}</Text>
-        <View style={styles.headerStatus}>{saved ? <CameraIcon name="check" size={22} color={theme.accent} /> : null}</View>
+        <IconButton icon="share" label={state.sharing ? '사진 공유 중' : '사진 공유'}
+          hint="현재 적용된 사진을 시스템 공유창으로 보내요. 앨범에 먼저 저장하지 않아도 돼요."
+          disabled={locked || editorOpen} onPress={onShare} />
       </View>
       <ScrollView ref={scroll} style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.filterRow}>
@@ -76,10 +77,11 @@ export function CameraResultScreen({ state, output, settings, foreground, return
       </ScrollView>
       <View style={styles.panel}>
         <Text accessibilityLiveRegion="polite" style={styles.status}>
-          {editorOpen ? '편집을 마치면 저장할 수 있어요.' : returning ? '카메라로 돌아가는 중' : saved ? '사진 앱에 저장했어요' : saving
-            ? '사진 앱에 저장하는 중…' : state.phase === 'failed' ? '저장하지 못했어요' : '아직 저장하지 않은 사진이에요'}
+          {state.sharing ? '공유창에서 돌아오면 사진을 계속 볼 수 있어요.' : editorOpen ? '편집을 마치면 저장하거나 공유할 수 있어요.' : returning ? '카메라로 돌아가는 중' : saved ? '사진 앱에 저장했어요' : saving
+            ? '사진 앱에 저장하는 중…' : state.phase === 'failed' ? '저장하지 못했어요' : '사진을 저장하거나 공유할 수 있어요.'}
         </Text>
         {state.message ? <Text accessibilityRole="alert" style={styles.error}>{state.message}</Text> : null}
+        {state.shareError ? <Text accessibilityRole="alert" style={styles.error}>{state.shareError}</Text> : null}
         {returnError ? <Text accessibilityRole="alert" style={styles.error}>{returnError}</Text> : null}
         {saved ? <CameraAction primary icon="camera" label="다음 순간 촬영" disabled={locked} onPress={requestReturn} />
           : <CameraAction primary icon="download" label={saving ? '저장 중…' : state.phase === 'failed' ? '다시 저장' : '사진 저장'}
@@ -93,7 +95,6 @@ export function CameraResultScreen({ state, output, settings, foreground, return
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.background }, scroll: { flex: 1 }, content: { flexGrow: 1, paddingHorizontal: 16, paddingBottom: 20, gap: 16 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8, minHeight: 56 },
-  headerStatus: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   title: { color: theme.text, fontSize: 16, fontWeight: '600', flexShrink: 1 },
   filterRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, minHeight: 24 },
   dot: { width: 5, height: 5, borderRadius: 3 }, filterName: { color: theme.text, fontSize: 14, flexShrink: 1 },

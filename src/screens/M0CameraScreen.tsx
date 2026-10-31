@@ -10,6 +10,7 @@ import type { MeteringState } from '../domain/capture/meteringSession';
 import { capturePhoto } from '../platform/camera/capturePhoto';
 import { removeFile } from '../platform/files/drafts';
 import { saveToGallery } from '../platform/media/gallery';
+import { sharePhoto } from '../platform/media/sharePhoto';
 import { pickLibraryPhoto, prepareLibraryPhoto, releasePickedPhoto } from '../platform/media/importPhoto';
 import { CameraPauseGate } from '../platform/camera/pauseGate';
 import { exportOriginalComparison, exportPhoto } from '../rendering/adapters/exportPhoto';
@@ -84,7 +85,7 @@ export function M0CameraScreen() {
     });
     return () => { sub.remove(); controller.close(); };
   }, [controller]);
-  const busy = state.phase === 'picking' || state.phase === 'importing' || state.phase === 'capturing' || state.phase === 'rendering' || state.phase === 'saving-gallery';
+  const busy = !!state.sharing || state.phase === 'picking' || state.phase === 'importing' || state.phase === 'capturing' || state.phase === 'rendering' || state.phase === 'saving-gallery';
   const importing = state.phase === 'picking' || state.phase === 'importing' || !!state.imported;
   const canCapture = ['idle', 'cancelled'].includes(state.phase);
   const resultOpen = !!state.output;
@@ -113,7 +114,7 @@ export function M0CameraScreen() {
     if (permission.hasPermission && device && foreground && !cameraError) setCameraStopped(false);
   }, [permission.hasPermission, device, foreground, cameraError]);
   const discardAndReturn = async () => {
-    if (discardPending.current || controller.state.preparingOriginal || controller.state.editing || ['picking', 'importing', 'capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
+    if (discardPending.current || controller.state.sharing || controller.state.preparingOriginal || controller.state.editing || ['picking', 'importing', 'capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
     discardPending.current = true; setReturning(true); setReturnError(undefined);
     setReady(false); setFilterRevision(value => value + 1);
     if (permission.hasPermission && device && foreground && !cameraError) setCameraStopped(false);
@@ -313,6 +314,7 @@ export function M0CameraScreen() {
     {state.output ? <CameraResultScreen state={state} output={state.output} settings={state.outputSettings ?? settings} foreground={foreground}
       returning={returning} returnError={returnError} onReturn={() => { void discardAndReturn(); }}
       onSave={() => { if (!discardPending.current) void controller.save(); }}
+      onShare={() => { if (!discardPending.current && foreground) void controller.share(sharePhoto); }}
       onPrepareOriginal={() => { if (!discardPending.current && foreground) void controller.prepareOriginal(); }}
       onEdit={nextSettings => discardPending.current || !foreground ? Promise.resolve(false) : controller.edit(nextSettings)}
       onSettings={() => { void Linking.openSettings().catch(error => setReturnError(String(error))); }} /> : null}

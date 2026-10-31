@@ -1,6 +1,20 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-31 앨범 사진 한 장 편집
+## 현재 상태 — 2026-10-31 결과 사진 공유
+
+- 요청: 다음 기능 계획 중 사진 공유 진행 승인. clean develop `f12c5d88741b0c0786b5c70b789a618cc7c2c7a5`(PR #33)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/photo-sharing` 각각 exit0. 기존 사용자 변경 없음. 테스트/빌드/기기 실행 보류, 개발 후 전체 Git Flow 상시 승인 유지.
+- UI: 촬영/가져오기 결과 오른쪽 위48pt 공유 아이콘·한국어 접근성 이름/힌트, 공유 중 작업 잠금과 별도 오류 안내를 추가했다. 갤러리 저장 전·후 모두 현재 적용 JPEG를 전달하며 원본 비교 화면의 축소본을 보내지 않는다. 편집 중에는 적용/취소 뒤 공유한다. 공유창에서 별도 저장했는지 추정할 수 없으므로 기본/돌아가기 문구도 이에 맞췄다. 밝은 테마·카메라 레이아웃·필터 수치/LUT/렌더링은 유지한다.
+- 상태: CaptureController.share와 SharePort, sharing/shareError를 추가하고 기존 busy/close/epoch를 재사용한다. 취소/실패/복귀 시 gallery phase/message·output/settings·original/imported를 유지한다. 공유는 save를 호출하지 않으며 전송 성공 표시도 없다. 닫힌 controller의 늦은 준비는 canPresent로 막는다. 요청 중 edit/save/discard/비교 준비/연타를 차단하고 결과 화면의 카메라 비활성을 유지한다.
+- 파일: native 파일 copy로 cache/yeoun-shares의 새 UUID 경로를 만든다. source·bytes를 확인하며 재인코딩/픽셀/사진 base64 전달 없음. 공유창 응답 뒤에도 사본을 남기고 보관 시각을 갱신한다.24시간이 지난 비활성 사본만 다음 앱 시작/공유 준비 때 정리한다. 세션 clearPreviousSession/결과 교체/버리기와 root를 분리했다. 부분 copy만 즉시 정리하고, native 오류는 이미 파일을 전달했을 수 있어 보관한다. 알 수 없는 기록은 보존하고 정리 실패는 사진 경로 없는 경고로 처리한다.
+- 의존성/API: 허용 후보 expo-sharing55.0.25 exact 추가. Expo55.0.32 bundledNativeModules·SDK55 공식 문서·npm metadata 확인, MIT/unpacked263,269bytes(앱 크기 아님)/Expo·React·RN peer*. `npm install --save-exact expo-sharing@55.0.25 --ignore-scripts --no-audit --no-fund` exit0(added1); lock 추가는 이 패키지 하나다. 추가 runtime 권한/app config/incoming extension/App Group/수신 intent 설정 없음. Android는 패키지의 non-exported FileProvider와 JPEG MIME을 사용한다.
+- iOS 선택 근거: systematic-debugging 지침으로 설치 Swift·RN0.83.10의 RCTActionSheetManager/Share.js와 공식 문서를 비교했다. Expo55 Swift는 activityError 인자를 사용하지 않고 RN은 실패 콜백으로 전달하므로 iOS는 기존 Share.share({url})를 재사용한다. Android RN은 파일 URL 전달 계약이 없어 Expo를 동적 import한다. 실제 오류 재현이나 수정 통과를 주장하지 않는다. React 지침은 결과 UI의 파생 잠금 상태/이벤트 처리에 적용했고 react-doctor 실행은 사용자 보류 지시를 우선했다.
+- 변경: App.tsx, package/lock, domain/capture/controller, platform/files/sharedPhotos·media/sharePhoto, screens CameraIcon/CameraResultScreen/M0CameraScreen, integration photoShareController/sharePhoto/sharedPhotos 테스트 소스, README·제품·기술·계획·검수·REFERENCES·PROGRESS. 테스트 소스는 상태 보존·최신 편집 결과·중복 작업·close·native 오류·보관 기간·활성 보호·부분 copy·세션 정리를 다룬다. 모의 파일 시스템은 실제 디스크/권한 검증이 아니다.
+- 소스 검토: 실제 설치 타입/콜백·FileProvider URI grant·FileSystem copy/list/write·기존 Crypto randomUUID, 파일 소유권·만료 정책·동시 입력 차단·에러 경계·UI 문구를 읽었다. `git diff --check` exit0. 공유 모듈의 추정 파일명 조회 실패는 실제 SharingNativeModule.ts로 보완했다. 검사 명령이나 앱을 실행하지 않았다.
+- **NOT_RUN:** lint/typecheck/Jest/react-doctor/자산 검사/JS·native build/prebuild/Pod install/기기 실행·화면 캡처/실제 공유·취소·수신 파일·권한·성능·접근성. Metro를 새로 실행하거나 사용자 사진을 실제로 전달하지 않았다. G0~G5 미통과 유지. 이전 ImagePicker/로컬 모듈/SQLite와 이번 ExpoSharing을 포함한 개발 앱 재빌드 후 요청된 기기 검수가 필요하다.
+- 한계: cache는 OS가 제거할 수 있고 수신 앱의 읽기/게시/압축 완료를 보장하지 않는다. native 응답 전 프로세스 종료 시 최초 보관 시각이 만료 기준이며, 기록 갱신 실패는 현재 프로세스에서 보호하고 이후에는 마지막 정상 기록을 따른다. Android native 시작 실패/재생성/재시도·iOS 공유 대상 내부 취소/오류 callback은 수동 확인 대상이다. 앱 종료 후 편집 복구는 미구현이고 다음 개발 후보다. 설정 기억/레시피는 자동 진행하지 않는다.
+- Git Flow: 관련 파일만 기능 브랜치에 커밋·푸시하고 develop PR 병합·fetch/FF/push 후 develop에서 마친다. 실제 PR·명령 결과는 후속 기록으로 보완한다.
+
+## 이전 기록 — 2026-10-31 앨범 사진 한 장 편집
 
 - 요청: 출시 준비의 다음 기능인 앨범 사진 가져오기·필터 편집을 승인. clean develop `660e747cbe190fac0c71cdd467ed7ec5f8db64ea`(PR #32)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/photo-library-import` 각각 exit0. 기존 사용자 변경 없음. 테스트·기기 확인 보류와 개발 후 전체 Git Flow 상시 승인 유지.
 - UI: 메인 앨범 아이콘과 카메라 권한 거부/기기 없음의 편집 진입점 → 시스템 단일 사진 선택 → 기존 결과/17종 필터 편집·즐겨찾기·원본 비교 → 새 JPEG 저장. 밝은 테마와 자체 native View 아이콘을 재사용한다. 원래 구도를 유지하고 큰 사진 축소/PNG 흰 배경을 결과 화면에 알린다. 날짜는 초기/필터 선택/초기화 때 꺼지고 수동으로 켜면 가져온 날짜임을 표시한다. 다음 촬영 설정·필터 자산·shader 수치는 변경하지 않았다.

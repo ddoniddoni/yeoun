@@ -3,12 +3,13 @@ import { StatusBar, Text } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { M0CameraScreen } from './src/screens/M0CameraScreen';
 import { clearPreviousSession } from './src/platform/files/drafts';
+import { clearExpiredSharedPhotos } from './src/platform/files/sharedPhotos';
 import { FilterFavoritesProvider } from './src/screens/FilterFavorites';
 import { cameraTheme as theme } from './src/screens/cameraTheme';
 export default function App() {
   const [startup, setStartup] = useState<'loading' | 'ready' | 'failed'>('loading');
   useEffect(() => {
-    try { clearPreviousSession(); setStartup('ready'); }
+    try { clearPreviousSession(); clearExpiredSharedPhotos(); setStartup('ready'); }
     catch { setStartup('failed'); }
   }, []);
   return <SafeAreaProvider><SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>

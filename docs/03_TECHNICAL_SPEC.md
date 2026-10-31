@@ -1,5 +1,18 @@
 # 03. 기술 설계와 구현 계약
 
+## 2026-10-31 공유 상태와 파일 수명
+
+허용 후보 `expo-sharing@55.0.25`를 exact 설치했다. Expo55.0.32 bundledNativeModules/SDK55 권장 버전과 npm metadata를 확인했고 MIT·unpacked263,269바이트(앱 용량 실측 아님), Expo/React/RN peer `*`다. config-plugins/config-types/plist 의존성은 기존 lock을 재사용하며 새 lock entry는 expo-sharing 하나다. install scripts/Pod/prebuild/build는 실행하지 않았다. 추가 runtime 권한, 사진 읽기 권한, incoming share extension·App Group·deep link·plugin 설정을 넣지 않았다. Android native package의 FileProvider는 exported=false와 URI 읽기 grant를 사용한다. [S50](REFERENCES.md#s50-결과-사진의-시스템-공유--2026-10-31).
+
+- `CaptureController.share(SharePort)`는 단일 busy를 공유하고 `sharing/shareError`만 갱신한다. gallery phase·message·output·settings·original·imported는 유지한다. `saved`에서도 허용하고 공유 때문에 save를 호출하지 않는다. 취소/완료의 void 응답을 전달 성공으로 해석하지 않는다. 실패 경로에는 native 오류/파일 URI를 노출하지 않는다.
+- `canPresent` 콜백은 controller close/epoch 변경 뒤 늦게 준비된 공유창을 열지 못하게 한다. 공유로 인한 background는 촬영 interrupt로 다루지 않는다. 출력이 있으므로 카메라는 계속 비활성이며, native promise 종료 전 edit/save/discard/중복 share가 겹치지 않는다. close는 대기 작업이 끝난 뒤 source/output/comparison만 정리한다.
+- iOS는 설치 RN0.83.10 `Share.share({url})`를 사용한다. RCTActionSheetManager는 activityError를 실패 콜백으로 전달한다. 설치 Expo55 SharingModule은 이 오류 인자를 버리므로 iOS의 기본 API를 재사용했다. 이 비교는 소스 관측이며 실기기에서 오류를 재현했다는 뜻이 아니다. Android의 RN Share는 파일 URL 계약이 없어 `expo-sharing`의 FileProvider/JPEG MIME 경로를 사용한다. native 모듈은 사용자 요청 때 동적으로 import하며 누락/미지원 오류는 카메라 시작을 막지 않는다.
+- `sharedPhotos.ts`가 cache/yeoun-shares/share-시각-UUID/yeoun.jpg로 파일을 복사한다. bytes·존재를 확인하며 재인코딩/픽셀 배열/base64를 사용하지 않는다. 원래 export를 덮거나 옮기지 않고 매번 새 URI를 만든다. 부분 copy 실패는 native 전달 전 해당 새 디렉터리만 삭제한다.
+- retained-at의 작은 시각 기록을 준비 시 쓰고 native 응답(성공/취소/오류 모두) 뒤 갱신한다. 활성 사본은 process-local Set으로 정리에서 제외한다. 정상 응답 뒤24시간이 지난 사본만 **다음 앱 시작 또는 공유 준비 때** 정리하며, 공유창이 닫히자마자 지우지 않는다. 프로세스가 종료돼 응답이 없으면 최초 준비 시각이 기준이다. 기존 yeoun-m0 세션 삭제는 이 별도 root에 닿지 않는다.
+- 알 수 없는 디렉터리/잘못된 보관 기록은 보존한다. 정리 실패는 경로 없는 경고만 남기며 공유나 카메라 시작을 막지 않는다. 응답 뒤 기록 갱신 실패는 현재 프로세스에서 사본을 계속 보호한다. 다음 프로세스에서는 마지막 정상 기록을 기준으로 정리할 수 있다. cache는 OS가 공간 부족 때 지울 수 있으므로24시간 보존·외부 앱의 늦은 읽기를 절대 보장하지 않는다. 재시도 시 현재 결과에서 새 사본을 만든다.
+
+네이티브 callback·공유 대상의 취소/오류·장시간 background·Android activity 재생성·디스크 부족·큰 파일 copy 지연·실제 URI grant/읽기는 NOT_RUN이다. 앱 종료 후 초안 복구, 전송 성공 추적, 외부 앱 자동 선택은 구현하지 않는다.
+
 ## 2026-10-31 사진 가져오기와 디코딩 제한
 
 허용 후보 `expo-image-picker@55.0.24`를 exact 추가하고 transitive `expo-image-loader@55.0.1`을 lockfile로 고정했다. Expo55.0.32 bundledNativeModules/SDK55 공식 자료·설치 타입과 소스를 확인했다. 두 패키지는 MIT이며 ImagePicker npm unpacked533,790바이트는 앱 용량 실측이 아니다. `--ignore-scripts --no-audit --no-fund`로 설치해 Pod/prebuild/build를 실행하지 않았다. app plugin은 photosPermission/microphonePermission false, cameraPermission은 기존 카메라 목적 문구를 유지한다. CAMERA를 차단하는 false 설정은 사용하지 않고 기존 Android 읽기/위치/오디오 차단 목록을 유지한다. [S49](REFERENCES.md#s49-시스템-사진-선택과-디코딩-제한--2026-10-31).

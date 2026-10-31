@@ -18,11 +18,13 @@ export interface ImportPorts {
   release(photo: SelectedPhoto): Promise<void>;
 }
 export type Output = Readonly<{ uri: string; width: number; height: number; bytes: number }>;
+export type SharePort = (output: Output, canPresent: () => boolean) => Promise<void>;
 export type Phase = 'idle' | 'picking' | 'importing' | 'capturing' | 'rendering' | 'file-ready' | 'saving-gallery' | 'saved' | 'failed' | 'cancelled';
 export type CaptureState = Readonly<{
   phase: Phase; output?: Output; message?: string; canRetryRender?: boolean;
   original?: Output; preparingOriginal?: boolean; originalError?: string;
   outputSettings?: CameraSettings; editing?: boolean; editError?: string;
+  sharing?: boolean; shareError?: string;
   imported?: ImportedPhotoInfo;
 }>;
 export interface CapturePorts {
@@ -174,7 +176,7 @@ export class CaptureController {
       this.output = next;
       applied = true;
       this.emit({ ...this.state, phase: 'file-ready', output: next, outputSettings: nextSettings,
-        message: undefined, canRetryRender: undefined });
+        message: undefined, canRetryRender: undefined, shareError: undefined });
       // The accepted file is now owned by the controller; only the superseded file is removed.
       await this.ports.remove(previous.uri);
       return true;
@@ -198,5 +200,23 @@ export class CaptureController {
     } catch (error) {
       this.emit({ ...this.state, phase: 'failed', output: this.output, message: `저장 실패: ${String(error)}` });
     } finally { this.busy = false; if (this.closed) await this.clearFiles(); }
+  }
+  async share(present: SharePort): Promise<void> {
+    if (this.busy || this.closed || !this.output) return;
+    this.busy = true;
+    const epoch = this.epoch;
+    // Sharing does not change gallery success/failure, settings or the accepted output.
+    this.emit({ ...this.state, sharing: true, shareError: undefined });
+    try {
+      await present(this.output, () => !this.closed && epoch === this.epoch);
+      // Native completion does not prove delivery to a recipient. No success toast.
+    } catch {
+      if (epoch === this.epoch) this.emit({ ...this.state,
+        shareError: '공유창을 열지 못했어요. 사진은 그대로 있어요. 다시 시도하거나 사진 저장을 이용해 주세요.' });
+    } finally {
+      this.busy = false;
+      if (this.closed) await this.clearFiles();
+      else this.emit({ ...this.state, sharing: false });
+    }
   }
 }

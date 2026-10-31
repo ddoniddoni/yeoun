@@ -3,6 +3,7 @@ import { cameraSettingsKey, copyCameraSettings, type CameraSettings } from '../f
 import { assertFlashMode, type PhotoFlashMode } from './flash';
 import { copyExposure, type ExposureReading } from './metering';
 import { localStampDate } from '../filters/retroControls';
+import { restoredState, type RecoveryPort, type RestoredCapture } from './recovery';
 export type Snapshot = Readonly<{
   id: string; settings: CameraSettings; position: 'front' | 'back'; capturedAt: string; grainSeed: number;
   flashMode: PhotoFlashMode; stampDate: number;
@@ -19,12 +20,13 @@ export interface ImportPorts {
 }
 export type Output = Readonly<{ uri: string; width: number; height: number; bytes: number }>;
 export type SharePort = (output: Output, canPresent: () => boolean) => Promise<void>;
-export type Phase = 'idle' | 'picking' | 'importing' | 'capturing' | 'rendering' | 'file-ready' | 'saving-gallery' | 'saved' | 'failed' | 'cancelled';
+export type Phase = 'idle' | 'picking' | 'importing' | 'capturing' | 'rendering' | 'file-ready' | 'saving-gallery' | 'save-uncertain' | 'saved' | 'failed' | 'cancelled';
 export type CaptureState = Readonly<{
   phase: Phase; output?: Output; message?: string; canRetryRender?: boolean;
   original?: Output; preparingOriginal?: boolean; originalError?: string;
   outputSettings?: CameraSettings; editing?: boolean; editError?: string;
   sharing?: boolean; shareError?: string;
+  resolvingSave?: boolean;
   imported?: ImportedPhotoInfo;
 }>;
 export interface CapturePorts {
@@ -46,7 +48,11 @@ export class CaptureController {
   private output?: Output;
   private original?: Output;
   private revision = 0;
-  constructor(private ports: CapturePorts, private notify: (state: CaptureState) => void) {}
+  constructor(private ports: CapturePorts, private notify: (state: CaptureState) => void,
+    private recovery?: RecoveryPort, restored?: RestoredCapture) {
+    this.draft = restored?.draft; this.snapshot = restored?.snapshot; this.output = restored?.output;
+    this.state = restoredState(restored);
+  }
   private emit(state: CaptureState) {
     this.state = this.draft?.imported ? { ...state, imported: this.draft.imported } : state;
     if (!this.closed) this.notify(this.state);
@@ -63,8 +69,20 @@ export class CaptureController {
   async discard(): Promise<void> {
     if (this.busy || this.closed) return;
     this.busy = true;
-    try { await this.clearFiles(); this.emit({ phase: 'idle' }); }
+    try { await this.recovery?.discard(); await this.clearFiles(); this.emit({ phase: 'idle' }); }
     finally { this.busy = false; }
+  }
+  private async renderAccepted(draft: Draft, snapshot: Snapshot, epoch: number, revision?: number): Promise<Output | undefined> {
+    const output = await this.ports.render(draft, snapshot, revision);
+    if (epoch !== this.epoch) { await this.ports.remove(output.uri); return; }
+    try { if (this.recovery) await this.recovery.checkpoint(draft, snapshot, output); }
+    catch {
+      await this.ports.remove(output.uri);
+      throw new Error('편집 사진을 보관하지 못했어요. 저장 공간을 확인하고 다시 적용해 주세요.');
+    }
+    // Once journal commit begins, accept the valid result even if backgrounded meanwhile.
+    // close() still cleans working copies in finally; the independent checkpoint survives.
+    return output;
   }
   async capture(settings: CameraSettings, position: 'front' | 'back', grainSeed = createGrainSeed(), flashMode: PhotoFlashMode = 'off', sourceExposure?: ExposureReading): Promise<void> {
     if (this.busy || this.closed || this.draft) return;
@@ -81,8 +99,8 @@ export class CaptureController {
       this.draft = await this.ports.capture(this.snapshot);
       if (epoch !== this.epoch) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }
       this.emit({ phase: 'rendering' });
-      this.output = await this.ports.render(this.draft, this.snapshot);
-      if (epoch !== this.epoch) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }
+      this.output = await this.renderAccepted(this.draft, this.snapshot, epoch);
+      if (!this.output) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }
       this.emit({ phase: 'file-ready', output: this.output, outputSettings: this.snapshot.settings });
     } catch (error) { this.emit({ phase: 'failed', message: String(error), canRetryRender: !!this.draft }); }
     finally { this.busy = false; if (this.closed) await this.clearFiles(); }
@@ -107,8 +125,8 @@ export class CaptureController {
       this.draft = await ports.prepare(selected, this.snapshot);
       if (epoch !== this.epoch) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }
       this.emit({ phase: 'rendering' });
-      this.output = await this.ports.render(this.draft, this.snapshot);
-      if (epoch !== this.epoch) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }
+      this.output = await this.renderAccepted(this.draft, this.snapshot, epoch);
+      if (!this.output) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }
       this.emit({ phase: 'file-ready', output: this.output, outputSettings: this.snapshot.settings });
     } catch (error) {
       if (epoch !== this.epoch) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); }
@@ -127,8 +145,8 @@ export class CaptureController {
     const epoch = this.epoch;
     try {
       this.emit({ phase: 'rendering' });
-      this.output = await this.ports.render(this.draft, this.snapshot);
-      if (epoch !== this.epoch) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }
+      this.output = await this.renderAccepted(this.draft, this.snapshot, epoch);
+      if (!this.output) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }
       this.emit({ phase: 'file-ready', output: this.output, outputSettings: this.snapshot.settings });
     } catch (error) { this.emit({ phase: 'failed', message: String(error), canRetryRender: !!this.draft }); }
     finally { this.busy = false; if (this.closed) await this.clearFiles(); }
@@ -155,7 +173,7 @@ export class CaptureController {
   }
   async edit(settings: CameraSettings): Promise<boolean> {
     if (this.busy || this.closed || !this.draft || !this.snapshot || !this.output ||
-      !this.state.outputSettings || this.state.phase === 'saved') return false;
+      !this.state.outputSettings || this.state.phase === 'saved' || this.state.phase === 'save-uncertain') return false;
     const currentSettings = this.state.outputSettings;
     this.busy = true;
     const epoch = this.epoch;
@@ -166,14 +184,14 @@ export class CaptureController {
       if (cameraSettingsKey(nextSettings) === cameraSettingsKey(currentSettings)) return true;
       // Keep the capture date, grain seed, camera position and exposure immutable.
       const nextSnapshot = Object.freeze({ ...this.snapshot, settings: nextSettings });
-      const next = await this.ports.render(this.draft, nextSnapshot, ++this.revision);
-      if (epoch !== this.epoch) {
-        await this.ports.remove(next.uri);
+      const next = await this.renderAccepted(this.draft, nextSnapshot, epoch, ++this.revision);
+      if (!next) {
         this.emit({ ...this.state, editError: '적용이 중단됐어요. 이전 사진을 유지했어요. 다시 적용해 주세요.' });
         return false;
       }
       const previous = this.output;
       this.output = next;
+      this.snapshot = nextSnapshot;
       applied = true;
       this.emit({ ...this.state, phase: 'file-ready', output: next, outputSettings: nextSettings,
         message: undefined, canRetryRender: undefined, shareError: undefined });
@@ -191,15 +209,38 @@ export class CaptureController {
     }
   }
   async save(): Promise<void> {
-    if (this.busy || this.closed || !this.output || this.state.phase === 'saved') return;
+    if (this.busy || this.closed || !this.output || this.state.phase === 'saved' || this.state.phase === 'save-uncertain') return;
     this.busy = true;
+    let attempted = false;
     try {
       this.emit({ ...this.state, phase: 'saving-gallery', output: this.output, message: undefined });
+      if (this.recovery) await this.recovery.setGalleryStatus('saving-gallery', this.output);
+      if (this.closed) return;
+      attempted = true;
       await this.ports.save(this.output);
-      this.emit({ ...this.state, phase: 'saved', output: this.output });
+      let message: string | undefined;
+      try { if (this.recovery) await this.recovery.setGalleryStatus('saved', this.output); }
+      catch { message = '사진은 저장됐어요. 보관 기록을 갱신하지 못해 다음 실행 때 저장 여부를 다시 확인할 수 있어요.'; }
+      this.emit({ ...this.state, phase: 'saved', output: this.output, message });
     } catch (error) {
-      this.emit({ ...this.state, phase: 'failed', output: this.output, message: `저장 실패: ${String(error)}` });
+      this.emit({ ...this.state, phase: attempted && this.recovery ? 'save-uncertain' : 'failed', output: this.output,
+        message: attempted ? this.recovery ? '저장 완료를 확인하지 못했어요. 사진 앱을 확인해 주세요.' : `저장 실패: ${String(error)}`
+          : '저장 준비를 마치지 못했어요. 사진은 보관되어 있어요. 공간을 확인한 뒤 다시 시도해 주세요.' });
     } finally { this.busy = false; if (this.closed) await this.clearFiles(); }
+  }
+  async resolveSave(saved: boolean): Promise<void> {
+    if (this.busy || this.closed || !this.output || this.state.phase !== 'save-uncertain') return;
+    this.busy = true;
+    this.emit({ ...this.state, resolvingSave: true, message: undefined });
+    try {
+      await this.recovery?.setGalleryStatus(saved ? 'saved' : 'not-saved', this.output);
+      this.emit({ ...this.state, phase: saved ? 'saved' : 'file-ready', message: undefined });
+    } catch { this.emit({ ...this.state, message: '확인 내용을 보관하지 못했어요. 잠시 후 다시 시도해 주세요.' }); }
+    finally {
+      this.busy = false;
+      if (this.closed) await this.clearFiles();
+      else this.emit({ ...this.state, resolvingSave: false });
+    }
   }
   async share(present: SharePort): Promise<void> {
     if (this.busy || this.closed || !this.output) return;

@@ -11,6 +11,6 @@ Pod::Spec.new do |s|
   s.source = { :git => 'https://github.com/ddoniddoni/yeoun.git' }
   s.static_framework = true
   s.dependency 'ExpoModulesCore'
-  s.frameworks = 'ImageIO', 'CoreGraphics', 'UniformTypeIdentifiers'
+  s.frameworks = 'ImageIO', 'CoreGraphics', 'UniformTypeIdentifiers', 'CryptoKit'
   s.source_files = '**/*.swift'
 end

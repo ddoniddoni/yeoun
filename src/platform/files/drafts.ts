@@ -10,7 +10,7 @@ export async function removeFile(uri: string) {
   try { const file = new File(uri); if (file.exists) file.delete(); }
   catch { console.warn('M0 temporary file cleanup failed; clear app cache if needed.'); }
 }
-// M0 caches are session-only, no recovery UI. M5 owns persistent recovery/backup policy.
+// Working copies only. Persistent recovery and shared copies have independent roots.
 export function clearPreviousSession() {
   if (root.exists) root.delete();
   root.create({ intermediates: true, idempotent: true });

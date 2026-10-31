@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useCameraDevice, useCameraPermission, usePhotoOutput } from 'react-native-vision-camera';
 import { CaptureController, type CaptureState } from '../domain/capture/controller';
+import { restoredState, type RestoredCapture } from '../domain/capture/recovery';
+import { editRecovery } from '../platform/storage/editRecovery';
 import { selectedFlashMode, type FlashSelection } from '../domain/capture/flash';
 import { cameraSettings, cameraSettingsKey, copyCameraSettings, type CameraFilterId } from '../domain/filters/cameraSettings';
 import { createGrainSeed } from '../domain/filters/grainSeed';
@@ -31,9 +33,10 @@ const LABELS: Record<CaptureState['phase'], string> = {
   idle: '오늘의 빛을, 오래 남을 색으로.', capturing: '순간을 담고 있어요', rendering: '사진에 색감을 입히고 있어요',
   picking: '앨범에서 사진 한 장을 골라 주세요', importing: '사진을 준비하고 있어요',
   'file-ready': '파일 준비 완료 · 아직 갤러리에 저장하지 않았어요',
+  'save-uncertain': '사진 앱에서 저장 여부를 확인해 주세요',
   'saving-gallery': '갤러리에 저장 중', saved: '갤러리 저장 완료', failed: '작업 실패', cancelled: '앱 중단으로 작업을 취소했어요',
 };
-export function M0CameraScreen() {
+export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
   const permission = useCameraPermission();
   const { width, fontScale } = useWindowDimensions();
   const [viewfinderSize, setViewfinderSize] = useState({ width, height: 180 });
@@ -60,7 +63,7 @@ export function M0CameraScreen() {
   const [cameraStopped, setCameraStopped] = useState(false);
   const [pauseGate] = useState(() => new CameraPauseGate());
   const [info, setInfo] = useState('실제 프레임 관측 대기');
-  const [state, setState] = useState<CaptureState>({ phase: 'idle' });
+  const [state, setState] = useState<CaptureState>(() => restoredState(restored));
   const preview = useRef<CameraPreviewHandle>(null);
   const [meteringState, setMeteringState] = useState<MeteringState>({ deviceId: '', ready: false, busy: false });
   const metering: MeteringState = meteringState.deviceId === device?.id ? meteringState
@@ -71,10 +74,13 @@ export function M0CameraScreen() {
   const onRunningChange = useCallback((running: boolean) => { setCameraStopped(!running); pauseGate.setRunning(running); }, [pauseGate]);
   const showError = useCallback((error: unknown) => setCameraError(String(error)), []);
   const onCameraError = useCallback((error: Error) => { setReady(false); setCameraError(String(error)); }, []);
-  const controller = useMemo(() => new CaptureController({
-    capture: snapshot => capturePhoto(photoOutput, snapshot), render: exportPhoto, renderOriginal: exportOriginalComparison,
+  const photoOutputRef = useRef(photoOutput);
+  photoOutputRef.current = photoOutput;
+  // The restored session has one owner for this mounted screen, even if camera output props change.
+  const [controller] = useState(() => new CaptureController({
+    capture: snapshot => capturePhoto(photoOutputRef.current, snapshot), render: exportPhoto, renderOriginal: exportOriginalComparison,
     save: saveToGallery, remove: removeFile,
-  }, setState), [photoOutput]);
+  }, setState, editRecovery, restored));
   useEffect(() => {
     const sub = AppState.addEventListener('change', next => {
       setForeground(next === 'active');
@@ -85,7 +91,7 @@ export function M0CameraScreen() {
     });
     return () => { sub.remove(); controller.close(); };
   }, [controller]);
-  const busy = !!state.sharing || state.phase === 'picking' || state.phase === 'importing' || state.phase === 'capturing' || state.phase === 'rendering' || state.phase === 'saving-gallery';
+  const busy = !!state.sharing || !!state.resolvingSave || state.phase === 'picking' || state.phase === 'importing' || state.phase === 'capturing' || state.phase === 'rendering' || state.phase === 'saving-gallery';
   const importing = state.phase === 'picking' || state.phase === 'importing' || !!state.imported;
   const canCapture = ['idle', 'cancelled'].includes(state.phase);
   const resultOpen = !!state.output;
@@ -114,12 +120,12 @@ export function M0CameraScreen() {
     if (permission.hasPermission && device && foreground && !cameraError) setCameraStopped(false);
   }, [permission.hasPermission, device, foreground, cameraError]);
   const discardAndReturn = async () => {
-    if (discardPending.current || controller.state.sharing || controller.state.preparingOriginal || controller.state.editing || ['picking', 'importing', 'capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
+    if (discardPending.current || controller.state.sharing || controller.state.resolvingSave || controller.state.preparingOriginal || controller.state.editing || ['picking', 'importing', 'capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
     discardPending.current = true; setReturning(true); setReturnError(undefined);
     setReady(false); setFilterRevision(value => value + 1);
     if (permission.hasPermission && device && foreground && !cameraError) setCameraStopped(false);
     try { await controller.discard(); setGrainSeed(createGrainSeed()); }
-    catch (error) { setReturnError(`임시 사진을 정리하지 못했어요. 다시 시도해 주세요. ${String(error)}`); }
+    catch { setReturnError('보관한 사진을 정리하지 못했어요. 사진은 유지돼요. 다시 시도해 주세요.'); }
     finally { discardPending.current = false; setReturning(false); }
   };
   const controlsHidden = overlayOpen || panel !== undefined;
@@ -312,6 +318,7 @@ export function M0CameraScreen() {
       </>}
     </CameraSheet> : null}
     {state.output ? <CameraResultScreen state={state} output={state.output} settings={state.outputSettings ?? settings} foreground={foreground}
+      onResolveSave={saved => { void controller.resolveSave(saved); }}
       returning={returning} returnError={returnError} onReturn={() => { void discardAndReturn(); }}
       onSave={() => { if (!discardPending.current) void controller.save(); }}
       onShare={() => { if (!discardPending.current && foreground) void controller.share(sharePhoto); }}

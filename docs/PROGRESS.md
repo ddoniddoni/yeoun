@@ -1,6 +1,20 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-31 결과 사진 공유
+## 현재 상태 — 2026-10-31 마지막 적용 사진 복구
+
+- 요청: 공유 다음 기능인 앱 종료 후 이어서 편집 진행 승인. clean develop `2059e57dd928975a278f351eabae659d7e7ecd5b`(PR #34)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/edit-recovery` 각각 exit0. 기존 사용자 변경 없음. 검사·빌드·기기 실행 보류 및 개발 후 전체 Git Flow 상시 승인 유지.
+- 기능: 촬영/앨범 가져오기 마지막 적용 사진 한 장과 filter/강도/질감/날짜/입자 seed/원본 치수·방향·import 정보를 함께 보관한다. 앱 시작에 이어서 편집·저장 사진 보기·확인 후 삭제를 제공하고, 현재 적용 결과부터 기존 편집/비교/저장/공유로 이어진다. 다음 촬영 설정·필터 수치·LUT·프리뷰 레이아웃은 변경하지 않았다. 첫 결과 보관 전 중단과 적용 전 조절값은 복구 대상이 아니다.
+- 저장 계약: source/output UUID 불변 사본을 native copy·SHA-256/size·sync 후 별도 SQLite 단일 row로 commit하고 이후 이전 파일을 정리한다. 설정 버전·manifest/backend fingerprint·경로/수치/날짜/크기를 확인하며 절대 photo URI를 DB에 기록하지 않는다. 작업 cache와 영구 보관을 분리하고 원본 비교는 재생성한다. read/write/discard는 promise queue로 직렬화, 모호한 commit 뒤 읽기도 실패하면 양쪽 파일을 보존한다. journal과 현재 output 매칭 없이 gallery 상태를 갱신하지 않는다.
+- 수명: checkpoint 시작 전 background는 후보 폐기, 시작 후 valid result commit은 일관되게 수용한다. close는 작업 사본만 정리하고 명시 discard만 보관 record를 지운다. 마지막 checkpoint/저장 상태 기록 후24시간 만료를 다음 시작에 정리한다. 읽기 불능/미지원 버전은 자동 삭제하지 않는다. 새 결과 보관 실패는 직전 결과를 유지하며 restore 실패는 부분 작업 사본만 지운다.
+- 중복 저장: native gallery 호출 전에 saving-gallery를 기록한다. 종료 복구/완료 불확실 시 save-uncertain으로 열고 사용자 저장 여부 확인 전 편집/재저장을 막는다. ‘아직 없어요’는 정상 저장 버튼만 복원하며 자동 저장하지 않는다. 실제 저장 성공 뒤 journal 갱신 실패는 현재 UI를 saved로 유지한다. 권한 거부도 보수적으로 확인 경로를 거친다. 전체 앨범 읽기 권한/자동 저장 판별은 없다.
+- 네이티브/API: 기존 YeounPhotoImport에 RecoveryFiles.swift/kt와 metadata bridge 네 함수를 추가. iOS Application Support+backup 제외 flag, Android noBackupFilesDir 아래에 JPEG·recovery.db/sidecar를 두고 자체 파일명만 정리한다. iOS custom DB 경로는 공백을 인코딩한 file URL. 기존 expo-sqlite55.0.20/Crypto55.0.19 사용, npm/package/lock/권한 변경 없음. CryptoKit 시스템 framework 추가. 설치 SQLite/Expo 파일 권한/카메라 orientation/Foundation SDK 소스와 공식 Android/Expo 문서를 읽었다. Apple 웹/Markdown 본문 조회 실패는 설치 SDK interface/header 확인으로 보완했다.
+- 변경: App, domain/capture(controller·recovery·recoveryStore), platform/storage/editRecovery·files/drafts, screens(EditRecoveryGate·M0CameraScreen·CameraResultScreen), 로컬 모듈 Swift/Kotlin/bridge/podspec/README, 두 테스트 소스, README·제품·기술·계획·검수·REFERENCES·PROGRESS. 기존 밝은 UI/React 상태·파일 소유권 지침을 적용했다. controller는 mounted session 내 단일 owner를 유지하고 camera output ref를 갱신한다.
+- 소스 검토: 복사→journal→이전 파일 정리 순서, restore hash/size, save의 pre/post journal 및 close, startup 선택 이전 카메라 비활성, 각 타입/API와 파일 소유권을 읽었다. `git diff --check` exit0. 경로/문서 제목 추정으로 실패한 조회·패치는 실제 파일을 읽고 보완했다. 테스트 소스는 commit 전후/불확실한 write/실패 보존/설정 재현/중복 저장/만료/손상/삭제 순서를 다루지만 실행하지 않았다.
+- **NOT_RUN:** lint/typecheck/Jest/react-doctor/자산 검사/JS·native build/prebuild/Pod/Metro/기기·화면 캡처/실제 복구·SQLite durability·backup 제외·권한·디스크 부족·성능·접근성. 새 native 코드가 없는 이전 개발 앱에서는 준비 안내가 나오므로 다음 기기 확인 전 재빌드가 필요하다. mock repository는 실제 파일/프로세스 종료 검증이 아니며 G0~G5 미통과 유지.
+- 한계/다음: 적용 완료 결과만 복구하며 첫 export job 재개·설정 기억·레시피는 아직 별도 범위다. 파일 복사/hash에 따른 지연·디스크 점유는 측정 전이며 전원 손실 내구성을 보장하지 않는다. 앱 데이터/앱 삭제는 복구할 수 없다. 사용자 요청 시 재빌드 후 docs/05_TEST_RELEASE의 종료 시점별 검수를 진행한다. 다른 기능은 자동 시작하지 않는다.
+- Git Flow: 명시24파일 stage, `git diff --cached --check` exit0. 구현 commit `f972d50`, `git push -u origin feature/edit-recovery`, [PR #35](https://github.com/ddoniddoni/yeoun/pull/35)(base develop) 생성 각각 exit0. 이 기록을 포함해 PR 병합 후 develop fetch/FF/push·로컬/원격 커밋 일치와 clean을 확인하고 develop에서 마친다. 최종 통합 상태는 PR/Git 이력을 따른다.
+
+## 이전 기록 — 2026-10-31 결과 사진 공유
 
 - 요청: 다음 기능 계획 중 사진 공유 진행 승인. clean develop `f12c5d88741b0c0786b5c70b789a618cc7c2c7a5`(PR #33)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/photo-sharing` 각각 exit0. 기존 사용자 변경 없음. 테스트/빌드/기기 실행 보류, 개발 후 전체 Git Flow 상시 승인 유지.
 - UI: 촬영/가져오기 결과 오른쪽 위48pt 공유 아이콘·한국어 접근성 이름/힌트, 공유 중 작업 잠금과 별도 오류 안내를 추가했다. 갤러리 저장 전·후 모두 현재 적용 JPEG를 전달하며 원본 비교 화면의 축소본을 보내지 않는다. 편집 중에는 적용/취소 뒤 공유한다. 공유창에서 별도 저장했는지 추정할 수 없으므로 기본/돌아가기 문구도 이에 맞췄다. 밝은 테마·카메라 레이아웃·필터 수치/LUT/렌더링은 유지한다.

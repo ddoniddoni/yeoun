@@ -1,0 +1,6 @@
+{
+  "name": "yeoun-photo-import",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local bounded photo decoding for Yeoun"
+}

@@ -9,7 +9,7 @@
       "bundleIdentifier": "dev.ddoni.yeouncamera",
       "supportsTablet": false,
       "infoPlist": {
-        "NSCameraUsageDescription": "테스트 필터를 미리 보고 사진을 촬영합니다.",
+        "NSCameraUsageDescription": "필터를 미리 보고 사진을 촬영합니다.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -32,10 +32,18 @@
     },
     "plugins": [
       [
+        "expo-image-picker",
+        {
+          "photosPermission": false,
+          "cameraPermission": "필터를 미리 보고 사진을 촬영합니다.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-media-library",
         {
           "photosPermission": false,
-          "savePhotosPermission": "촬영한 필터 사진을 갤러리에 저장합니다.",
+          "savePhotosPermission": "촬영하거나 편집한 사진을 갤러리에 저장합니다.",
           "isAccessMediaLocationEnabled": false,
           "granularPermissions": []
         }

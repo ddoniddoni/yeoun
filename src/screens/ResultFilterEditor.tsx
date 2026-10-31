@@ -5,8 +5,8 @@ import { CameraAction } from './CameraControls';
 import { FilterAdjustmentPanel } from './FilterControls';
 import { cameraTheme as theme } from './cameraTheme';
 
-export function ResultFilterEditor({ settings, disabled, applying, error, onApply, onClose }: {
-  settings: CameraSettings; disabled: boolean; applying: boolean; error?: string;
+export function ResultFilterEditor({ settings, disabled, applying, error, imported = false, onApply, onClose }: {
+  settings: CameraSettings; disabled: boolean; applying: boolean; error?: string; imported?: boolean;
   onApply(settings: CameraSettings): Promise<boolean>; onClose(): void;
 }) {
   // Unapplied choices stay here. Neither the camera settings nor the accepted output changes.
@@ -14,6 +14,10 @@ export function ResultFilterEditor({ settings, disabled, applying, error, onAppl
   const [attempted, setAttempted] = useState(false);
   const submitting = useRef(false);
   const changed = cameraSettingsKey(draft) !== cameraSettingsKey(settings);
+  const preset = (id: CameraSettings['filterId']) => {
+    const next = cameraSettings(id);
+    return imported ? copyCameraSettings({ ...next, dateStamp: false }) : next;
+  };
   const apply = async () => {
     if (disabled || submitting.current || !changed) return;
     submitting.current = true;
@@ -24,12 +28,12 @@ export function ResultFilterEditor({ settings, disabled, applying, error, onAppl
   return <View style={styles.panel}>
     <Text accessibilityRole="header" style={styles.title}>이 순간의 색감</Text>
     <Text style={styles.note}>필터를 고르고 적용해 주세요. 그전까지 사진은 유지돼요.</Text>
-    <FilterAdjustmentPanel settings={draft} disabled={disabled}
-      onSelect={id => { if (id !== draft.filterId) setDraft(cameraSettings(id)); }}
+    <FilterAdjustmentPanel settings={draft} disabled={disabled} imported={imported}
+      onSelect={id => { if (id !== draft.filterId) setDraft(preset(id)); }}
       onIntensity={intensity => setDraft(current => copyCameraSettings({ ...current, intensity }))}
       onTexture={(control, value) => setDraft(current => copyCameraSettings({ ...current, [control]: value }))}
       onDateStamp={dateStamp => setDraft(current => copyCameraSettings({ ...current, dateStamp }))}
-      onReset={() => setDraft(cameraSettings(draft.filterId))} />
+      onReset={() => setDraft(preset(draft.filterId))} />
     {attempted && error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     <Text accessibilityLiveRegion="polite" style={styles.note}>{applying
       ? '원본 사진에 새 색감을 적용하고 있어요…'

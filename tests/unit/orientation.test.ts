@@ -1,4 +1,4 @@
-import { neutralizeOrientation, orientationTransform, centerCrop43, type ExifOrientation } from '../../src/rendering/adapters/jpegOrientation';
+import { neutralizeOrientation, orientationTransform, centerCrop43, photoFrame, type ExifOrientation } from '../../src/rendering/adapters/jpegOrientation';
 function jpeg(orientation: number, little: boolean) {
   const bytes = new Uint8Array(40); const v = new DataView(bytes.buffer);
   bytes.set([0xff, 0xd8, 0xff, 0xe1, 0, 34, 0x45, 0x78, 0x69, 0x66, 0, 0]);
@@ -7,6 +7,10 @@ function jpeg(orientation: number, little: boolean) {
   v.setUint16(22, 0x112, little); v.setUint16(24, 3, little); v.setUint32(26, 1, little);
   v.setUint16(30, orientation, little); bytes.set([0xff, 0xd9], 38); return bytes;
 }
+test.each([[4000, 2000], [1200, 1200], [900, 2400]])('library photo keeps all %i×%i pixels without the camera crop', (width, height) => {
+  expect(photoFrame(width, height, 'full')).toEqual({ x: 0, y: 0, width, height });
+  expect(photoFrame(width, height, 'camera')).toEqual(centerCrop43(width, height));
+});
 test.each([1, 2, 3, 4, 5, 6, 7, 8] as ExifOrientation[])('EXIF %i handles both endian orders without mutating source', o => {
   for (const little of [false, true]) {
     const input = jpeg(o, little); const original = input.slice();

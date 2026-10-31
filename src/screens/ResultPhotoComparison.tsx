@@ -30,7 +30,7 @@ export function ResultPhotoComparison({ output, state, width, enabled, locked, f
   };
   return <View style={styles.group}>
     <View accessible accessibilityRole="image"
-      accessibilityLabel={active ? '촬영 원본 비교 사진' : `${filterName}로 촬영한 사진`}
+      accessibilityLabel={active ? '필터 적용 전 원본 비교 사진' : `${filterName} 적용 사진`}
       style={[styles.frame, { width, aspectRatio: output.width / output.height }]}>
       {enabled && state.original ? <Image key={imageKey} source={{ uri: state.original.uri }}
         style={[StyleSheet.absoluteFill, !active && styles.hidden]} resizeMode="contain" resizeMethod="resize" fadeDuration={0} accessible={false}
@@ -47,14 +47,14 @@ export function ResultPhotoComparison({ output, state, width, enabled, locked, f
         icon="compare" label={state.preparingOriginal ? '원본 준비 중…' : state.originalError ? '원본 비교 다시 시도' : '원본 비교'}
         disabled={locked} onPress={onPrepare} /> : failed ? <CameraAction label="비교 이미지 다시 열기"
         disabled={locked} onPress={() => setAttempt(value => value + 1)} /> : <View style={styles.row}>
-        <Pressable accessibilityRole="button" accessibilityLabel="누르는 동안 촬영 원본 비교"
+        <Pressable accessibilityRole="button" accessibilityLabel="누르는 동안 원본 비교"
           accessibilityHint="옆의 원본 유지 스위치로도 비교할 수 있어요."
           disabled={!available || pinned} accessibilityState={{ disabled: !available || pinned }}
           onPressIn={() => change('hold')} onPressOut={() => change('release')}
           style={[styles.button, (!available || pinned) && styles.disabled]}>
           <CameraIcon name="compare" size={20} /><Text style={styles.label}>원본 비교</Text>
         </Pressable>
-        <Pressable accessibilityRole="switch" accessibilityLabel="촬영 원본 보기 유지"
+        <Pressable accessibilityRole="switch" accessibilityLabel="원본 보기 유지"
           accessibilityState={{ checked: pinned, disabled: !available }} disabled={!available}
           onPress={() => change('toggle')} style={[styles.button, styles.pin, pinned && styles.selected, !available && styles.disabled]}>
           <CameraIcon name="pin" size={21} color={pinned ? theme.accent : theme.secondary} />

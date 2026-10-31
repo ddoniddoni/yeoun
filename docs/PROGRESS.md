@@ -1,6 +1,19 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-30 밝은 카메라 디자인
+## 현재 상태 — 2026-10-31 앨범 사진 한 장 편집
+
+- 요청: 출시 준비의 다음 기능인 앨범 사진 가져오기·필터 편집을 승인. clean develop `660e747cbe190fac0c71cdd467ed7ec5f8db64ea`(PR #32)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/photo-library-import` 각각 exit0. 기존 사용자 변경 없음. 테스트·기기 확인 보류와 개발 후 전체 Git Flow 상시 승인 유지.
+- UI: 메인 앨범 아이콘과 카메라 권한 거부/기기 없음의 편집 진입점 → 시스템 단일 사진 선택 → 기존 결과/17종 필터 편집·즐겨찾기·원본 비교 → 새 JPEG 저장. 밝은 테마와 자체 native View 아이콘을 재사용한다. 원래 구도를 유지하고 큰 사진 축소/PNG 흰 배경을 결과 화면에 알린다. 날짜는 초기/필터 선택/초기화 때 꺼지고 수동으로 켜면 가져온 날짜임을 표시한다. 다음 촬영 설정·필터 자산·shader 수치는 변경하지 않았다.
+- 수명: CaptureController에 picking/importing 단계를 추가하고 busy/epoch로 취소·중복·close/background의 늦은 결과를 정리한다. 실제 카메라 정지를 기다린 후 picker/디코더를 시작하고, 시스템 picker 복귀의 active 상태를 기다린다. 원본 cache JPEG로 렌더 재시도·재편집하고 저장 성공 전 성공 UI를 표시하지 않는다. 선택기 사본만 URI 소유권 확인 후 지우며 앨범 원본/provider URI는 수정하지 않는다. Android pending 결과는 사본 정리 후 재선택하며 복구로 간주하지 않는다.
+- 의존성: 명세 허용 후보 `expo-image-picker@55.0.24` 필요성을 확인해 exact 설치. Expo55.0.32 bundledNativeModules/공식 SDK55·npm metadata/설치 타입·네이티브 소스를 읽었다. `npm install --save-exact expo-image-picker@55.0.24 --ignore-scripts --no-audit --no-fund` exit0(added2). MIT ImagePicker와 transitive expo-image-loader55.0.1만 manifest/lock에 추가됐다. plugin은 photos/microphonePermission false, 기존 CAMERA 유지와 목적 문구를 맞췄고 저장 목적을 촬영/편집으로 갱신했다.
+- 네이티브: 기존 NitroImage의 decode 크기 제한 API가 없어 로컬 Expo 모듈 YeounPhotoImport(Swift/Kotlin)를 추가했다. metadata 우선100MiB/200MP/변당100k 제한, 최대12MP/긴 변4,096px 디코딩, EXIF 방향·흰 배경 PNG·지원 HEIC→정방향 sRGB JPEG. Expo module queue에서 context/bitmap을 소유/해제하고 metadata만 반환한다. Android24~27은 JPEG/PNG power-of-two sample로 더 작을 수 있다. 기본 ./modules autolinking을 사용하며 .gitignore의 root /ios/·/android/만 무시하도록 조정했다. 생성 native 프로젝트는 수정하지 않았다.
+- 변경 파일: package/lock/app.json/.gitignore, capture/controller, media/importPhoto·camera/pauseGate, exportPhoto/jpegOrientation, screens의 main/result/editor/comparison/filter-controls/icon, modules/yeoun-photo-import(package/config/README/podspec/Swift/Gradle/manifest/Kotlin), tests/integration/photoImportController·unit/cameraPauseGate·orientation, README·제품·기술·계획·검수·REFERENCES·이 기록.
+- 소스 검토: native/JS 파일 소유권·제한·방향·정지 대기·full/camera framing 분기·편집 날짜 기본값·optional native 실패 경계를 읽었다. 설치된 SDK headers와 ImagePicker fast-copy/fallback, Expo module/autolinking 소스, 공식 ImageDecoder/ExifInterface API를 확인했다. 기능 테스트 소스는 취소/연타/늦은 완료/재시도/편집/정지 timeout/전체 구도를 다루며 실행하지 않았다. frontend-design/React 지침을 UI 설계에 적용했다. 경로 추정에 실패한 소스 조회는 실제 경로·공식 문서로 보완했다.
+- **NOT_RUN:** lint/typecheck/Jest/react-doctor/자산 검사/JS·native build/prebuild/Pod install/기기 실행·화면 캡처/권한·HEIC·EXIF·사진 저장·메모리·접근성. 사용자 보류 지시를 일반 검사 요구보다 우선했다. 소스 검토는 실행 통과 증거가 아니며 G0~G5 미통과 유지. Metro·기기를 새로 실행하지 않았다.
+- 남은 제한: iOS picker의 Current 파일 복사 실패 시 upstream UIImage fallback이 있어 선택 과정 전체의 메모리 상한은 보장하지 않는다. decoder 지원/색공간/방향/반복 수명은 미검증이다. source는 세션 cache여서 앱 종료 후 편집 복구는 미구현이며 공유·레시피도 이번 범위가 아니다. 다음 요청 시 이전 SQLite와 ImagePicker·로컬 모듈을 포함해 개발 앱을 재빌드한 뒤 수동 검수한다.
+- Git Flow: `git diff --check`와 명시33파일 stage 후 `git diff --cached --check` 각각 exit0. 기능 commit `3f826b9`, `git push -u origin feature/photo-library-import`, [PR #33](https://github.com/ddoniddoni/yeoun/pull/33)(base develop) 생성 exit0. 이 기록을 포함해 PR을 병합하고 develop fetch/FF/push·로컬/원격 커밋 일치와 clean을 확인한 뒤 develop에서 마친다. 실제 최종 통합 상태는 PR/Git 이력을 따른다.
+
+## 이전 기록 — 2026-10-30 밝은 카메라 디자인
 
 - 요청: “디자인을 더 예쁘게…너무 칙칙해”. clean develop `e184f41`(PR #31)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/bright-camera-design` 각각 exit0. 기존 사용자 변경 없음. 기기 테스트 보류와 개발 후 Git Flow 상시 승인 유지.
 - 구현: 크림/화이트 바탕, 코랄 원형 셔터/로고 점/저장 버튼, 선명한 파스텔 팔레트 카드, 선택 강도 배지와 탭/효과/즐겨찾기의 옅은 배경·진한 표시. 촬영/권한·오류/촬영 설정/나의 색감/결과·편집/개발 진단의 공통 테마를 갱신했다. frontend-design 지침을 적용했으며 새 패키지/이미지/폰트는 없다.

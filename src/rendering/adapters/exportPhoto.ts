@@ -4,7 +4,7 @@ import { AlphaType, ColorType, FilterMode, ImageFormat, MipmapMode, Skia, TileMo
 import type { Draft, Output, Snapshot } from '../../domain/capture/controller';
 import { cameraSettings, copyCameraSettings, type CameraSettings } from '../../domain/filters/cameraSettings';
 import { draftFile, removeFile, type DraftFileName } from '../../platform/files/drafts';
-import { centerCrop43, neutralizeOrientation, orientationTransform } from './jpegOrientation';
+import { photoFrame, neutralizeOrientation, orientationTransform } from './jpegOrientation';
 import { createBundledDraftLutLoader, loadDraftLutPipeline } from './bundledLutLoader';
 import { assertGrainSeed } from '../../domain/filters/grainSeed';
 import { hasSpatialEffects } from '../../domain/filters/retroControls';
@@ -18,20 +18,20 @@ export function renderJpeg(input: Uint8Array, matrix: readonly number[]) {
   return renderStyledJpeg(input, { kind: 'matrix', matrix });
 }
 
-export function renderLutJpeg(input: Uint8Array, settings: CameraSettings, pipeline?: SkiaLutPipeline, grainSeed = 0, stampDate = 0) {
+export function renderLutJpeg(input: Uint8Array, settings: CameraSettings, pipeline?: SkiaLutPipeline, grainSeed = 0, stampDate = 0, framing: 'camera' | 'full' = 'camera') {
   assertGrainSeed(grainSeed);
-  return renderStyledJpeg(input, { kind: 'lut', settings: copyCameraSettings(settings), pipeline, grainSeed, stampDate });
+  return renderStyledJpeg(input, { kind: 'lut', settings: copyCameraSettings(settings), pipeline, grainSeed, stampDate }, undefined, framing);
 }
 
 type JpegStyle = { kind: 'matrix'; matrix: readonly number[] } |
   { kind: 'lut'; settings: CameraSettings; pipeline?: SkiaLutPipeline; grainSeed: number; stampDate: number };
 
 // Only the display-only comparison uses a size bound. Saved exports remain full resolution.
-export function renderOriginalComparisonJpeg(input: Uint8Array) {
-  return renderStyledJpeg(input, { kind: 'lut', settings: cameraSettings('original'), grainSeed: 0, stampDate: 0 }, 1600);
+export function renderOriginalComparisonJpeg(input: Uint8Array, framing: 'camera' | 'full' = 'camera') {
+  return renderStyledJpeg(input, { kind: 'lut', settings: cameraSettings('original'), grainSeed: 0, stampDate: 0 }, 1600, framing);
 }
 
-function renderStyledJpeg(input: Uint8Array, style: JpegStyle, maxEdge?: number) {
+function renderStyledJpeg(input: Uint8Array, style: JpegStyle, maxEdge?: number, framing: 'camera' | 'full' = 'camera') {
   const normalized = neutralizeOrientation(input);
   const data = Skia.Data.fromBytes(normalized.bytes);
   let image: SkImage | null = null;
@@ -43,7 +43,7 @@ function renderStyledJpeg(input: Uint8Array, style: JpegStyle, maxEdge?: number)
     if (!image) throw new Error('Camera JPEG decode failed');
     if (image.width() * image.height() > 16_000_000) throw new Error('JPEG exceeds M0 16MP processing limit');
     const rotated = normalized.orientation >= 5;
-    const crop = centerCrop43(rotated ? image.height() : image.width(), rotated ? image.width() : image.height());
+    const crop = photoFrame(rotated ? image.height() : image.width(), rotated ? image.width() : image.height(), framing);
     const scale = maxEdge ? Math.min(1, maxEdge / Math.max(crop.width, crop.height)) : 1;
     const width = Math.max(1, Math.round(crop.width * scale));
     const height = Math.max(1, Math.round(crop.height * scale));
@@ -110,8 +110,9 @@ async function exportDraft(draft: Draft, snapshot: Snapshot, comparison: boolean
       finally { loader.clearCache(); }
     }
     const input = await source.bytes();
-    const result = comparison ? renderOriginalComparisonJpeg(input)
-      : renderLutJpeg(input, settings, pipeline, snapshot.grainSeed, snapshot.stampDate);
+    const framing = draft.imported ? 'full' : 'camera';
+    const result = comparison ? renderOriginalComparisonJpeg(input, framing)
+      : renderLutJpeg(input, settings, pipeline, snapshot.grainSeed, snapshot.stampDate, framing);
     // Release before publishing/writing output so a disposal failure cannot orphan a successful file.
     pipeline?.dispose(); pipeline = undefined;
     file.write(result.bytes);

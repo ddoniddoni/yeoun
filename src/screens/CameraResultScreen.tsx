@@ -44,7 +44,7 @@ export function CameraResultScreen({ state, output, settings, foreground, return
     <SafeAreaView style={styles.page}>
       <View style={styles.header}>
         <IconButton icon={editorOpen ? 'close' : 'back'} label={editorOpen ? '편집 취소' : '카메라로 돌아가기'} disabled={locked} onPress={requestReturn} />
-        <Text accessibilityRole="header" style={styles.title}>{editorOpen ? '색감 편집' : '남겨진 순간'}</Text>
+        <Text accessibilityRole="header" style={styles.title}>{editorOpen ? '색감 편집' : state.imported ? '가져온 순간' : '남겨진 순간'}</Text>
         <View style={styles.headerStatus}>{saved ? <CameraIcon name="check" size={22} color={theme.accent} /> : null}</View>
       </View>
       <ScrollView ref={scroll} style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
@@ -61,13 +61,18 @@ export function CameraResultScreen({ state, output, settings, foreground, return
           editorRevealed.current = true;
           scroll.current?.scrollTo({ y: event.nativeEvent.layout.y, animated: false });
         }}><ResultFilterEditor settings={settings} disabled={locked} applying={!!state.editing}
-          error={state.editError} onApply={onEdit} onClose={closeEditor} /></View>
+          error={state.editError} imported={!!state.imported} onApply={onEdit} onClose={closeEditor} /></View>
           : !saved ? <CameraAction icon="sliders" label="색감 편집" disabled={locked}
             onPress={() => { editorRevealed.current = false; setEditorOpen(true); }} /> : null}
         <View style={styles.fileInfo}>
           <Text style={styles.mono}>{output.width} × {output.height}</Text>
           <Text style={styles.mono}>JPEG · {(output.bytes / 1024 / 1024).toFixed(1)} MB</Text>
         </View>
+        {state.imported ? <Text style={styles.status}>
+          {state.imported.resized ? '최대 1,200만 화소·긴 변 4,096px 안으로 줄였어요. ' : ''}
+          {state.imported.flattened ? '투명한 부분은 흰색으로 채웠어요. ' : ''}
+          앨범의 원본은 그대로 남아요.{settings.dateStamp ? ' 날짜 도장은 가져온 날짜예요.' : ''}
+        </Text> : null}
       </ScrollView>
       <View style={styles.panel}>
         <Text accessibilityLiveRegion="polite" style={styles.status}>

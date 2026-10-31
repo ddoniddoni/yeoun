@@ -1,0 +1,17 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'dev.ddoni.yeoun.photoimport'
+version = '0.1.0'
+
+android {
+  namespace 'dev.ddoni.yeoun.photoimport'
+  defaultConfig { versionCode 1; versionName '0.1.0' }
+}
+
+dependencies {
+  // Same exact native dependency already used by expo-image-picker 55.0.24.
+  implementation 'androidx.exifinterface:exifinterface:1.4.1'
+}

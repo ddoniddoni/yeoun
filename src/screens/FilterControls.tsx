@@ -105,8 +105,8 @@ const EFFECTS: readonly { key: EffectKey; label: string; icon: CameraIconName }[
   { key: 'lightLeak', label: '빛샘', icon: 'flash' }, { key: 'dust', label: '먼지', icon: 'grain' },
 ];
 
-export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensity, onTexture, onDateStamp, onReset }: {
-  settings: CameraSettings; disabled: boolean;
+export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensity, onTexture, onDateStamp, onReset, imported = false }: {
+  settings: CameraSettings; disabled: boolean; imported?: boolean;
   onSelect(id: CameraFilterId): void; onIntensity(value: number): void;
   onTexture(control: 'grain' | 'bloom' | RetroAmount, value: number): void;
   onDateStamp(enabled: boolean): void; onReset(): void;
@@ -155,14 +155,14 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
       <View style={styles.footer}>
         <CameraIcon name="calendar" size={20} color={settings.dateStamp ? accent : theme.secondary} />
         <Text style={styles.dateLabel}>날짜 도장</Text>
-        <Switch accessibilityLabel="촬영 날짜 도장" disabled={disabled} value={settings.dateStamp}
+        <Switch accessibilityLabel={imported ? '가져온 날짜 도장' : '촬영 날짜 도장'} disabled={disabled} value={settings.dateStamp}
           onValueChange={onDateStamp} thumbColor={theme.surface}
           ios_backgroundColor={theme.line} trackColor={{ false: theme.line, true: accent }} />
         <View style={styles.divider} />
         <IconButton icon="reset" label="현재 필터 기본값으로 초기화" disabled={disabled} onPress={onReset} />
       </View>
       {settings.intensity === 0 ? <Text style={styles.caption}>강도 0% · 날짜를 포함한 모든 효과가 꺼져 있어요.</Text>
-        : settings.dateStamp ? <Text style={styles.caption}>촬영한 날짜가 저장 사진에도 남아요.</Text> : null}
+        : settings.dateStamp ? <Text style={styles.caption}>{imported ? '사진을 가져온 날짜가 찍혀요. 원래 촬영일과 다를 수 있어요.' : '촬영한 날짜가 저장 사진에도 남아요.'}</Text> : null}
     </> : <Text style={styles.caption}>필터를 고르면 강도와 질감을 조절할 수 있어요.</Text>}
   </View>;
 }

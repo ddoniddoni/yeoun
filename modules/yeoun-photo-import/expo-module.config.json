@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["YeounPhotoImportModule"] },
+  "android": { "modules": ["dev.ddoni.yeoun.photoimport.YeounPhotoImportModule"] }
+}

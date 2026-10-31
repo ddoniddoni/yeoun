@@ -63,3 +63,6 @@ export function centerCrop43(width: number, height: number) {
   const h = Math.floor(Math.min(height, width / ratio));
   return { x: (width - w) / 2, y: (height - h) / 2, width: w, height: h };
 }
+export function photoFrame(width: number, height: number, framing: 'camera' | 'full') {
+  return framing === 'full' ? { x: 0, y: 0, width, height } : centerCrop43(width, height);
+}

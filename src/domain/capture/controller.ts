@@ -8,13 +8,22 @@ export type Snapshot = Readonly<{
   flashMode: PhotoFlashMode; stampDate: number;
   sourceExposure?: ExposureReading;
 }>;
-export type Draft = Readonly<{ sourceUri: string; width: number; height: number; orientation: string; mirrored: boolean }>;
+export type ImportedPhotoInfo = Readonly<{ resized: boolean; flattened: boolean }>;
+export type Draft = Readonly<{ sourceUri: string; width: number; height: number; orientation: string; mirrored: boolean;
+  imported?: ImportedPhotoInfo }>;
+export type SelectedPhoto = Readonly<{ uri: string }>;
+export interface ImportPorts {
+  pick(): Promise<SelectedPhoto | null>;
+  prepare(photo: SelectedPhoto, snapshot: Snapshot): Promise<Draft>;
+  release(photo: SelectedPhoto): Promise<void>;
+}
 export type Output = Readonly<{ uri: string; width: number; height: number; bytes: number }>;
-export type Phase = 'idle' | 'capturing' | 'rendering' | 'file-ready' | 'saving-gallery' | 'saved' | 'failed' | 'cancelled';
+export type Phase = 'idle' | 'picking' | 'importing' | 'capturing' | 'rendering' | 'file-ready' | 'saving-gallery' | 'saved' | 'failed' | 'cancelled';
 export type CaptureState = Readonly<{
   phase: Phase; output?: Output; message?: string; canRetryRender?: boolean;
   original?: Output; preparingOriginal?: boolean; originalError?: string;
   outputSettings?: CameraSettings; editing?: boolean; editError?: string;
+  imported?: ImportedPhotoInfo;
 }>;
 export interface CapturePorts {
   capture(snapshot: Snapshot): Promise<Draft>;
@@ -36,7 +45,10 @@ export class CaptureController {
   private original?: Output;
   private revision = 0;
   constructor(private ports: CapturePorts, private notify: (state: CaptureState) => void) {}
-  private emit(state: CaptureState) { this.state = state; if (!this.closed) this.notify(state); }
+  private emit(state: CaptureState) {
+    this.state = this.draft?.imported ? { ...state, imported: this.draft.imported } : state;
+    if (!this.closed) this.notify(this.state);
+  }
   interrupt() { this.epoch++; } // Native operations finish and release before their results are dropped.
   close() { this.closed = true; this.interrupt(); if (!this.busy) void this.clearFiles(); }
   private async clearFiles() {
@@ -72,6 +84,40 @@ export class CaptureController {
       this.emit({ phase: 'file-ready', output: this.output, outputSettings: this.snapshot.settings });
     } catch (error) { this.emit({ phase: 'failed', message: String(error), canRetryRender: !!this.draft }); }
     finally { this.busy = false; if (this.closed) await this.clearFiles(); }
+  }
+  async importPhoto(settings: CameraSettings, ports: ImportPorts): Promise<void> {
+    if (this.busy || this.closed || this.draft) return;
+    this.busy = true;
+    const epoch = this.epoch;
+    let selected: SelectedPhoto | null = null;
+    try {
+      // The import date is not the original EXIF capture date. Stamping starts off.
+      const frozenSettings = copyCameraSettings({ ...settings, dateStamp: false });
+      this.emit({ phase: 'picking' });
+      selected = await ports.pick();
+      if (epoch !== this.epoch) { this.emit({ phase: 'cancelled' }); return; }
+      if (!selected) { this.emit({ phase: 'idle' }); return; }
+      const now = new Date();
+      this.snapshot = Object.freeze({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        capturedAt: now.toISOString(), stampDate: localStampDate(now), position: 'back',
+        grainSeed: createGrainSeed(), flashMode: 'off', settings: frozenSettings });
+      this.emit({ phase: 'importing' });
+      this.draft = await ports.prepare(selected, this.snapshot);
+      if (epoch !== this.epoch) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }
+      this.emit({ phase: 'rendering' });
+      this.output = await this.ports.render(this.draft, this.snapshot);
+      if (epoch !== this.epoch) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); return; }
+      this.emit({ phase: 'file-ready', output: this.output, outputSettings: this.snapshot.settings });
+    } catch (error) {
+      if (epoch !== this.epoch) { await this.clearFiles(); this.emit({ phase: 'cancelled' }); }
+      else this.emit({ phase: 'failed', message: this.draft ? '사진에 색감을 적용하지 못했어요. 보관한 사진으로 다시 시도해 주세요.'
+        : error instanceof Error ? error.message : '사진을 가져오지 못했어요. 다시 골라 주세요.', canRetryRender: !!this.draft });
+    } finally {
+      // Picker cache ownership ends here; never delete a gallery asset or user-selected provider URI.
+      try { if (selected) await ports.release(selected); }
+      catch { console.warn('Picker cache cleanup failed; accepted photo retained.'); }
+      finally { this.busy = false; if (this.closed) await this.clearFiles(); }
+    }
   }
   async retryRender(): Promise<void> {
     if (this.busy || this.closed || !this.draft || !this.snapshot || this.output) return;

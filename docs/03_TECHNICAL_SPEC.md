@@ -1,5 +1,22 @@
 # 03. 기술 설계와 구현 계약
 
+## 2026-10-31 사진 가져오기와 디코딩 제한
+
+허용 후보 `expo-image-picker@55.0.24`를 exact 추가하고 transitive `expo-image-loader@55.0.1`을 lockfile로 고정했다. Expo55.0.32 bundledNativeModules/SDK55 공식 자료·설치 타입과 소스를 확인했다. 두 패키지는 MIT이며 ImagePicker npm unpacked533,790바이트는 앱 용량 실측이 아니다. `--ignore-scripts --no-audit --no-fund`로 설치해 Pod/prebuild/build를 실행하지 않았다. app plugin은 photosPermission/microphonePermission false, cameraPermission은 기존 카메라 목적 문구를 유지한다. CAMERA를 차단하는 false 설정은 사용하지 않고 기존 Android 읽기/위치/오디오 차단 목록을 유지한다. [S49](REFERENCES.md#s49-시스템-사진-선택과-디코딩-제한--2026-10-31).
+
+`src/platform/media/importPhoto.ts`는 images 단일 선택, quality1, 편집/EXIF/base64 비활성, iOS Current 표현을 요청한다. 카메라의 실제 onStopped를 CameraPauseGate로 기다리고 선택기 복귀의 active 상태를 기다린 뒤 디코딩한다. native 모듈 조회와 picker import는 요청 시 실패 경계 안에서 수행하며 구 개발 앱의 모듈 누락이 카메라 시작을 막지 않는다. Android activity 파괴 뒤 남은 picker 결과는 새 선택 전에 소유한 cache 사본만 정리하며 자동 편집 복원으로 취급하지 않는다.
+
+기존 NitroImage에는 decode 단계 크기 제한 API가 없어 `modules/yeoun-photo-import`의 로컬 Expo 모듈을 추가했다. autolinking 기본 `./modules` 탐색을 사용한다. 루트 CNG 생성물만 무시하도록 `.gitignore`의 /ios/·/android/를 고정해 로컬 모듈 소스를 추적한다. 이 경로는 생성된 Xcode/Gradle 프로젝트의 직접 수정이 아니다.
+
+- JS/native 경계에는 캐시 file URI와 width/height/resized/flattened만 전달한다. 디코더·bitmap/context는 Expo AsyncFunction 큐 안에서 소유하고 iOS autoreleasepool, Android finally recycle로 해제한다. 프레임 픽셀을 React state·JSON·base64에 넣지 않는다.
+- 입력은 앱 cache 파일, 출력은 cache/yeoun-m0의 source.jpg로 한정한다. 디코딩 전 파일100MiB·2억 화소·변당10만px 제한을 검사하고 최대1,200만 화소·긴 변4,096px 이내로 디코딩한다. iOS는 ImageIO thumbnail+EXIF transform, Android API28+는 ImageDecoder의 header/targetSize/sRGB, API24~27은 bounds/inSampleSize와 ExifInterface의 수평 반전 후 회전을 사용한다. 구 Android는 power-of-two sampling 때문에 결과가 더 작을 수 있다.
+- JPEG/PNG·지원 HEIC/HEIF를 정방향 sRGB/8bit JPEG로 만든다. API24~27은 JPEG/PNG만 처리한다. 투명 부분은 흰색 합성, source EXIF/GPS/원래 촬영일은 새 파일에 복사하지 않는다. HDR·Live Photo 움직임 보존을 주장하지 않는다. PNG의 animated 검출은 iOS/ImageDecoder에서 거부하며 구 Android decoder의 동작은 수동 확인 대상이다.
+- 반환 치수/플래그/파일 존재·bytes를 adapter에서 확인한다. 출력 실패는 부분 파일을 지우고 선택·포맷·크기 오류는 파일 경로 없는 안내로 바꾼다. picker URI 삭제는 현재 cache의 ImagePicker 바로 아래 파일 또는 SDK55 iOS UUID 파일명으로 한정하고 provider/앨범 URI를 지우지 않는다.
+- CaptureController의 picking/importing 단계도 단일 busy/epoch로 관리한다. 설정은 시작 시 동결하되 dateStamp false·노출 없음·flash off로 만들고 날짜/입자 seed는 준비 시 고정한다. 늦은 선택·준비·렌더 결과는 close/interrupt 시 정리한다. source 재렌더/재시도·원본 비교·저장/버리기는 기존 파일 소유권을 재사용한다.
+- Draft.imported가 있으면 export/비교 모두 full framing, 일반 카메라는 기존 4:3 crop이다. 비교 표시만 긴 변1,600px로 줄이며 저장은 준비된 source 크기를 사용한다. 필터 정의·공통 shader·LUT 버전은 바꾸지 않는다.
+
+**제약/미검증:** SDK55 iOS picker의 정상 Current/quality1 경로는 파일 복사지만 그 경로 실패 시 UIImage fallback이 있어 전체 선택 과정의 메모리 상한을 보장하지 않는다. 네이티브 디코더 지원·EXIF8방향·P3/HDR 변환·PNG·큰 파일·반복 메모리는 기기 확인 전이다. source는 세션 캐시여서 프로세스 종료 후 복구하지 않는다. SQLite·ImagePicker·로컬 모듈을 포함한 개발 앱 재빌드가 필요하며 테스트/빌드/기기 실행은 NOT_RUN이다.
+
 ## 2026-10-30 즐겨찾기 영구 저장
 
 명세 허용 목록의 `expo-sqlite@55.0.20`을 exact 설치했다. Expo55.0.32의 bundledNativeModules와 공식 SDK55 문서 권장 범위가~55.0.20이고 peer는 Expo/React/RN `*`이다. MIT, npm unpacked78,017,151바이트이며 이는 앱 용량 증가 실측이 아니다. transitive await-lock2.2.2도 lockfile에 고정된다. lifecycle script/Pod install/prebuild/JS·native build는 실행하지 않았다. 새 모듈을 포함한 iOS/Android 개발 빌드가 이후 기기 확인의 선행 조건이다. [S48](REFERENCES.md#s48-즐겨찾기와-expo-sqlite--2026-10-30).

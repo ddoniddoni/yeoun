@@ -24,6 +24,6 @@ artifacts/local/
 # 이 예시만 보고 android/, ios/ 또는 공개 가능한 테스트 fixture를 삭제하지 않습니다.
 
 # Expo CNG: regenerate from app.json; no manual native edits.
-ios/
-android/
+/ios/
+/android/
 work/

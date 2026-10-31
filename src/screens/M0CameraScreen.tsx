@@ -10,6 +10,8 @@ import type { MeteringState } from '../domain/capture/meteringSession';
 import { capturePhoto } from '../platform/camera/capturePhoto';
 import { removeFile } from '../platform/files/drafts';
 import { saveToGallery } from '../platform/media/gallery';
+import { pickLibraryPhoto, prepareLibraryPhoto, releasePickedPhoto } from '../platform/media/importPhoto';
+import { CameraPauseGate } from '../platform/camera/pauseGate';
 import { exportOriginalComparison, exportPhoto } from '../rendering/adapters/exportPhoto';
 import type { FilterStatus } from '../rendering/adapters/cameraLut';
 import { FilterControls, FilterAdjustmentPanel } from './FilterControls';
@@ -26,8 +28,9 @@ import { cameraTheme as theme } from './cameraTheme';
 const PHOTO_SIZE = { width: 4032, height: 3024 };
 const LABELS: Record<CaptureState['phase'], string> = {
   idle: '오늘의 빛을, 오래 남을 색으로.', capturing: '순간을 담고 있어요', rendering: '사진에 색감을 입히고 있어요',
+  picking: '앨범에서 사진 한 장을 골라 주세요', importing: '사진을 준비하고 있어요',
   'file-ready': '파일 준비 완료 · 아직 갤러리에 저장하지 않았어요',
-  'saving-gallery': '갤러리에 저장 중', saved: '갤러리 저장 완료', failed: '작업 실패', cancelled: '앱 중단으로 촬영을 취소했어요',
+  'saving-gallery': '갤러리에 저장 중', saved: '갤러리 저장 완료', failed: '작업 실패', cancelled: '앱 중단으로 작업을 취소했어요',
 };
 export function M0CameraScreen() {
   const permission = useCameraPermission();
@@ -54,6 +57,7 @@ export function M0CameraScreen() {
   const [returnError, setReturnError] = useState<string>();
   const discardPending = useRef(false);
   const [cameraStopped, setCameraStopped] = useState(false);
+  const [pauseGate] = useState(() => new CameraPauseGate());
   const [info, setInfo] = useState('실제 프레임 관측 대기');
   const [state, setState] = useState<CaptureState>({ phase: 'idle' });
   const preview = useRef<CameraPreviewHandle>(null);
@@ -63,7 +67,7 @@ export function M0CameraScreen() {
   const comparisonContext = `${cameraSettingsKey(settings)}/${filterRevision}/${grainSeed}/${device?.id ?? 'none'}/${foreground}`;
   const markReady = useCallback(() => setReady(true), []);
   const markStopped = useCallback(() => setReady(false), []);
-  const onRunningChange = useCallback((running: boolean) => setCameraStopped(!running), []);
+  const onRunningChange = useCallback((running: boolean) => { setCameraStopped(!running); pauseGate.setRunning(running); }, [pauseGate]);
   const showError = useCallback((error: unknown) => setCameraError(String(error)), []);
   const onCameraError = useCallback((error: Error) => { setReady(false); setCameraError(String(error)); }, []);
   const controller = useMemo(() => new CaptureController({
@@ -75,12 +79,13 @@ export function M0CameraScreen() {
       setForeground(next === 'active');
       if (next !== 'active') {
         setReady(false);
-        if (controller.state.phase === 'capturing' || controller.state.phase === 'rendering' || controller.state.preparingOriginal || controller.state.editing) controller.interrupt();
+        if (controller.state.phase === 'capturing' || controller.state.phase === 'importing' || controller.state.phase === 'rendering' || controller.state.preparingOriginal || controller.state.editing) controller.interrupt();
       }
     });
     return () => { sub.remove(); controller.close(); };
   }, [controller]);
-  const busy = state.phase === 'capturing' || state.phase === 'rendering' || state.phase === 'saving-gallery';
+  const busy = state.phase === 'picking' || state.phase === 'importing' || state.phase === 'capturing' || state.phase === 'rendering' || state.phase === 'saving-gallery';
+  const importing = state.phase === 'picking' || state.phase === 'importing' || !!state.imported;
   const canCapture = ['idle', 'cancelled'].includes(state.phase);
   const resultOpen = !!state.output;
   const overlayOpen = diagnosticsOpen || resultOpen;
@@ -108,7 +113,7 @@ export function M0CameraScreen() {
     if (permission.hasPermission && device && foreground && !cameraError) setCameraStopped(false);
   }, [permission.hasPermission, device, foreground, cameraError]);
   const discardAndReturn = async () => {
-    if (discardPending.current || controller.state.preparingOriginal || controller.state.editing || ['capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
+    if (discardPending.current || controller.state.preparingOriginal || controller.state.editing || ['picking', 'importing', 'capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
     discardPending.current = true; setReturning(true); setReturnError(undefined);
     setReady(false); setFilterRevision(value => value + 1);
     if (permission.hasPermission && device && foreground && !cameraError) setCameraStopped(false);
@@ -118,6 +123,16 @@ export function M0CameraScreen() {
   };
   const controlsHidden = overlayOpen || panel !== undefined;
   const settingsDisabled = busy || !canCapture || returning;
+  const importDisabled = settingsDisabled || !foreground || diagnosticsOpen || metering.busy;
+  const importPhoto = () => {
+    if (importDisabled || discardPending.current) return;
+    setPanel(undefined); setReady(false);
+    void controller.importPhoto(settings, {
+      pick: async () => { await pauseGate.wait(); return pickLibraryPhoto(); },
+      prepare: async (photo, snapshot) => { await pauseGate.wait(); return prepareLibraryPhoto(photo, snapshot); },
+      release: releasePickedPhoto,
+    }).finally(() => { setReady(false); setFilterRevision(value => value + 1); });
+  };
   const flashLabel = flashMode === 'off' ? '끔' : flashMode === 'auto' ? '자동' : '켬';
   const exposureLabel = metering.exposure === undefined ? undefined
     : `${metering.unit === 'step' ? '노출' : 'EV'} ${metering.exposure > 0 ? '+' : ''}${metering.unit === 'step'
@@ -144,6 +159,7 @@ export function M0CameraScreen() {
         </View>
         <Text accessibilityRole="header" accessibilityLabel="여운" style={styles.brand}>yeoun<Text style={{ color: theme.shutter }}>.</Text></Text>
         <View style={[styles.toolbarGroup, styles.toolbarEnd]}>
+          <IconButton icon="album" label="앨범 사진 가져오기" hint="사진 한 장에 필터를 적용하고 새 JPEG로 저장해요." disabled={importDisabled} onPress={importPhoto} />
           <IconButton icon="settings" label="촬영 설정" disabled={settingsDisabled} onPress={() => setPanel('camera')} />
         </View>
       </View>
@@ -160,13 +176,15 @@ export function M0CameraScreen() {
               {permission.canRequestPermission
                 ? <CameraAction primary label="카메라 시작" onPress={() => { void permission.requestPermission().catch(showError); }} />
                 : <CameraAction primary label="설정에서 카메라 허용" onPress={openSettings} />}
+              <CameraAction icon="album" label="앨범 사진 편집" disabled={importDisabled} onPress={importPhoto} />
             </View> : !device ? <View style={styles.emptyFrame}>
               <Text style={styles.welcome}>카메라를 찾지 못했어요</Text>
               <Text style={styles.text}>아래 전환 버튼으로 다른 카메라를 선택해 주세요.</Text>
+              <CameraAction icon="album" label="앨범 사진 편집" disabled={importDisabled} onPress={importPhoto} />
             </View> : <View style={[styles.viewfinder, { width: previewWidth }]}>
               <CameraPreview ref={preview} key={device.id} device={device} photoOutput={photoOutput}
                 controlsEnabled={!meteringDisabled} onMetering={setMeteringState}
-                active={foreground && !cameraError && !overlayOpen} settings={comparison.previewSettings} grainSeed={grainSeed} filterRequestKey={filterRequestKey}
+                active={foreground && !cameraError && !overlayOpen && !importing} settings={comparison.previewSettings} grainSeed={grainSeed} filterRequestKey={filterRequestKey}
                 onFilterStatus={setFilterStatus} onReady={markReady} onStopped={markStopped}
                 onRunningChange={onRunningChange} onError={onCameraError} onInfo={setInfo} />
               {grid ? <CameraGrid /> : null}
@@ -209,7 +227,7 @@ export function M0CameraScreen() {
                 if (controller.state.phase === 'cancelled') setGrainSeed(createGrainSeed());
               });
             }} /> : null}
-          {state.phase === 'failed' && !resultOpen ? <CameraAction label="임시 사진 버리고 다시 촬영"
+          {state.phase === 'failed' && !resultOpen ? <CameraAction label="카메라로 돌아가기"
             disabled={busy || returning} onPress={() => { void discardAndReturn(); }} /> : null}
         </View>
       </ScrollView>
@@ -256,7 +274,7 @@ export function M0CameraScreen() {
         </> : <Text style={styles.info}>카메라를 허용하면 촬영 설정을 사용할 수 있어요.</Text>}
         <Text style={styles.info}>사진은 기기 안에서만 처리해요.</Text>
         {__DEV__ ? <CameraAction label="개발 진단" disabled={busy || !foreground || returning} onPress={() => {
-          if (!__DEV__ || !foreground || discardPending.current || ['capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
+          if (!__DEV__ || !foreground || discardPending.current || ['picking', 'importing', 'capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
           setPanel(undefined); setReady(false); setDiagnosticsOpen(true);
         }} /> : null}
       </> : <>

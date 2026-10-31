@@ -12,7 +12,7 @@
 - 소스 검토: 복사→journal→이전 파일 정리 순서, restore hash/size, save의 pre/post journal 및 close, startup 선택 이전 카메라 비활성, 각 타입/API와 파일 소유권을 읽었다. `git diff --check` exit0. 경로/문서 제목 추정으로 실패한 조회·패치는 실제 파일을 읽고 보완했다. 테스트 소스는 commit 전후/불확실한 write/실패 보존/설정 재현/중복 저장/만료/손상/삭제 순서를 다루지만 실행하지 않았다.
 - **NOT_RUN:** lint/typecheck/Jest/react-doctor/자산 검사/JS·native build/prebuild/Pod/Metro/기기·화면 캡처/실제 복구·SQLite durability·backup 제외·권한·디스크 부족·성능·접근성. 새 native 코드가 없는 이전 개발 앱에서는 준비 안내가 나오므로 다음 기기 확인 전 재빌드가 필요하다. mock repository는 실제 파일/프로세스 종료 검증이 아니며 G0~G5 미통과 유지.
 - 한계/다음: 적용 완료 결과만 복구하며 첫 export job 재개·설정 기억·레시피는 아직 별도 범위다. 파일 복사/hash에 따른 지연·디스크 점유는 측정 전이며 전원 손실 내구성을 보장하지 않는다. 앱 데이터/앱 삭제는 복구할 수 없다. 사용자 요청 시 재빌드 후 docs/05_TEST_RELEASE의 종료 시점별 검수를 진행한다. 다른 기능은 자동 시작하지 않는다.
-- Git Flow: 관련 파일만 명시 stage 후 commit/push·develop 대상 PR·merge·develop 동기화를 진행한다. 실행한 결과는 다음 기록 또는 PR/Git 이력으로 남긴다.
+- Git Flow: 명시24파일 stage, `git diff --cached --check` exit0. 구현 commit `f972d50`, `git push -u origin feature/edit-recovery`, [PR #35](https://github.com/ddoniddoni/yeoun/pull/35)(base develop) 생성 각각 exit0. 이 기록을 포함해 PR 병합 후 develop fetch/FF/push·로컬/원격 커밋 일치와 clean을 확인하고 develop에서 마친다. 최종 통합 상태는 PR/Git 이력을 따른다.
 
 ## 이전 기록 — 2026-10-31 결과 사진 공유
 

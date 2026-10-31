@@ -27,6 +27,7 @@
     "expo-file-system": "55.0.26",
     "expo-image-picker": "55.0.24",
     "expo-media-library": "55.0.21",
+    "expo-sharing": "55.0.25",
     "expo-sqlite": "55.0.20",
     "react": "19.2.0",
     "react-native": "0.83.10",

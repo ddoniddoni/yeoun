@@ -1,6 +1,18 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-11-10 크게 보는 촬영 화면
+## 현재 상태 — 2026-11-10 필터·전후면 전환 중 iOS 종료 수정
+
+- 요청/준비: 사용자가 필터 변경과 전후면 전환을 반복할 때 앱이 종료된다고 보고했다. clean develop `14f95b7ccfc697e03e2557bf75691f5c828ab83e`(PR #42)에서 fetch/FF 후 `fix/camera-switch-crash`를 생성했다. `systematic-debugging` 절차로 먼저 실제 crash log와 설치된 구현을 확인했다. 직전 큰 프레임/필터 목록 변경은 사용자가 ‘커졌고 펼치기·접기도 돼요’로 수동 확인했다.
+- 관측: 연결 iPhone15/iOS27.2의 systemCrashLogs에서 `M0-2026-11-10-022827.ips`, `M0-2026-11-10-022853.ips`를 읽었다. 두 건 모두 EXC_CRASH/SIGABRT이며 `AVCaptureOutput detachFromFigCaptureSession` → `AVCaptureSession dealloc` → `HybridCameraSession.deinit` → Hermes GC 경로다. 마지막 Jetsam은 전날23:36으로 이번 두 건은 과거 Skia OOM과 별도로 분류한다. 원본 보고서는 /private/tmp에만 두고 커밋하지 않는다.
+- 원인/수정: 부모의 usePhotoOutput은 유지되는데 `CameraPreview key={device.id}`가 전환마다 새 native session을 만들었다. 이전 세션이 늦게 GC될 때 재사용한 output을 detach하는 upstream #4156/#4215의 재현 구조/스택과 일치한다. key를 제거해 기존 세션의 device 재구성을 사용한다. 패키지/네이티브 파일은 수정하지 않았다.
+- 전환 준비: 새 device의 onConfigured 전 프레임을 폐기하고 geometry를 비운다. 기존 frame epoch와 device 일치 검사를 함께 사용해 늦은 이전 프레임을 무시한다. 해당 device controller가 React ref에 게시된 뒤 첫 프레임으로 ready/초점·노출을 다시 연결한다. 준비 전 전환 버튼 비활성화와 즉시 ref 잠금으로 연속 입력을 막고 오류/기기 없음의 다른 렌즈 선택은 유지한다.
+- 변경 파일: src/screens/M0CameraScreen.tsx, src/platform/camera/CameraPreview.tsx, docs/03_TECHNICAL_SPEC.md, docs/05_TEST_RELEASE.md, docs/REFERENCES.md, 이 기록. 새 의존성/권한/네이티브 빌드 설정 변경 없음. native GC 충돌을 JS mock 통과로 대신하지 않으며 수동 회귀 절차를 검수 문서에 추가했다.
+- 실행/관측: `devicectl device info files --domain-type systemCrashLogs` 및 두 `device copy from` exit0; Python으로 해당 crash JSON의 exception/원인 thread만 추출했다. 설치 VisionCamera5.2.3의 useCameraController/useCameraSession/HybridCameraSession과 SkiaCamera ref 구현을 읽고 공식 Lifecycle 및 upstream 보고와 비교했다. `git diff --check` exit0. 기존 Metro 세션은 유지하고 읽었으며 수정 후 새 출력은 아직 없었다.
+- **NOT_RUN:** npm run lint, npm run typecheck, npm test -- --runInBand, react-doctor, JS/native build, 재설치. 현재 검사 보류 지시를 따른다. 변경 후 반복 전환·초점/노출·촬영 저장·background 복귀·Android·15분 메모리/GPU 안정성은 아직 미확인이다. 사용자에게 앱을 완전히 닫고 다시 연 뒤 필터와 전후면 전환을 반복하도록 확인을 요청했다. 재현 없음/완전 해결로 단정하지 않는다.
+- Git Flow: 위6개 파일만 명시 stage해 커밋·푸시·develop PR 생성/병합·동기화한 뒤 develop에서 종료한다. 최종 커밋/PR/동기화 결과는 Git 이력과 완료 보고를 따른다.
+- 다음 확인: 사용자 반복 전환 결과, 같은 SIGABRT의 신규 로그 여부, 전후면 각각 초점·노출과 고해상도 저장. 앱 전체 unmount/권한 변경/기기 제거 시 upstream 세션 teardown 문제는 별도 범위로 남는다.
+
+## 이전 기록 — 2026-11-10 크게 보는 촬영 화면
 
 - 요청/준비: 사용자가 아이폰처럼 더 큰 카메라 화면을 요청했고 ‘기본은 접고 크게 촬영’을 선택했다. clean develop `54cf863aa9c128536c98e51bb01324c43815bd5b`(PR #41)에서 fetch/FF와 `git switch -c fix/larger-camera-viewfinder` exit0. 검사 보류·개발 후 Git Flow 상시 승인 유지.
 - 원인/구현: 기존 viewfinderArea의 남은 높이에서 previewWidth를 min(width,height×3/4)로 계산하고96pt 필터 목록을 항상 표시해 프레임 폭까지 줄었다. 가로폭100%/기존 CameraPreview3:4 aspectRatio의 정상 흐름으로 바꾸고 좌우8pt 여백·22pt 둥근 clipping을 제거했다. 표시 크기만 바꾸며 sensor/preview resolution·crop·LUT·고해상도 저장 경로는 바꾸지 않았다.

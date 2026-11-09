@@ -63,6 +63,7 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>();
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
   const [ready, setReady] = useState(false);
+  const readyRef = useRef(false);
   const [cameraError, setCameraError] = useState<string>();
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [returning, setReturning] = useState(false);
@@ -77,11 +78,11 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
   const metering: MeteringState = meteringState.deviceId === device?.id ? meteringState
     : { deviceId: device?.id ?? '', ready: false, busy: false };
   const comparisonContext = `${cameraSettingsKey(settings)}/${filterRevision}/${grainSeed}/${device?.id ?? 'none'}/${foreground}`;
-  const markReady = useCallback(() => setReady(true), []);
-  const markStopped = useCallback(() => setReady(false), []);
+  const markReady = useCallback(() => { readyRef.current = true; setReady(true); }, []);
+  const markStopped = useCallback(() => { readyRef.current = false; setReady(false); }, []);
   const onRunningChange = useCallback((running: boolean) => { setCameraStopped(!running); pauseGate.setRunning(running); }, [pauseGate]);
   const showError = useCallback((error: unknown) => setCameraError(String(error)), []);
-  const onCameraError = useCallback((error: Error) => { setReady(false); setCameraError(String(error)); }, []);
+  const onCameraError = useCallback((error: Error) => { markStopped(); setCameraError(String(error)); }, [markStopped]);
   const photoOutputRef = useRef(photoOutput);
   photoOutputRef.current = photoOutput;
   // The restored session has one owner for this mounted screen, even if camera output props change.
@@ -106,6 +107,9 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
   const overlayOpen = diagnosticsOpen || resultOpen;
   const assistDisabled = !permission.hasPermission || !device || !ready || !foreground || !!cameraError ||
     busy || !canCapture || overlayOpen || returning || memory.switching;
+  // Error/missing-device states still allow selecting the other camera for recovery.
+  const flipDisabled = busy || metering.busy || !canCapture || returning || !foreground || overlayOpen ||
+    memory.switching || (!!device && permission.hasPermission && !ready && !cameraError);
   const hasStyle = settings.filterId !== 'original' && settings.intensity > 0;
   const comparisonAvailable = hasStyle && permission.hasPermission && !!device && ready && foreground &&
     !cameraError && !busy && canCapture && !overlayOpen && !returning;
@@ -203,7 +207,8 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
               <Text style={styles.text}>아래 전환 버튼으로 다른 카메라를 선택해 주세요.</Text>
               <CameraAction icon="album" label="앨범 사진 편집" disabled={importDisabled} onPress={importPhoto} />
             </View> : <View style={styles.viewfinder}>
-              <CameraPreview ref={preview} key={device.id} device={device} photoOutput={photoOutput}
+              {/* A device key would recreate the session while reusing its photo output (iOS teardown abort). */}
+              <CameraPreview ref={preview} device={device} photoOutput={photoOutput}
                 controlsEnabled={!meteringDisabled} onMetering={setMeteringState}
                 active={foreground && !cameraError && !overlayOpen && !importing} settings={comparison.previewSettings} grainSeed={grainSeed} filterRequestKey={filterRequestKey}
                 onFilterStatus={setFilterStatus} onReady={markReady} onStopped={markStopped}
@@ -272,10 +277,15 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
           });
         }} />
         <Pressable accessibilityRole="button" accessibilityLabel={position === 'back' ? '전면 카메라로 전환' : '후면 카메라로 전환'}
-          disabled={busy || metering.busy || !canCapture || returning} accessibilityState={{ disabled: busy || metering.busy || !canCapture || returning }}
-          onPress={() => { setReady(false); setCameraError(undefined); setFlashSelection(undefined); setPosition(value => value === 'back' ? 'front' : 'back'); }}
+          disabled={flipDisabled} accessibilityState={{ disabled: flipDisabled }}
+          onPress={() => {
+            if (flipDisabled || (device && permission.hasPermission && !cameraError && !readyRef.current)) return;
+            // Close synchronously too: two taps may arrive before React renders disabled.
+            markStopped(); setCameraError(undefined); setFlashSelection(undefined);
+            setPosition(value => value === 'back' ? 'front' : 'back');
+          }}
           style={({ pressed }) => [styles.sideControl, pressed && styles.pressed,
-            (busy || metering.busy || !canCapture || returning) && styles.disabled]}>
+            flipDisabled && styles.disabled]}>
           <CameraIcon name="flip" size={28} />
         </Pressable>
       </View>

@@ -8,6 +8,7 @@ import { clearExpiredSharedPhotos } from '../platform/files/sharedPhotos';
 import { CameraAction } from './CameraControls';
 import { CameraIcon } from './CameraIcon';
 import { FilterFavoritesProvider } from './FilterFavorites';
+import { RecipesProvider } from './RecipeControls';
 import { M0CameraScreen } from './M0CameraScreen';
 import { cameraTheme as theme, filterPresentation } from './cameraTheme';
 
@@ -52,7 +53,9 @@ export function EditRecoveryGate() {
   const discard = () => Alert.alert('보관한 사진을 삭제할까요?', '이 편집 사진은 다시 불러올 수 없어요. 사진 앱에 저장한 사진은 그대로 남아요.', [
     { text: '취소', style: 'cancel' }, { text: '삭제', style: 'destructive', onPress: () => { void act('discard'); } },
   ]);
-  if (state.phase === 'ready') return <FilterFavoritesProvider><M0CameraScreen restored={state.restored} /></FilterFavoritesProvider>;
+  if (state.phase === 'ready') return <FilterFavoritesProvider><RecipesProvider>
+    <M0CameraScreen restored={state.restored} />
+  </RecipesProvider></FilterFavoritesProvider>;
   const record = state.phase === 'offer' ? state.record : undefined;
   const filter = record ? CAMERA_FILTERS.find(item => item.id === record.snapshot.settings.filterId) : undefined;
   const palette = record ? filterPresentation[record.snapshot.settings.filterId] : undefined;

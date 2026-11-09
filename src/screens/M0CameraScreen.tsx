@@ -290,7 +290,11 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
           <CameraAction label="색감 다시 불러오기" disabled={settingsDisabled} onPress={() => setFilterRevision(value => value + 1)} />
           <CameraAction label="원본으로 전환" disabled={settingsDisabled} onPress={() => selectFilter('original')} />
         </View> : null}
-        <FilterAdjustmentPanel settings={settings} disabled={settingsDisabled} onSelect={selectFilter}
+        <FilterAdjustmentPanel settings={settings} disabled={settingsDisabled || !foreground} onSelect={selectFilter}
+          onRecipe={next => {
+            if (settingsDisabled || !foreground) return;
+            setSettings(copyCameraSettings(next)); setFilterRevision(value => value + 1);
+          }}
           onIntensity={intensity => {
             setSettings(copyCameraSettings({ ...settings, intensity })); setFilterRevision(value => value + 1);
           }} onTexture={(control, value) => {

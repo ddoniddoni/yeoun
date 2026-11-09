@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Alert, Modal, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CaptureState, Output } from '../domain/capture/controller';
 import { CAMERA_FILTERS, type CameraSettings } from '../domain/filters/cameraSettings';
@@ -43,6 +43,8 @@ export function CameraResultScreen({ state, output, settings, foreground, return
   };
   return <Modal visible animationType="none" presentationStyle="fullScreen" onRequestClose={requestReturn}>
     <SafeAreaView style={styles.page}>
+      <KeyboardAvoidingView style={styles.page} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={insets.top}>
       <View style={styles.header}>
         <IconButton icon={editorOpen ? 'close' : 'back'} label={editorOpen ? '편집 취소' : '카메라로 돌아가기'} disabled={locked} onPress={requestReturn} />
         <Text accessibilityRole="header" style={styles.title}>{editorOpen ? '색감 편집' : state.imported ? '가져온 순간' : '남겨진 순간'}</Text>
@@ -50,7 +52,8 @@ export function CameraResultScreen({ state, output, settings, foreground, return
           hint="현재 적용된 사진을 시스템 공유창으로 보내요. 앨범에 먼저 저장하지 않아도 돼요."
           disabled={locked || editorOpen} onPress={onShare} />
       </View>
-      <ScrollView ref={scroll} style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView ref={scroll} style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag" contentContainerStyle={styles.content}>
         <View style={styles.filterRow}>
           <View style={[styles.dot, { backgroundColor: accent }]} />
           <Text numberOfLines={1} style={styles.filterName}>{filter?.name}</Text>
@@ -94,6 +97,7 @@ export function CameraResultScreen({ state, output, settings, foreground, return
             disabled={locked || editorOpen} onPress={onSave} />}
         {state.phase === 'failed' || uncertain ? <CameraAction label="저장 권한 설정" disabled={locked} onPress={onSettings} /> : null}
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   </Modal>;
 }

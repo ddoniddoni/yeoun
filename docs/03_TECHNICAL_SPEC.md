@@ -369,16 +369,23 @@ saving-gallery 도중 프로세스 종료 -> save-uncertain
 
 ## 11. SQLite 데이터
 
+### 2026-11-09 개인 레시피 구현
+
+`src/storage/localDatabase.ts`가 `yeoun.db`의 단일 초기화/연결 promise/작업 queue를 소유한다. 즐겨찾기와 레시피 읽기·쓰기를 모두 직렬화한다. exclusive transaction에서 schema0은 즐겨찾기와 레시피를 생성하고, schema1은 기존 favorite_filters를 수정하지 않고 recipes만 추가해 user_version2로 올린다. schema2는 유지하며 알 수 없는 버전은 DDL 없이 거부한다. 초기화 실패는 연결을 닫고 다음 요청에서 다시 시도한다. 별도 no-backup `recovery.db`는 변경하지 않는다.
+
+실제 recipes 열은 아래 SQL과 같다. payload schema1은 `{settings, fingerprint}`로, `copyCameraSettings`가 승인한 전체 색감 조절값과 버전만 저장한다. 실제 날짜/seed/사진/장치 설정은 제외한다. fingerprint는 해당 look·identity LUT SHA256, look/authoring/renderer/렌더 계약/Skia·공간 효과 backend 버전과 grainStyle 수치다. 관계없는 필터의 변경으로 기존 레시피를 막지 않는다. 현재 버전이 없는 경우 raw payload를 덮어쓰지 않고 적용 불가 항목으로 반환한다. 이름 변경은 name/updated_at만, 삭제는 명시된 UUID 한 행만 변경한다.
+
+사용자 문자열은 runAsync 바인딩만 사용한다. 최대100개 제한을 쓰기 transaction 안에서도 확인하며, 쓰기와 목록 읽기가 끝나고 commit 응답을 받은 뒤에만 UI 성공을 확정한다. 실패/commit 불명확 시 마지막 확인 목록을 유지하고 재조회까지 변경과 적용을 차단한다. 입력 폼은 닫아 같은 제출의 자동 재시도를 피한다. 손상된 payload/미지원 레시피 schema는 행을 보존하며, 손상된 ID/기본 열로 안전한 식별이 불가능하면 목록 읽기를 실패시킨다.
+
+`RecipesStore`는 앱 세션 인스턴스 하나이고 구독은 레시피 UI에만 둔다. 저장 버튼을 누른 시점의 조절값을 비동기 작업 전에 불변 snapshot으로 복사하며 원래 조절값을 변경하지 않는다. 이름 입력 중 조절값을 바꾸면 그 변경도 저장 대상에 반영된다. 촬영 불러오기는 전체 설정을 한 번에 교체하고 프리뷰 request revision을 갱신한다. 결과 편집은 draft만 변경하며 기존 controller의 명시 적용/성공 후 교체 경로를 사용한다. 가져온 사진은 dateStamp=false로 불러온다. 새 패키지/네이티브/권한 변경 없음. 공식 API 근거는 [S52](REFERENCES.md#s52-개인-레시피와-입력-ui--2026-11-09).
+
 SQLite에는 사진 바이너리나 GPU 객체를 넣지 않는다. 연결 초기화와 migration은 단일 경로에서 수행한다. SQL에 사용자 입력을 문자열 보간하지 않고 parameter binding을 사용한다. SQLite persistence는 [S13](REFERENCES.md)를 참고한다.
 
 ```sql
 CREATE TABLE recipes (
-  id TEXT PRIMARY KEY,
+  id TEXT PRIMARY KEY NOT NULL,
   name TEXT NOT NULL,
-  filter_id TEXT NOT NULL,
-  look_version TEXT NOT NULL,
-  engine_version TEXT NOT NULL,
-  params_json TEXT NOT NULL,
+  payload TEXT NOT NULL,
   schema_version INTEGER NOT NULL,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -418,9 +425,9 @@ CREATE TABLE export_jobs (
 );
 ```
 
-이는 최소 초기 스키마다. `variant`는 `filtered/unfiltered`, `status`는 정의된 enum으로 제한하고 DB와 앱 경계에서 검증한다. migration 버전은 `PRAGMA user_version` 또는 기존 migration 시스템 중 하나로 관리한다. 외부 키와 정리 규칙을 추가할 경우 디스크 파일 삭제와 순서를 함께 정의한다.
+recipes/favorite_filters는 현재 yeoun.db schema2에 구현돼 있다. app_settings/draft_sessions/export_jobs는 향후 목표 스키마이며 현재 구현됐다는 뜻이 아니다. 현재 편집 복구는 별도 recovery.db를 쓴다. `variant`는 `filtered/unfiltered`, `status`는 정의된 enum으로 제한하고 DB와 앱 경계에서 검증한다. 외부 키와 정리 규칙을 추가할 경우 디스크 파일 삭제와 순서를 함께 정의한다.
 
-`params_json`에는 `intensity`, `grain`, `bloom`만 저장한다. 기존 recipe는 출시된 look/engine version을 고정한다. 지원 버전이 없어도 설정을 지워서는 안 되며 복구 가능한 오류로 표시한다.
+레시피 payload의 전체 필드와 버전 고정 계약은 위 현재 구현 절을 따른다. 지원 버전이 없어도 설정을 지워서는 안 되며 복구 가능한 오류로 표시한다.
 
 초안과 저널은 재시도에 필요한 최소 정보다. 영구 촬영 이력이나 앱 자체 사진 앨범으로 확장하지 않는다. 파일과 DB 중 한쪽만 남은 상황의 복구를 테스트한다.
 

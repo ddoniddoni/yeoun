@@ -422,3 +422,8 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 - [Apple isExcludedFromBackup](https://developer.apple.com/documentation/foundation/urlresourcevalues/isexcludedfrombackup): 웹은 JS 전용이고 Markdown fetch도 실패했다. 설치 iPhoneOS SDK Foundation.swiftinterface의 URLResourceValues setter·FileHandle.read(upToCount:)와 NSFileHandle.h의 sync API를 읽었다. 코드에 폴더 제외 flag를 설정했지만 실제 backup 제외는 기기 검증 전이다.
 - [Expo SDK55 SQLite](https://docs.expo.dev/versions/v55.0.0/sdk/sqlite/): openDatabaseAsync의 custom directory·재시작 지속성을 확인했다. 설치55.0.20의 pathUtils/SQLiteDatabase.ts 및 Swift/Kotlin ensureDatabasePathExists·run/get statement finalize 경로를 읽어 file URL/절대 경로와 비동기 단일 statement를 선택했다.
 - 설치 Expo FileSystem 및 module core의 경로 권한 처리를 읽었다. 기본 documents/cache 외 신규 경로에 JS File.write 권한이 있다고 가정하지 않고 기존 Expo AsyncFunction 로컬 모듈에서 파일을 복사한다. CryptoKit SHA256/Android MessageDigest의 스트리밍 IO, UUID 파일명·단일 record·24시간 TTL·확인 후 재저장은 제품/구현 결정이며 런타임 통과 증거가 아니다.
+## S52. 개인 레시피와 입력 UI — 2026-11-09
+
+- [Expo SDK55 SQLite](https://docs.expo.dev/versions/v55.0.0/sdk/sqlite/): 설치55.0.20과 공식 문서에서 openDatabaseAsync, parameter binding, user_version migration, withExclusiveTransactionAsync를 확인했다. 설치 SQLiteDatabase.ts의 별도 transaction connection·commit/rollback/finally close 구현을 읽었으며 실제 transaction/기기 실행은 하지 않았다.
+- [React Native0.83 TextInput](https://reactnative.dev/docs/0.83/textinput), [KeyboardAvoidingView](https://reactnative.dev/docs/0.83/keyboardavoidingview): 이름 입력·submit·문자 길이·키보드 offset/behavior를 확인했다. 설치 RN0.83.10 타입을 읽고 iOS padding/Android height와 scroll keyboardShouldPersistTaps를 사용한다. 한글 조합/작은 화면/키보드 동작은 NOT_RUN이다.
+- 전체 색감 설정의 whitelist,1~24 code point/100개 제한, look별 fingerprint, 앱 내부 DB queue, 불확실한 write 뒤 재조회는 프로젝트 정책이다. 이전 필터 자산을 임의로 최신 자산에 매핑하지 않는다.

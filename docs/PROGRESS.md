@@ -1,6 +1,20 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-11-09 Unslop UI 다듬기
+## 현재 상태 — 2026-11-09 내 색감 개인 레시피
+
+- 요청/준비: 사용자가 개인 레시피 저장·불러오기·이름 변경·삭제·앱 재실행 보존을 승인했다. clean develop `63b16a533c144c634f48ac0b1c879c662265d216`(PR #36)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/personal-recipes` exit0. 현재 검사 실행 보류 및 개발 후 Git Flow 상시 승인 지침을 읽었다.
+- UI: 촬영/저장 전 결과 편집의 기존 조절 패널에 '내 색감' 접기/펼치기·+저장·이름 입력·불러오기·관리(이름 변경/확인 후 삭제)를 추가했다. 앞뒤 공백 제외1~24 Unicode code point, 중복 이름 허용/UUID 구분, 최신 생성 순서/최대100개. 기존 크림·코랄/시스템 글꼴/48pt 터치와 공유 버튼 스타일을 따른다. KeyboardAvoidingView와 스크롤 키보드 입력 처리를 추가했다. frontend-design/React 지침을 적용했고 새 의존성은 없다.
+- 설정: 저장 버튼 시점의 CameraSettings 전체를 whitelist 복사해 look/engine/renderer 버전과 함께 저장한다. look·identity LUT SHA256, 렌더 계약/Skia/공간 효과 backend 및 grainStyle을 fingerprint로 고정한다. 과거 버전·다른 자산·손상 payload는 적용을 차단하고 행/관리 기능을 유지한다. 사진/URI/위치/촬영일/seed/노출/플래시는 저장하지 않는다. 가져온 사진의 dateStamp는 불러올 때false, 사용자가 다시 켜면 기존 가져온 날 정책을 따른다.
+- 적용: 촬영은 전체 설정을 한 번에 교체해 프리뷰 revision을 올린다. 결과는 편집 draft만 바꾸고 기존 명시 적용 성공 뒤에만 출력 사진을 교체한다. 저장/이름 변경/삭제는 현재 사진이나 카메라 조절값에 영향을 주지 않는다. 마지막 촬영 설정 기억·레시피 자체 즐겨찾기·원본도 저장·세 분위기는 범위 밖이다.
+- DB: localDatabase에서 yeoun.db 초기화/연결/작업 queue를 공유한다. schema0→2는 두 표 생성,1→2는 favorite_filters를 유지하고 recipes 추가,2는 유지, 미지원 버전은DDL 없이 거부한다. 초기화 실패는 연결 close/재시도, 모든 사용자 값은 바인딩, 쓰기와 read-back은 exclusive transaction. 성공 응답 전 목록을 바꾸지 않으며 불확실한 write는 폼을 닫고 재조회 전 추가 변경/적용을 막는다. 별도 recovery.db/네이티브/권한/사진 수명 변경은 없다.
+- 변경: 새 domain/recipes(recipe·recipeStore), storage(localDatabase·recipeCatalog·recipesRepository), screens/RecipeControls, 테스트3개. 수정 favoritesRepository, EditRecoveryGate, FilterControls, M0CameraScreen, ResultFilterEditor, CameraSheet, CameraResultScreen, README·제품·기술·계획·검수·REFERENCES·PROGRESS.
+- 근거/소스 검토: 설치 Expo SQLite55.0.20의 transaction·query 바인딩·finalize 경로와 RN0.83.10 입력/키보드 타입, SDK55 SQLite 및 RN0.83 공식 문서를 읽었다(S52). 사진 데이터 경로/필터 LUT/renderer 수치와 package/lock 변경 없음. 초기 추정 favoritesRepository 테스트 경로는 없어 `rg --files tests`로 실제 파일을 확인했다. 문서 끝 공백 때문에 한 차례 `git diff --check` exit2였으며 공백 수정 후 exit0. 함수/호출부/저장 실패·불러오기 경계를 diff와 파일 읽기로 검토했다.
+- 테스트 소스: Unicode 이름·필드 제외·버전/hash/손상 방어·import 날짜, store 재생성/동일 이름 관리/불변 snapshot/연타/쓰기 불명확/재조회 실패, schema0/1/2/미지원/DDL 실패·초기화 재시도·공통 queue·문자열 바인딩·100개 제한을 다룬다. mocks는 실제 SQLite commit/rollback/기기 재시작 증거가 아니다.
+- **NOT_RUN:** `npm run lint`, `npm run typecheck`, `npm test -- --runInBand`, react-doctor, 자산 검사, JS/native build, 앱/실기기/화면 캡처, 실제 DB migration·재시작 보존·사진 적용·접근성·성능. 현재 보류 지시를 따랐고 자동 실행으로 우회하지 않았다. G0~G5 미통과 유지. 이전 네이티브 기능이 포함된 개발 앱 재빌드가 기기 확인의 선행 조건이다.
+- 다음: docs/05_TEST_RELEASE의 개인 레시피 항목에 따라 실제 schema1 즐겨찾기 보존, 촬영/가져오기 불러오기→적용, 키보드·작은 화면·큰 글자, 쓰기 중 종료/실패 후 재조회와 버전 미지원 관리를 확인한다. 기존 asset 교체 시 recipeCatalog의 manifest 참조도 함께 갱신해야 한다. 현재 기능은 코드 구현이며 실행 검증 완료가 아니다.
+- Git Flow: 관련 파일만 stage하고 커밋·푸시·develop PR/병합·동기화를 진행한다. 실제 명령 결과와 최종 상태는 Git 이력 및 완료 보고를 따른다.
+
+## 이전 기록 — 2026-11-09 Unslop UI 다듬기
 
 - 요청/방향: 사용자가 unslop 적용을 요청하고 기존 크림·코랄 분위기를 유지하는 다듬기를 선택했다. 따뜻한 인화지·색감 견본, 사진 중심, 기존 코랄 셔터/로고 점을 기준으로 간격·글자·곡률을 정리했다. 상세 단계와 저작자 표기는 `docs/STITCH_DESIGN.md`에 기록했다.
 - 준비: clean develop `0e99aec`에서 시작했다. 최초 `git fetch origin develop`은 sandbox의 FETCH_HEAD 쓰기 제한으로 exit255, 승인된 권한 재시도 exit0. `git merge --ff-only origin/develop` 및 `git switch -c refactor/unslop-camera-polish` exit0. 기존 사용자 변경 없음.

@@ -29,6 +29,7 @@ export function ResultFilterEditor({ settings, disabled, applying, error, import
     <Text accessibilityRole="header" style={styles.title}>이 순간의 색감</Text>
     <Text style={styles.note}>필터를 고르고 적용해 주세요. 그전까지 사진은 유지돼요.</Text>
     <FilterAdjustmentPanel settings={draft} disabled={disabled} imported={imported}
+      onRecipe={next => { if (!disabled) setDraft(copyCameraSettings(next)); }}
       onSelect={id => { if (id !== draft.filterId) setDraft(preset(id)); }}
       onIntensity={intensity => setDraft(current => copyCameraSettings({ ...current, intensity }))}
       onTexture={(control, value) => setDraft(current => copyCameraSettings({ ...current, [control]: value }))}

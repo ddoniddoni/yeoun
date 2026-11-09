@@ -64,6 +64,14 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer npm run ios -- --device
 
 Expo Go, 웹, 시뮬레이터 카메라를 실제 센서 촬영 증거로 사용하지 않는다.
 
+### 개인 개발 계정의 설치 만료와 재설치 (2026-11-10)
+
+아이폰에서 ‘더 이상 사용할 수 없음’이 표시되면 설치용 빌드의 embedded.mobileprovision 만료일을 확인한다. 무료 Personal Team 프로비저닝은 발급 후7일 동안 유효하며 만료 후 다시 빌드·설치해야 한다([Apple 공식 설명](https://developer.apple.com/help/account/basics/about-your-developer-account/)). Metro 시작만으로 실행 허가가 갱신되지는 않는다. 기존 앱을 삭제하지 않고 같은 bundle ID와 개발 팀으로 덮어설치한다. 기존 유효 인증서를 우선 사용하며 인증서 삭제/재생성으로 해결하려 하지 않는다.
+
+이 Mac은 전역 xcode-select가 CommandLineTools를 가리키므로 `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`를 명령별로 지정한다. 최근 config plugin/native 의존성 변경이 있으면 기존 iOS 설정을 보관한 뒤 `npx --no-install expo prebuild --platform ios --no-install`과 `pod install --no-repo-update`로 반영한다. clean 재생성은 하지 않는다. Xcode 계정과 기존 인증서를 확인한 후 automatic signing의 provisioning 갱신을 허용해 빌드한다. 앱 설치 성공, 프로세스 시작, Metro JS 전달, 카메라 프레임 관측은 각각 구분해서 기록한다.
+
+서명 검사/프로파일 유효기간/기기 등록이 정상인데 실행이 Security 사유로 거부되면, 아이폰에서 설정 → 일반 → VPN 및 기기 관리 → 개발자 앱의 신뢰/앱 확인을 완료한다. 이후 앱의 로컬 네트워크 허용 팝업을 수락하고 같은 Wi-Fi의 Metro URL로 다시 연다.2026-11-10에는 사용자 신뢰 확인과 로컬 네트워크 허용 후 JS 전달 및 실제 카메라 프레임을 관측했다. 서버 로딩 오류와 앱 서명 만료는 별도 원인으로 확인한다.
+
 ## 실기기 체크리스트 (현재 모두 NOT_RUN)
 
 기기별 모델, OS, 앱 버전, 테스트 시각, 실제 파일 해상도/크기, 결과를 별도로 기록한다. 개인 사진과 상세 장치 로그는 `artifacts/local/`에만 보관하고 공개 Git에 넣지 않는다.

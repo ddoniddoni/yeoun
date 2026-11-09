@@ -10,6 +10,7 @@ export const cameraTheme = {
   shutter: '#EB816D', error: '#AC343D',
   photoMatte: '#191919', onPhoto: '#FFFFFF', photoOverlay: 'rgba(20,20,20,0.72)',
   focus: '#FFE0A3', scrim: 'rgba(36,28,24,0.32)',
+  controlRadius: 12, panelRadius: 24,
   mono: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
 } as const;
 

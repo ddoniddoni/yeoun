@@ -1,6 +1,17 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-10-31 마지막 적용 사진 복구
+## 현재 상태 — 2026-11-09 Unslop UI 다듬기
+
+- 요청/방향: 사용자가 unslop 적용을 요청하고 기존 크림·코랄 분위기를 유지하는 다듬기를 선택했다. 따뜻한 인화지·색감 견본, 사진 중심, 기존 코랄 셔터/로고 점을 기준으로 간격·글자·곡률을 정리했다. 상세 단계와 저작자 표기는 `docs/STITCH_DESIGN.md`에 기록했다.
+- 준비: clean develop `0e99aec`에서 시작했다. 최초 `git fetch origin develop`은 sandbox의 FETCH_HEAD 쓰기 제한으로 exit255, 승인된 권한 재시도 exit0. `git merge --ff-only origin/develop` 및 `git switch -c refactor/unslop-camera-polish` exit0. 기존 사용자 변경 없음.
+- 구현: 4pt 기준 주요 여백/간격,12pt 필터명·효과명·사진 정보·촬영 상태,600 시트 제목/선택 필터명,500 보조 버튼, 수치 tabular-nums, 공통 조작 곡률12/시트24. 카드72pt 폭/8pt 가로 간격/96pt 목록과 스크롤 계산을 유지하며 카드 그림60pt/내부 여백4pt로 조정했다. 촬영 상태 두 줄 예약 높이를32×fontScale로 함께 변경했다.
+- 변경 파일: `src/screens/`의 cameraTheme, CameraControls, CameraSheet, FilterControls, FilterFavorites, M0CameraScreen, CameraAssistControls, CameraMeteringControls, CameraResultScreen, OriginalComparisonControls, ResultPhotoComparison 및 `docs/STITCH_DESIGN.md`, `docs/PROGRESS.md`. 새 의존성·필터 수치·LUT·네이티브·사진 처리·권한 변경 없음.
+- 검토: `git diff --check` exit0, `git diff --stat`와 각 파일 diff를 읽었다. `rg -n 'fontVariant|tabular-nums' node_modules/react-native/Libraries/StyleSheet/StyleSheetTypes.d.ts` exit0로 설치 타입을 확인했다. 기능 이벤트·상태 전이와 사진 데이터 경로 변경이 없음을 소스 diff에서 확인했다. 이전 단계의 파일 조회에서 매치 없음(exit1)은 화면 캡처가 있다는 증거로 사용하지 않았다.
+- **NOT_RUN:** `npm run lint`, `npm run typecheck`, `npm test -- --runInBand`, react-doctor, 자산 검사, JS/native build, 앱/기기 실행, 화면 캡처, 접근성·실촬영·성능. `CODEX_START.md`와 `docs/GIT_WORKFLOW.md`의 현재 검사 보류 지시를 따랐다. 소스 검토는 렌더링·타입검사·촬영 검증을 대신하지 않으며 G0~G5 미통과를 유지한다.
+- 다음 확인: 작은 화면/큰 글자에서 긴 필터 이름, 효과 선택, 촬영 상태 두 줄, 결과 하단 버튼/공유/비교를 확인한다. 현재 변경의 시각적 완성도와 기기 동작은 미검증이다. 별도 기능 단계로 확장하지 않았다.
+- Git Flow: 관련13파일 `git add` exit0, `git diff --cached --check` exit0. 최초 커밋은 자동 승인 검토가 현재 요청의 명시적 Git 승인이 없다는 이유로 실행 전 거부하여 보류했다. 이후 사용자가 **Git Flow 전체 진행 승인**으로 커밋·푸시·develop PR 생성/병합을 명시적으로 승인했다. 재개 시 작업 브랜치와13파일 stage를 확인하고 `git diff --cached --check` exit0. 이 기록을 포함해 Git Flow를 진행하고 develop에서 마친다. 실제 커밋/PR 및 최종 통합 상태는 Git 이력과 완료 보고를 따른다.
+
+## 이전 기록 — 2026-10-31 마지막 적용 사진 복구
 
 - 요청: 공유 다음 기능인 앱 종료 후 이어서 편집 진행 승인. clean develop `2059e57dd928975a278f351eabae659d7e7ecd5b`(PR #34)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/edit-recovery` 각각 exit0. 기존 사용자 변경 없음. 검사·빌드·기기 실행 보류 및 개발 후 전체 Git Flow 상시 승인 유지.
 - 기능: 촬영/앨범 가져오기 마지막 적용 사진 한 장과 filter/강도/질감/날짜/입자 seed/원본 치수·방향·import 정보를 함께 보관한다. 앱 시작에 이어서 편집·저장 사진 보기·확인 후 삭제를 제공하고, 현재 적용 결과부터 기존 편집/비교/저장/공유로 이어진다. 다음 촬영 설정·필터 수치·LUT·프리뷰 레이아웃은 변경하지 않았다. 첫 결과 보관 전 중단과 적용 전 조절값은 복구 대상이 아니다.

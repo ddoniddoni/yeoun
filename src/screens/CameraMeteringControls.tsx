@@ -17,14 +17,14 @@ export function CameraMeteringControls({ state, disabled, onFocusCenter, onExpos
   const upperDisabled = locked || value === undefined || !state.range || value >= state.range.max;
   return <View style={styles.group}>
     <View style={styles.row}>
-      <CameraIcon name="focus" size={21} color={theme.secondary} />
+      <CameraIcon name="focus" size={20} color={theme.secondary} />
       <Text style={styles.label}>초점</Text>
       <CameraAction icon="focus" label="중앙에 맞추기" disabled={locked || !state.focusSupported} onPress={onFocusCenter} />
     </View>
     <Text style={styles.note}>{state.ready && !state.focusSupported ? '이 카메라는 탭 초점을 지원하지 않아요.' : '뷰파인더를 눌러 원하는 곳에 초점을 맞추세요.'}</Text>
     {state.range ? <View style={styles.exposure}>
       <View style={styles.row}>
-        <CameraIcon name="sun" size={21} color={theme.secondary} />
+        <CameraIcon name="sun" size={20} color={theme.secondary} />
         <Text style={styles.label}>노출</Text>
         <IconButton icon="reset" label="노출을 기본 밝기로 초기화" disabled={locked || value === 0} onPress={() => onExposure(0)} />
       </View>
@@ -57,9 +57,9 @@ export function FocusTarget({ state }: { state: MeteringState }) {
 const styles = StyleSheet.create({
   group: { gap: 12 }, row: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12 },
   label: { color: theme.text, fontSize: 14, flex: 1 },
-  exposure: { backgroundColor: theme.inset, padding: 12, borderRadius: 18 },
+  exposure: { backgroundColor: theme.inset, padding: 12, borderRadius: theme.panelRadius },
   unit: { color: theme.secondary, fontSize: 12 },
-  value: { color: theme.accent, fontSize: 26, fontFamily: theme.mono, flex: 1, textAlign: 'center' },
+  value: { color: theme.accent, fontSize: 24, fontFamily: theme.mono, fontVariant: ['tabular-nums'], flex: 1, textAlign: 'center' },
   note: { color: theme.secondary, fontSize: 12, lineHeight: 18, flexShrink: 1 }, error: { color: theme.error, fontSize: 13 },
   target: { position: 'absolute', width: 40, height: 40, marginLeft: -20, marginTop: -20,
     borderWidth: 1, borderColor: theme.focus, borderRadius: 4 },

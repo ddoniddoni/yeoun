@@ -43,8 +43,11 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
   const styles = useStyles();
   const permission = useCameraPermission();
   const { width, fontScale } = useWindowDimensions();
-  const [viewfinderSize, setViewfinderSize] = useState({ width, height: 180 });
-  const previewWidth = Math.max(1, Math.min(viewfinderSize.width, viewfinderSize.height * 3 / 4));
+  // Width owns the 3:4 frame. Controls and messages must never shrink the camera.
+  const [previewWidth, setPreviewWidth] = useState(width);
+  const cameraScroll = useRef<ScrollView>(null);
+  const scrollAfterResize = useRef<'top' | 'end' | undefined>(undefined);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [panel, setPanel] = useState<'camera' | 'filter'>();
   const [position, setPosition] = useState<'front' | 'back'>('back');
   const device = useCameraDevice(position, { physicalDevices: ['wide-angle'] });
@@ -177,25 +180,29 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
             badge={memory.error ? '!' : undefined} disabled={settingsDisabled} onPress={() => setPanel('camera')} />
         </View>
       </View>
-      <ScrollView style={styles.body} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={[styles.viewfinderArea, (!permission.hasPermission || !device) && { minHeight: 340 * fontScale }]} onLayout={event => {
-          const { width: nextWidth, height: nextHeight } = event.nativeEvent.layout;
-          setViewfinderSize(previous => previous.width === nextWidth && previous.height === nextHeight
-            ? previous : { width: nextWidth, height: nextHeight });
+      <ScrollView ref={cameraScroll} style={styles.body} showsVerticalScrollIndicator={false}
+        onContentSizeChange={() => {
+          const target = scrollAfterResize.current;
+          scrollAfterResize.current = undefined;
+          if (target === 'end') cameraScroll.current?.scrollToEnd({ animated: false });
+          else if (target === 'top') cameraScroll.current?.scrollTo({ y: 0, animated: false });
         }}>
-          <View style={styles.previewCenter}>
-            {!permission.hasPermission ? <View style={styles.emptyFrame}>
+        <View style={styles.viewfinderArea} onLayout={event => {
+          setPreviewWidth(Math.max(1, event.nativeEvent.layout.width));
+        }}>
+          <View style={styles.previewContent}>
+            {!permission.hasPermission ? <View style={[styles.emptyFrame, { minHeight: previewWidth * 4 / 3 }]}>
               <Text style={styles.welcome}>오늘의 빛을,{"\n"}오래 남을 색으로</Text>
               <Text style={styles.text}>눈앞의 순간에 색감을 더해 보세요.</Text>
               {permission.canRequestPermission
                 ? <CameraAction primary label="카메라 시작" onPress={() => { void permission.requestPermission().catch(showError); }} />
                 : <CameraAction primary label="설정에서 카메라 허용" onPress={openSettings} />}
               <CameraAction icon="album" label="앨범 사진 편집" disabled={importDisabled} onPress={importPhoto} />
-            </View> : !device ? <View style={styles.emptyFrame}>
+            </View> : !device ? <View style={[styles.emptyFrame, { minHeight: previewWidth * 4 / 3 }]}>
               <Text style={styles.welcome}>카메라를 찾지 못했어요</Text>
               <Text style={styles.text}>아래 전환 버튼으로 다른 카메라를 선택해 주세요.</Text>
               <CameraAction icon="album" label="앨범 사진 편집" disabled={importDisabled} onPress={importPhoto} />
-            </View> : <View style={[styles.viewfinder, { width: previewWidth }]}>
+            </View> : <View style={styles.viewfinder}>
               <CameraPreview ref={preview} key={device.id} device={device} photoOutput={photoOutput}
                 controlsEnabled={!meteringDisabled} onMetering={setMeteringState}
                 active={foreground && !cameraError && !overlayOpen && !importing} settings={comparison.previewSettings} grainSeed={grainSeed} filterRequestKey={filterRequestKey}
@@ -226,7 +233,12 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
           </View>
         </View>
         <View style={styles.deck}>
-          <FilterControls settings={settings} disabled={settingsDisabled} onSelect={selectFilter} onOpen={() => setPanel('filter')} />
+          <FilterControls settings={settings} disabled={settingsDisabled} expanded={filtersExpanded}
+            onToggleList={() => {
+              if (settingsDisabled) return;
+              scrollAfterResize.current = filtersExpanded ? 'top' : 'end';
+              setFiltersExpanded(value => !value);
+            }} onSelect={selectFilter} onOpen={() => setPanel('filter')} />
           {cameraError ? <View style={styles.notice}>
             <Text accessibilityRole="alert" style={styles.error}>{cameraError}</Text>
             <CameraAction label="카메라 다시 연결" onPress={() => { setReady(false); setCameraError(undefined); setFilterRevision(value => value + 1); }} />
@@ -344,14 +356,14 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
   </>;
 }
 const useStyles = createThemedStyles(theme => StyleSheet.create({
-  page: { flex: 1, backgroundColor: theme.background }, body: { flex: 1 }, content: { flexGrow: 1 },
+  page: { flex: 1, backgroundColor: theme.background }, body: { flex: 1 },
   header: { paddingHorizontal: 8, minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   toolbarGroup: { width: 96, flexDirection: 'row', alignItems: 'center' }, toolbarEnd: { justifyContent: 'flex-end' },
   toolbarAction: { width: 48, height: 48, borderRadius: theme.controlRadius, alignItems: 'center', justifyContent: 'center' },
   toolbarSelected: { backgroundColor: theme.accentSoft },
   brand: { color: theme.text, fontSize: 25, fontWeight: '700', letterSpacing: -1.3, flexShrink: 1 },
-  viewfinderArea: { flex: 1, minHeight: 260, backgroundColor: theme.inset, marginHorizontal: 8, borderRadius: 22, overflow: 'hidden' },
-  previewCenter: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  viewfinderArea: { width: '100%', backgroundColor: theme.photoMatte },
+  previewContent: { width: '100%' },
   frameLabel: { position: 'absolute', left: 12, right: 12, top: 12, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   badge: { color: theme.onPhoto, backgroundColor: theme.photoOverlay, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
     fontFamily: theme.mono, fontSize: 12, fontVariant: ['tabular-nums'] },
@@ -359,7 +371,7 @@ const useStyles = createThemedStyles(theme => StyleSheet.create({
   filterNoticeText: { color: theme.onPhoto, fontSize: 12, lineHeight: 18, textAlign: 'center',
     backgroundColor: theme.photoOverlay, paddingHorizontal: 12, paddingVertical: 8, borderRadius: theme.controlRadius },
   filterError: { minHeight: 48, justifyContent: 'center' },
-  viewfinder: { backgroundColor: theme.photoMatte, overflow: 'hidden' },
+  viewfinder: { width: '100%', backgroundColor: theme.photoMatte, overflow: 'hidden' },
   emptyFrame: { width: '100%', padding: 24, gap: 16, justifyContent: 'center', backgroundColor: theme.inset },
   welcome: { color: theme.text, fontSize: 23, lineHeight: 32, fontWeight: '500' },
   text: { color: theme.secondary, fontSize: 15, lineHeight: 24 },

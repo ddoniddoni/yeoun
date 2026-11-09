@@ -8,9 +8,10 @@
 - 전환 준비: 새 device의 onConfigured 전 프레임을 폐기하고 geometry를 비운다. 기존 frame epoch와 device 일치 검사를 함께 사용해 늦은 이전 프레임을 무시한다. 해당 device controller가 React ref에 게시된 뒤 첫 프레임으로 ready/초점·노출을 다시 연결한다. 준비 전 전환 버튼 비활성화와 즉시 ref 잠금으로 연속 입력을 막고 오류/기기 없음의 다른 렌즈 선택은 유지한다.
 - 변경 파일: src/screens/M0CameraScreen.tsx, src/platform/camera/CameraPreview.tsx, docs/03_TECHNICAL_SPEC.md, docs/05_TEST_RELEASE.md, docs/REFERENCES.md, 이 기록. 새 의존성/권한/네이티브 빌드 설정 변경 없음. native GC 충돌을 JS mock 통과로 대신하지 않으며 수동 회귀 절차를 검수 문서에 추가했다.
 - 실행/관측: `devicectl device info files --domain-type systemCrashLogs` 및 두 `device copy from` exit0; Python으로 해당 crash JSON의 exception/원인 thread만 추출했다. 설치 VisionCamera5.2.3의 useCameraController/useCameraSession/HybridCameraSession과 SkiaCamera ref 구현을 읽고 공식 Lifecycle 및 upstream 보고와 비교했다. `git diff --check` exit0. 기존 Metro 세션은 유지하고 읽었으며 수정 후 새 출력은 아직 없었다.
-- **NOT_RUN:** npm run lint, npm run typecheck, npm test -- --runInBand, react-doctor, JS/native build, 재설치. 현재 검사 보류 지시를 따른다. 변경 후 반복 전환·초점/노출·촬영 저장·background 복귀·Android·15분 메모리/GPU 안정성은 아직 미확인이다. 사용자에게 앱을 완전히 닫고 다시 연 뒤 필터와 전후면 전환을 반복하도록 확인을 요청했다. 재현 없음/완전 해결로 단정하지 않는다.
-- Git Flow: 위6개 파일만 명시 stage해 커밋·푸시·develop PR 생성/병합·동기화한 뒤 develop에서 종료한다. 최종 커밋/PR/동기화 결과는 Git 이력과 완료 보고를 따른다.
-- 다음 확인: 사용자 반복 전환 결과, 같은 SIGABRT의 신규 로그 여부, 전후면 각각 초점·노출과 고해상도 저장. 앱 전체 unmount/권한 변경/기기 제거 시 upstream 세션 teardown 문제는 별도 범위로 남는다.
+- 사용자 실기기 확인: 앱을 완전히 닫고 다시 연 뒤 필터와 전후면 전환을 반복하도록 요청한 데 대해 ‘이제 꺼지지 않고 전환돼요’라고 답했다. 해당 사용자 확인 범위에서 종료 없이 전환됨을 기록한다. 정확한 횟수/시간은 별도로 보고되지 않았으므로20회·15분 기준이나 에이전트 관측 통과로 확대하지 않는다.
+- **NOT_RUN:** npm run lint, npm run typecheck, npm test -- --runInBand, react-doctor, JS/native build, 재설치. 현재 검사 보류 지시를 따른다. 변경 후 초점/노출·촬영 저장·background 복귀·Android·15분 메모리/GPU 안정성, 신규 crash log 재조회는 아직 미확인이다.
+- Git Flow: 수정 커밋 `fa77349`를 PR #43으로 병합했고 로컬/원격 develop `febf2b19991d86154e85ceadd254d1565d327a8c` 일치와 clean 상태를 확인했다. 후속 사용자 확인은 docs/camera-switch-device-confirmation에서 이 문서만 갱신한다. 후속 검사는 `git diff --check`만 실행하며 앱 검사/빌드는 실행하지 않는다.
+- 다음 확인: 같은 SIGABRT의 신규 로그 여부, 전후면 각각 초점·노출과 고해상도 저장, 장시간 안정성. 앱 전체 unmount/권한 변경/기기 제거 시 upstream 세션 teardown 문제는 별도 범위로 남는다.
 
 ## 이전 기록 — 2026-11-10 크게 보는 촬영 화면
 

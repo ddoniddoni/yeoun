@@ -433,3 +433,9 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 - [React Native0.83 Appearance](https://reactnative.dev/docs/0.83/appearance), [useColorScheme](https://reactnative.dev/docs/0.83/usecolorscheme): 현재 기기 모드 구독·앱 단위 override 계약을 확인했다. 실제 설치0.83.10 Appearance.d.ts/Appearance.js/RCTAppearance.mm/AppearanceModule.kt를 우선해 auto 대신 지원되는 unspecified를 사용한다. iOS window override, Android AppCompatDelegate MODE_NIGHT_YES/NO/FOLLOW_SYSTEM 경로를 읽었다.
 - [Expo Color themes](https://docs.expo.dev/develop/user-interface/color-themes/): 플랫폼별 userInterfaceStyle과 Android config override의 expo-system-ui 요구를 확인했다. 이번에는 iOS config만 automatic으로 바꾸고 Android는 이미 설치된 RN Appearance 런타임 경로를 사용한다. 설치 @expo/prebuild-config의 withIosUserInterfaceStyle은 automatic을 Info.plist Automatic으로 매핑한다. native 자동 연동·재빌드는 미실행이다.
 - 영구 저장은 기존 SQLite55.0.20 계약/S52와 app_settings를 재사용한다. 사진/필터 설정과 별도 schemaVersion1 payload, UI 적용 후 저장 실패 안내는 프로젝트의 제품 결정이다.
+
+## S54. 전후면 전환과 세션 수명 — 2026-11-10
+
+- [VisionCamera Lifecycle](https://visioncamera.margelo.com/docs/lifecycle): device 변경은 기존 세션 재구성, unmount는 세션 전체 teardown, isActive=false는 설정을 유지한 정지라는 계약을 확인했다. 설치5.2.3 useCamera/useCameraController/useCameraSession 및 Swift HybridCameraSession 소스에서 기존 session 재사용, configure 완료 콜백과 controller 게시 순서, serial native queue를 읽었다.
+- [upstream issue #4156](https://github.com/margelo/react-native-vision-camera/issues/4156), [수정 제안 PR #4215](https://github.com/margelo/react-native-vision-camera/pull/4215): output을 소유한 부모는 유지하면서 카메라만 재마운트하면 이전 세션의 GC 시점에 같은 detach assertion이 발생하는 재현 보고다. PR은 확인 시 Open이며 이번 앱에 적용하거나 패키지를 업데이트하지 않았다. 보고된 타인의 시험 결과를 여운의 통과 결과로 쓰지 않는다.
+- 연결 아이폰의 02:28 충돌2건에서 같은 SIGABRT/AVCaptureSession dealloc/HybridCameraSession.deinit/Hermes GC 스택을 관측했다. 앱의 device key와 부모 usePhotoOutput 수명이 위 재현 구조와 일치해 불필요한 세션 재생성을 제거했다. 실제 반복 전환·저장·장시간 자원 안정성은 별도 확인해야 한다.

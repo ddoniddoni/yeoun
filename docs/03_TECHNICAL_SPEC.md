@@ -284,6 +284,8 @@ Crypto를 포함하는 개발 앱 재빌드가 필요하며 이번에는 prebuil
 
 후면의 일반 광각 카메라를 기본 후보로 선택한다. 단순 전후면 전환을 먼저 완성하고 멀티 카메라, 자동 렌즈 전환, 고배율 줌을 추가하지 않는다.
 
+전후면 전환은 같은 `CameraPreview`/`SkiaCamera`와 photo output을 유지한 채 `device`만 바꾼다. `device.id`를 React key로 사용해 세션을 매번 재생성하지 않는다. VisionCamera 5.2.3의 unmount는 비동기 stop/configure([])를 요청하며, 이전 세션이 Hermes GC에서 해제되기 전에 같은 output이 새 세션으로 옮겨가면 iOS detach assertion이 발생할 수 있다. 입력 변경 때 geometry/프레임 epoch를 무효화하고 새 onConfigured 및 해당 device의 controller/첫 프레임을 확인한 뒤 촬영·전환을 허용한다. 전환 버튼은 React 렌더 전 중복 입력도 차단하며, 오류/기기 없음에서는 다른 카메라 선택을 허용한다. 근거와 한계: [S54](REFERENCES.md#s54-전후면-전환과-세션-수명--2026-11-10).
+
 미리보기는 30FPS, 긴 변 약 1280px 수준을 첫 성능 후보로 한다. 촬영은 지원 범위 안에서 4:3, 약 1200만 픽셀을 목표로 하고 실제 선택된 해상도를 기록한다. 센서가 지원하지 않는 크기를 강제하거나 프리뷰를 확대해 고해상도라고 부르지 않는다.
 
 픽셀 포맷은 native buffer import가 검증되면 `native`, 그렇지 않으면 `yuv`를 우선 비교한다. 실제 협상된 pixel format을 확인하고 처리 불가능한 RAW/private 포맷은 명시적으로 거부한다. 플랫폼마다 확인 없이 `rgb`나 `yuv`를 절대 최적이라고 단정하지 않는다. 참고: [S19, S20](REFERENCES.md).

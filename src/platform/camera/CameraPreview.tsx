@@ -24,6 +24,8 @@ export function CameraPreview({ ref, device, photoOutput, active, controlsEnable
 }) {
   const camera = useRef<SkiaCameraRef>(null);
   const live = useRef(active);
+  const deviceId = device.id;
+  const configuredDevice = useMemo(() => createSynchronizable<string | undefined>(undefined), []);
   const frameEpoch = useMemo(() => createSynchronizable(0), []);
   const geometry = useMemo(() => createSynchronizable<FocusFrame | undefined>(undefined), []);
   const metering = useMemo(() => new MeteringSession(device.id, onMetering), [device.id, onMetering]);
@@ -49,6 +51,15 @@ export function CameraPreview({ ref, device, photoOutput, active, controlsEnable
     reportStopped(); onRunningChange(false);
   }, [reportStopped, onRunningChange]);
   const reportSessionStarted = useCallback(() => onRunningChange(true), [onRunningChange]);
+  const reportConfigured = useCallback(() => {
+    reportStopped();
+    configuredDevice.setBlocking(deviceId);
+  }, [reportStopped, configuredDevice, deviceId]);
+  // Keep the native session mounted, but reject frames until its new input is configured.
+  useLayoutEffect(() => {
+    configuredDevice.setBlocking(undefined);
+    geometry.setBlocking(undefined);
+  }, [configuredDevice, deviceId, geometry]);
   // SkiaCamera copies a rendered image to RN asynchronously. Its native busy
   // flag only covers the camera callback, not that pending image delivery.
   const previewPending = useMemo(() => createSynchronizable(false), []);
@@ -56,12 +67,18 @@ export function CameraPreview({ ref, device, photoOutput, active, controlsEnable
     previewPending.setBlocking(false);
   }, [previewPending]);
   const reportFrame = useCallback((info: string, epoch: number) => {
-    if (!live.current || epoch !== frameEpoch.getBlocking()) return;
+    if (!live.current || epoch !== frameEpoch.getBlocking() || configuredDevice.getBlocking() !== deviceId) return;
+    // onConfigured fires before useCamera publishes its replacement controller.
+    // Retry on the next frame instead of exposing the previous lens's controls.
+    if (camera.current?.controller?.device.id !== deviceId) {
+      reported.setBlocking(undefined);
+      return;
+    }
     onReady();
     void startMetering();
     onInfo(info);
     if (__DEV__) console.info(`[camera-preview] ${device.position}: ${info}`);
-  }, [device.position, onInfo, onReady, startMetering, frameEpoch]);
+  }, [device.position, deviceId, configuredDevice, reported, onInfo, onReady, startMetering, frameEpoch]);
   useLayoutEffect(() => {
     live.current = active;
     if (!active) { reported.setBlocking(undefined); geometry.setBlocking(undefined); metering.stop(); }
@@ -82,7 +99,7 @@ export function CameraPreview({ ref, device, photoOutput, active, controlsEnable
     warnIfRenderSkipped={false}
     onStarted={reportSessionStarted} onStopped={reportSessionStopped} onError={onError}
     onInterruptionStarted={reportStopped}
-    onConfigured={reportStopped}
+    onConfigured={reportConfigured}
     onSessionConfigSelected={config => {
       onInfo(`선택 FPS ${config.selectedFPS ?? '?'} / native ${config.nativePixelFormat} / photo HDR ${String(config.isPhotoHDREnabled)}`);
     }}
@@ -91,7 +108,7 @@ export function CameraPreview({ ref, device, photoOutput, active, controlsEnable
       try {
         // Drop before allocating a GPU snapshot or its CPU copy if RN has not
         // accepted the previous preview yet. The frame is still disposed below.
-        if (previewPending.getBlocking()) return;
+        if (configuredDevice.getBlocking() !== deviceId || previewPending.getBlocking()) return;
         if (frame.pixelFormat.includes('raw') || frame.pixelFormat === 'private') {
           throw new Error('Unsupported M0 preview pixel format');
         }

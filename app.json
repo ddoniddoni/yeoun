@@ -3,6 +3,7 @@
     "name": "여운 M0",
     "slug": "yeoun-camera",
     "version": "0.0.1",
+    "icon": "./assets/brand/yeoun-icon.png",
     "orientation": "portrait",
     "ios": {
       "userInterfaceStyle": "automatic",
@@ -15,6 +16,11 @@
     },
     "android": {
       "package": "dev.ddoni.yeouncamera",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/brand/yeoun-adaptive-foreground.png",
+        "monochromeImage": "./assets/brand/yeoun-adaptive-foreground.png",
+        "backgroundColor": "#FFF9F3"
+      },
       "permissions": [
         "android.permission.CAMERA"
       ],

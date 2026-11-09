@@ -1,6 +1,17 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-11-10 필터·전후면 전환 중 iOS 종료 수정
+## 현재 상태 — 2026-11-10 스토어용 여운 앱 아이콘
+
+- 요청/준비: 사용자가 스토어 등록을 위한 앱 아이콘 제작을 요청했다. clean develop `1f10c9ca839c4496a7193c0ec0cd03d26e6a9005`에서 fetch/FF 후 feature/yeoun-app-icon 생성. 기존 크림·코랄 방향과 imagegen/unslop 지침을 사용했다.
+- 디자인: 크림 배경의 코랄 조리개와 복숭아색 잔상. 글자 없이 큰 중심 여백/굵은 곡선으로 작은 크기에서 읽히게 구성했다. 내장 image_gen 기본 아이콘1회·투명 전경 편집1회·추가 정리 시안1회를 생성했고 앞의 두 결과를 선택했다. 명시적 이미지 제작 요청 범위이며 CLI/API 키 경로로 전환하지 않았다.
+- 변경: assets/brand의 원본2개·파생PNG3개·README/PROMPTS, scripts/export-app-icon.mjs, app.json, 이 기록. expo.icon 및 Android adaptive foreground/background/monochrome을 연결했다. 사진 처리/카메라 코드·앱 표시명·시작 화면·패키지는 변경하지 않았다.
+- 자산 확인: `sips` 및 `node scripts/export-app-icon.mjs` exit0. iOS1024×1024 RGB/827,911bytes/alpha 채널 없음, Play512×512 RGBA/288,932bytes/모든 픽셀alpha255, Android1024×1024 RGBA를 PNG header/pixel 메타데이터로 읽었다. sRGB 프로필과 config의 세 참조 파일 존재를 확인했다. export는 크기/형식 변환이며 배경 편집은 image_gen에서 수행했다.
+- 시각 확인:256px 출력 및48/60px·둥근 사각형/원형 마스크를 담은 Quick Look 미리보기를 읽었다. 첫 qlmanage는 sandbox 초기화 오류 exit255, 권한 재시도 exit0. 결과는 ignored work/app-icon-review에만 둔다. 주요 심볼은 마스크 안에 들어가며 작은 크기에서도 중심/곡선이 읽혔다. 투명 전경의 미세한 잔여 alpha 때문에 모든 비영점 픽셀이 중앙 영역 안이라는 엄격한 주장은 하지 않는다. 테마 마스크 검토 그림은 실제 Android 런처 결과가 아니다.
+- 근거: 설치 Expo config-types의 icon/IOSIcons/adaptiveIcon 타입과 공식 Expo 아이콘·Android adaptive·Play 자산 문서를 확인했다. Apple HIG Markdown 직접 fetch와 일부 Android 디자인 페이지 fetch는 실패했고 Expo 문서/Google Play 공식 도움말로 필요한 PNG 계약을 확인했다. 링크/전체 프롬프트/내보내기 방법은 assets/brand에 남겼다.
+- **NOT_RUN:** 기존 보류 지시에 따라 lint/typecheck/Jest/react-doctor/Expo config CLI/JS·native build/prebuild/재설치·스토어 업로드를 실행하지 않았다. 자산 제작/읽기 검토만 수행했다. 현재 설치 앱의 홈 화면 아이콘은 다음 네이티브 구성 반영·재빌드·설치 뒤 확인해야 한다. 실제 iOS/Android 런처·dark/tinted appearance와 스토어 검증은 미완료다.
+- Git Flow: 관련 자산/스크립트/설정/기록만 stage하고 커밋·푸시·develop PR 생성/병합·동기화 후 develop에서 종료한다. 제출/릴리스는 실행하지 않는다. 다음은 사용자 디자인 확인과 요청 시 새 개발 빌드에서 홈 화면 확인이다.
+
+## 이전 기록 — 2026-11-10 필터·전후면 전환 중 iOS 종료 수정
 
 - 요청/준비: 사용자가 필터 변경과 전후면 전환을 반복할 때 앱이 종료된다고 보고했다. clean develop `14f95b7ccfc697e03e2557bf75691f5c828ab83e`(PR #42)에서 fetch/FF 후 `fix/camera-switch-crash`를 생성했다. `systematic-debugging` 절차로 먼저 실제 crash log와 설치된 구현을 확인했다. 직전 큰 프레임/필터 목록 변경은 사용자가 ‘커졌고 펼치기·접기도 돼요’로 수동 확인했다.
 - 관측: 연결 iPhone15/iOS27.2의 systemCrashLogs에서 `M0-2026-11-10-022827.ips`, `M0-2026-11-10-022853.ips`를 읽었다. 두 건 모두 EXC_CRASH/SIGABRT이며 `AVCaptureOutput detachFromFigCaptureSession` → `AVCaptureSession dealloc` → `HybridCameraSession.deinit` → Hermes GC 경로다. 마지막 Jetsam은 전날23:36으로 이번 두 건은 과거 Skia OOM과 별도로 분류한다. 원본 보고서는 /private/tmp에만 두고 커밋하지 않는다.

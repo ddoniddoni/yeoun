@@ -178,7 +178,7 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
         }}>
           <View style={styles.previewCenter}>
             {!permission.hasPermission ? <View style={styles.emptyFrame}>
-              <Text style={styles.welcome}>오늘의 빛을,{"\n"}오래 남을 색으로.</Text>
+              <Text style={styles.welcome}>오늘의 빛을,{"\n"}오래 남을 색으로</Text>
               <Text style={styles.text}>눈앞의 순간에 색감을 더해 보세요.</Text>
               {permission.canRequestPermission
                 ? <CameraAction primary label="카메라 시작" onPress={() => { void permission.requestPermission().catch(showError); }} />
@@ -260,7 +260,7 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
           <CameraIcon name="flip" size={28} />
         </Pressable>
       </View>
-      <Text accessibilityLiveRegion="polite" numberOfLines={2} style={[styles.captureStatus, { height: 28 * fontScale }]}>
+      <Text accessibilityLiveRegion="polite" numberOfLines={2} style={[styles.captureStatus, { height: 32 * fontScale }]}>
         {comparison.active ? '원본 비교 중 · 비교를 끄면 촬영할 수 있어요' : metering.busy ? metering.message
           : state.phase !== 'idle' ? LABELS[state.phase] : ' '}
       </Text>
@@ -334,17 +334,17 @@ const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.background }, body: { flex: 1 }, content: { flexGrow: 1 },
   header: { paddingHorizontal: 8, minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   toolbarGroup: { width: 96, flexDirection: 'row', alignItems: 'center' }, toolbarEnd: { justifyContent: 'flex-end' },
-  toolbarAction: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  toolbarAction: { width: 48, height: 48, borderRadius: theme.controlRadius, alignItems: 'center', justifyContent: 'center' },
   toolbarSelected: { backgroundColor: theme.accentSoft },
   brand: { color: theme.text, fontSize: 25, fontWeight: '700', letterSpacing: -1.3, flexShrink: 1 },
   viewfinderArea: { flex: 1, minHeight: 260, backgroundColor: theme.inset, marginHorizontal: 8, borderRadius: 22, overflow: 'hidden' },
   previewCenter: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   frameLabel: { position: 'absolute', left: 12, right: 12, top: 12, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   badge: { color: theme.onPhoto, backgroundColor: theme.photoOverlay, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
-    fontFamily: theme.mono, fontSize: 10, letterSpacing: 1 },
+    fontFamily: theme.mono, fontSize: 12, fontVariant: ['tabular-nums'] },
   filterNotice: { position: 'absolute', left: 12, right: 12, bottom: 16, alignItems: 'center' },
   filterNoticeText: { color: theme.onPhoto, fontSize: 12, lineHeight: 18, textAlign: 'center',
-    backgroundColor: theme.photoOverlay, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
+    backgroundColor: theme.photoOverlay, paddingHorizontal: 12, paddingVertical: 8, borderRadius: theme.controlRadius },
   filterError: { minHeight: 48, justifyContent: 'center' },
   viewfinder: { backgroundColor: theme.photoMatte, overflow: 'hidden' },
   emptyFrame: { width: '100%', padding: 24, gap: 16, justifyContent: 'center', backgroundColor: theme.inset },
@@ -354,11 +354,11 @@ const styles = StyleSheet.create({
   deck: { paddingHorizontal: 16, paddingBottom: 0, gap: 8 },
   notice: { paddingVertical: 12, minHeight: 48, gap: 12 },
   error: { color: theme.error, fontSize: 14, lineHeight: 22 },
-  captureRow: { paddingHorizontal: 34, paddingTop: 8, paddingBottom: 4, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  captureRow: { paddingHorizontal: 32, paddingTop: 8, paddingBottom: 4, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   sideControl: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: 28,
     backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.line },
   activeDot: { position: 'absolute', bottom: 5, width: 3, height: 3, borderRadius: 2 },
   selected: { borderColor: theme.accent, backgroundColor: theme.accentSoft },
-  captureStatus: { color: theme.secondary, fontSize: 11, textAlign: 'center', paddingHorizontal: 16, lineHeight: 14, paddingBottom: 0 },
+  captureStatus: { color: theme.secondary, fontSize: 12, textAlign: 'center', paddingHorizontal: 16, lineHeight: 16, paddingBottom: 0 },
   pressed: { opacity: 0.7 }, disabled: { opacity: 0.4 },
 });

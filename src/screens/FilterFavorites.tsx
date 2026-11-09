@@ -60,7 +60,7 @@ export function FavoritesMessage({ disabled }: { disabled: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  button: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  button: { width: 48, height: 48, borderRadius: theme.controlRadius, alignItems: 'center', justifyContent: 'center' },
   selected: { backgroundColor: theme.accentSoft },
   selectedDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: theme.accent, position: 'absolute', bottom: 5 },
   message: { color: theme.secondary, fontSize: 12, lineHeight: 18, flexShrink: 1, maxWidth: 230 },

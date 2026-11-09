@@ -57,7 +57,7 @@ export function ResultPhotoComparison({ output, state, width, enabled, locked, f
         <Pressable accessibilityRole="switch" accessibilityLabel="원본 보기 유지"
           accessibilityState={{ checked: pinned, disabled: !available }} disabled={!available}
           onPress={() => change('toggle')} style={[styles.button, styles.pin, pinned && styles.selected, !available && styles.disabled]}>
-          <CameraIcon name="pin" size={21} color={pinned ? theme.accent : theme.secondary} />
+          <CameraIcon name="pin" size={20} color={pinned ? theme.accent : theme.secondary} />
         </Pressable>
       </View>}
       <Text accessibilityLiveRegion="polite" style={styles.note}>
@@ -72,10 +72,10 @@ export function ResultPhotoComparison({ output, state, width, enabled, locked, f
 const styles = StyleSheet.create({
   group: { gap: 12 }, frame: { alignSelf: 'center', backgroundColor: theme.photoMatte, borderRadius: 18, overflow: 'hidden' },
   hidden: { opacity: 0 }, badge: { position: 'absolute', top: 16, left: 16, color: theme.onPhoto,
-    backgroundColor: theme.photoOverlay, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, fontSize: 12 },
+    backgroundColor: theme.photoOverlay, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, fontSize: 12 },
   controls: { gap: 8 }, row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   button: { minHeight: 48, minWidth: 48, flexGrow: 1, flexDirection: 'row', gap: 8, padding: 12, justifyContent: 'center',
-    alignItems: 'center', borderWidth: 1, borderColor: theme.line, borderRadius: 14 },
+    alignItems: 'center', borderWidth: 1, borderColor: theme.line, borderRadius: theme.controlRadius },
   pin: { width: 48, flexGrow: 0 },
   selected: { borderColor: theme.accent, backgroundColor: theme.accentSoft }, disabled: { opacity: 0.4 },
   label: { color: theme.text, fontSize: 13 }, note: { color: theme.secondary, fontSize: 12, lineHeight: 18 },

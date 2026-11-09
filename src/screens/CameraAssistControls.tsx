@@ -13,14 +13,14 @@ export function CameraAssistControls({ grid, flashMode, hasFlash, disabled, onGr
 }) {
   return <View style={styles.group}>
     <View style={styles.settingRow}>
-      <CameraIcon name="grid" color={theme.secondary} size={21} />
+      <CameraIcon name="grid" color={theme.secondary} size={20} />
       <Text style={styles.label}>격자 안내선</Text>
       <Switch accessibilityLabel="3×3 격자 안내선" accessibilityHint="저장 사진에는 표시되지 않아요."
         disabled={disabled} value={grid} onValueChange={onGrid} thumbColor={theme.surface}
         ios_backgroundColor={theme.line} trackColor={{ false: theme.line, true: theme.accent }} />
     </View>
     <View style={styles.settingRow}>
-      <CameraIcon name="flash" color={theme.secondary} size={21} />
+      <CameraIcon name="flash" color={theme.secondary} size={20} />
       <Text style={styles.label}>플래시</Text>
       <View style={styles.segmented} accessibilityRole="radiogroup" accessibilityLabel="플래시 모드">
         {FLASH_MODES.map(({ mode, label }) => <Pressable key={mode} accessibilityRole="radio"
@@ -54,8 +54,8 @@ const styles = StyleSheet.create({
   group: { gap: 12, width: '100%' },
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48 },
   label: { color: theme.text, fontSize: 14, flex: 1 },
-  segmented: { flexDirection: 'row', padding: 3, borderRadius: 16, backgroundColor: theme.inset },
-  button: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 13 },
+  segmented: { flexDirection: 'row', padding: 4, borderRadius: 16, backgroundColor: theme.inset },
+  button: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: theme.controlRadius },
   selected: { backgroundColor: theme.accentSoft, borderWidth: 1, borderColor: theme.accent },
   auto: { color: theme.secondary, fontSize: 15, fontFamily: theme.mono },
   note: { color: theme.secondary, fontSize: 12, lineHeight: 18 }, disabled: { opacity: 0.4 }, pressed: { opacity: 0.65 },

@@ -52,7 +52,7 @@ function FilterStrip({ selectedId, disabled, onSelect, filters = CAMERA_FILTERS,
             <CameraIcon name="check" size={11} color={theme.onAccent} />
           </View> : null}
         </View>
-        <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[styles.cardName, selected && { color, fontWeight: '700' }]}>{filter.name}</Text>
+        <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[styles.cardName, selected && { color, fontWeight: '600' }]}>{filter.name}</Text>
       </Pressable>;
     })}
     {message ? <View style={styles.listMessage}>{message}</View> : null}
@@ -146,7 +146,7 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
         {EFFECTS.map(item => <Pressable key={item.key} accessibilityRole="tab" accessibilityLabel={item.label}
           accessibilityState={{ selected: effect === item.key, disabled }} disabled={disabled} onPress={() => setEffect(item.key)}
           style={({ pressed }) => [styles.effect, effect === item.key && { backgroundColor: wash, borderColor: accent }, pressed && styles.pressed, disabled && styles.disabled]}>
-          <CameraIcon name={item.icon} color={effect === item.key ? accent : theme.secondary} size={22} />
+          <CameraIcon name={item.icon} color={effect === item.key ? accent : theme.secondary} />
           <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[styles.effectName, effect === item.key && { color: accent }]}>{item.label}</Text>
         </Pressable>)}
       </ScrollView>
@@ -161,9 +161,9 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
         <View style={styles.divider} />
         <IconButton icon="reset" label="현재 필터 기본값으로 초기화" disabled={disabled} onPress={onReset} />
       </View>
-      {settings.intensity === 0 ? <Text style={styles.caption}>강도 0% · 날짜를 포함한 모든 효과가 꺼져 있어요.</Text>
+      {settings.intensity === 0 ? <Text style={styles.caption}>강도 0% · 날짜를 포함한 모든 효과가 꺼져 있어요</Text>
         : settings.dateStamp ? <Text style={styles.caption}>{imported ? '사진을 가져온 날짜가 찍혀요. 원래 촬영일과 다를 수 있어요.' : '촬영한 날짜가 저장 사진에도 남아요.'}</Text> : null}
-    </> : <Text style={styles.caption}>필터를 고르면 강도와 질감을 조절할 수 있어요.</Text>}
+    </> : <Text style={styles.caption}>필터를 고르면 강도와 질감을 조절할 수 있어요</Text>}
   </View>;
 }
 
@@ -200,35 +200,35 @@ const styles = StyleSheet.create({
   selection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, height: 48 },
   selectionName: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 },
   selectionActions: { flexDirection: 'row' },
-  listRow: { flexDirection: 'row', height: 96 }, listSwitch: { justifyContent: 'center', paddingRight: 6 },
+  listRow: { flexDirection: 'row', height: 96 }, listSwitch: { justifyContent: 'center', paddingRight: 8 },
   stripViewport: { height: 96, flexGrow: 1, flexShrink: 1 },
   listMessage: { justifyContent: 'center', width: 220, paddingHorizontal: 4 },
   name: { color: theme.text, fontSize: 15, fontWeight: '600', flexShrink: 1 },
-  dot: { width: 6, height: 6, borderRadius: 3 }, value: { fontFamily: theme.mono, fontSize: 12 }, unit: { fontSize: 11 },
-  intensityPill: { borderRadius: 10, paddingHorizontal: 7, paddingVertical: 4, flexShrink: 0 },
-  strip: { gap: 8, paddingVertical: 3 }, card: { width: 72, gap: 5 },
-  cardFrame: { height: 61, borderRadius: 14, borderWidth: 1.5, borderColor: theme.line, backgroundColor: theme.surface, padding: 3 },
-  cardName: { color: theme.secondary, textAlign: 'center', fontSize: 11, lineHeight: 16, fontWeight: '500' },
-  check: { width: 17, height: 17, borderRadius: 9, position: 'absolute', right: 0, bottom: -2, alignItems: 'center', justifyContent: 'center' },
-  favoriteMark: { position: 'absolute', top: 5, right: 5, width: 18, height: 18, borderRadius: 9,
+  dot: { width: 6, height: 6, borderRadius: 3 }, value: { fontFamily: theme.mono, fontSize: 12, fontVariant: ['tabular-nums'] }, unit: { fontSize: 12 },
+  intensityPill: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, flexShrink: 0 },
+  strip: { gap: 8, paddingVertical: 4 }, card: { width: 72, gap: 4 },
+  cardFrame: { height: 60, borderRadius: 16, borderWidth: 2, borderColor: theme.line, backgroundColor: theme.surface, padding: 4 },
+  cardName: { color: theme.secondary, textAlign: 'center', fontSize: 12, lineHeight: 16, fontWeight: '500' },
+  check: { width: 20, height: 20, borderRadius: 10, position: 'absolute', right: 0, bottom: -2, alignItems: 'center', justifyContent: 'center' },
+  favoriteMark: { position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: 10,
     backgroundColor: theme.surface, alignItems: 'center', justifyContent: 'center' },
   adjustment: { gap: 16 }, caption: { color: theme.secondary, fontSize: 12, lineHeight: 18 },
   captionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 }, captionText: { flex: 1 },
-  groups: { gap: 6 }, group: { minHeight: 48, paddingHorizontal: 16, borderRadius: 24, justifyContent: 'center',
-    flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: theme.line },
-  groupSelected: { backgroundColor: theme.accentSoft, borderColor: theme.accent }, groupName: { color: theme.secondary, fontSize: 13, fontWeight: '600' },
+  groups: { gap: 8 }, group: { minHeight: 48, paddingHorizontal: 16, borderRadius: theme.controlRadius, justifyContent: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: theme.line },
+  groupSelected: { backgroundColor: theme.accentSoft, borderColor: theme.accent }, groupName: { color: theme.secondary, fontSize: 13, fontWeight: '500' },
   groupNameSelected: { color: theme.accent },
-  effects: { gap: 6 }, effect: { width: 66, minHeight: 70, borderRadius: 18, justifyContent: 'center', alignItems: 'center', gap: 8,
+  effects: { gap: 8 }, effect: { width: 72, minHeight: 72, borderRadius: theme.controlRadius, justifyContent: 'center', alignItems: 'center', gap: 8,
     borderWidth: 1, borderColor: 'transparent' },
-  effectName: { color: theme.secondary, fontSize: 11 },
-  amount: { borderRadius: 18, padding: 12, backgroundColor: theme.inset, gap: 4 },
-  amountHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10, minHeight: 30 },
-  amountLabel: { color: theme.text, fontSize: 14, fontWeight: '500' }, amountValue: { fontFamily: theme.mono, fontSize: 22 },
-  amountRow: { flexDirection: 'row', alignItems: 'center', gap: 4 }, meter: { flex: 1, minHeight: 48, justifyContent: 'center', gap: 7 },
-  track: { height: 5, backgroundColor: theme.line, borderRadius: 3 }, fill: { height: 5, borderRadius: 3 },
+  effectName: { color: theme.secondary, fontSize: 12 },
+  amount: { borderRadius: theme.panelRadius, padding: 12, backgroundColor: theme.inset, gap: 4 },
+  amountHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, minHeight: 32 },
+  amountLabel: { color: theme.text, fontSize: 14, fontWeight: '500' }, amountValue: { fontFamily: theme.mono, fontSize: 22, fontVariant: ['tabular-nums'] },
+  amountRow: { flexDirection: 'row', alignItems: 'center', gap: 4 }, meter: { flex: 1, minHeight: 48, justifyContent: 'center', gap: 8 },
+  track: { height: 4, backgroundColor: theme.line, borderRadius: 2 }, fill: { height: 4, borderRadius: 2 },
   ticks: { flexDirection: 'row', justifyContent: 'space-between' }, tick: { width: 1, height: 3, backgroundColor: theme.line },
   majorTick: { height: 6, backgroundColor: theme.secondary },
-  footer: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48 },
+  footer: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 },
   dateLabel: { color: theme.text, fontSize: 14, flex: 1 }, divider: { width: 1, height: 20, backgroundColor: theme.line },
   pressed: { opacity: 0.65 }, disabled: { opacity: 0.4 },
 });

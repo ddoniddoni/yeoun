@@ -8,6 +8,7 @@ import { FilterSwatch } from './FilterSwatch';
 import { FavoriteButton, FavoritesMessage, useFilterFavorites } from './FilterFavorites';
 import { isFavoriteFilterId, type FavoriteFilterId } from '../domain/filters/favorites';
 import { cameraTheme as theme, filterPresentation } from './cameraTheme';
+import { RecipeControls } from './RecipeControls';
 
 const FILTER_GROUPS = [
   { name: '전체', filters: CAMERA_FILTERS },
@@ -105,9 +106,10 @@ const EFFECTS: readonly { key: EffectKey; label: string; icon: CameraIconName }[
   { key: 'lightLeak', label: '빛샘', icon: 'flash' }, { key: 'dust', label: '먼지', icon: 'grain' },
 ];
 
-export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensity, onTexture, onDateStamp, onReset, imported = false }: {
+export function FilterAdjustmentPanel({ settings, disabled, onSelect, onRecipe, onIntensity, onTexture, onDateStamp, onReset, imported = false }: {
   settings: CameraSettings; disabled: boolean; imported?: boolean;
   onSelect(id: CameraFilterId): void; onIntensity(value: number): void;
+  onRecipe(settings: CameraSettings): void;
   onTexture(control: 'grain' | 'bloom' | RetroAmount, value: number): void;
   onDateStamp(enabled: boolean): void; onReset(): void;
 }) {
@@ -164,6 +166,7 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onIntensit
       {settings.intensity === 0 ? <Text style={styles.caption}>강도 0% · 날짜를 포함한 모든 효과가 꺼져 있어요</Text>
         : settings.dateStamp ? <Text style={styles.caption}>{imported ? '사진을 가져온 날짜가 찍혀요. 원래 촬영일과 다를 수 있어요.' : '촬영한 날짜가 저장 사진에도 남아요.'}</Text> : null}
     </> : <Text style={styles.caption}>필터를 고르면 강도와 질감을 조절할 수 있어요</Text>}
+    <RecipeControls settings={settings} disabled={disabled} imported={imported} onSelect={onRecipe} />
   </View>;
 }
 

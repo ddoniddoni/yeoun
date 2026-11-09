@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState, Linking, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useCameraDevice, useCameraPermission, usePhotoOutput } from 'react-native-vision-camera';
 import { CaptureController, type CaptureState } from '../domain/capture/controller';
 import { restoredState, type RestoredCapture } from '../domain/capture/recovery';
 import { editRecovery } from '../platform/storage/editRecovery';
 import { selectedFlashMode, type FlashSelection } from '../domain/capture/flash';
-import { cameraSettings, cameraSettingsKey, copyCameraSettings, type CameraFilterId } from '../domain/filters/cameraSettings';
+import { cameraSettings, cameraSettingsKey, type CameraFilterId, type CameraSettings } from '../domain/filters/cameraSettings';
 import { createGrainSeed } from '../domain/filters/grainSeed';
 import { CameraPreview, type CameraPreviewHandle } from '../platform/camera/CameraPreview';
 import type { MeteringState } from '../domain/capture/meteringSession';
@@ -25,6 +25,7 @@ import { CameraIcon } from './CameraIcon';
 import { CameraResultScreen } from './CameraResultScreen';
 import { CameraAssistControls, CameraGrid } from './CameraAssistControls';
 import { CameraMeteringControls, FocusTarget } from './CameraMeteringControls';
+import { CameraMemoryControls, useCameraMemory } from './CameraMemory';
 import { OriginalComparisonControls } from './OriginalComparisonControls';
 import { usePreviewComparison } from './usePreviewComparison';
 import { cameraTheme as theme } from './cameraTheme';
@@ -44,12 +45,13 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
   const [panel, setPanel] = useState<'camera' | 'filter'>();
   const [position, setPosition] = useState<'front' | 'back'>('back');
   const device = useCameraDevice(position, { physicalDevices: ['wide-angle'] });
-  const [grid, setGrid] = useState(false);
+  const memoryStore = useCameraMemory();
+  const memory = useSyncExternalStore(memoryStore.subscribe, memoryStore.getSnapshot, memoryStore.getSnapshot);
+  const { settings, grid } = memory.camera;
   const [flashSelection, setFlashSelection] = useState<FlashSelection>();
   const flashMode = selectedFlashMode(flashSelection, device);
   useEffect(() => { setFlashSelection(undefined); }, [device?.id, device?.hasFlash]);
   const photoOutput = usePhotoOutput({ targetResolution: PHOTO_SIZE, containerFormat: 'jpeg', quality: 0.94, qualityPrioritization: 'quality' });
-  const [settings, setSettings] = useState(() => cameraSettings('light-afternoon'));
   const [grainSeed, setGrainSeed] = useState(createGrainSeed);
   const [filterRevision, setFilterRevision] = useState(0);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>();
@@ -97,7 +99,7 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
   const resultOpen = !!state.output;
   const overlayOpen = diagnosticsOpen || resultOpen;
   const assistDisabled = !permission.hasPermission || !device || !ready || !foreground || !!cameraError ||
-    busy || !canCapture || overlayOpen || returning;
+    busy || !canCapture || overlayOpen || returning || memory.switching;
   const hasStyle = settings.filterId !== 'original' && settings.intensity > 0;
   const comparisonAvailable = hasStyle && permission.hasPermission && !!device && ready && foreground &&
     !cameraError && !busy && canCapture && !overlayOpen && !returning;
@@ -111,9 +113,10 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
   const shutterStatus = busy ? 'processing' : captureUnavailable || currentFilterStatus?.phase === 'error'
     ? 'unavailable' : filterReady ? 'ready' : 'preparing';
   const meteringDisabled = assistDisabled || comparison.active;
-  const selectFilter = (id: CameraFilterId) => {
-    setSettings(cameraSettings(id)); setFilterRevision(value => value + 1);
+  const applySettings = (next: CameraSettings) => {
+    if (memoryStore.setSettings(next)) setFilterRevision(value => value + 1);
   };
+  const selectFilter = (id: CameraFilterId) => applySettings(cameraSettings(id));
   const openSettings = () => { void Linking.openSettings().catch(showError); };
   const closeDiagnostics = useCallback(() => {
     setReady(false); setDiagnosticsOpen(false); setFilterRevision(value => value + 1);
@@ -129,7 +132,7 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
     finally { discardPending.current = false; setReturning(false); }
   };
   const controlsHidden = overlayOpen || panel !== undefined;
-  const settingsDisabled = busy || !canCapture || returning;
+  const settingsDisabled = busy || !canCapture || returning || memory.switching;
   const importDisabled = settingsDisabled || !foreground || diagnosticsOpen || metering.busy;
   const importPhoto = () => {
     if (importDisabled || discardPending.current) return;
@@ -159,7 +162,7 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
             }} />
           <Pressable accessibilityRole="switch" accessibilityLabel="격자 안내선"
             accessibilityState={{ checked: grid, disabled: assistDisabled }} disabled={assistDisabled}
-            onPress={() => setGrid(value => !value)} style={({ pressed }) => [styles.toolbarAction, grid && styles.toolbarSelected, pressed && styles.pressed,
+            onPress={memoryStore.toggleGrid} style={({ pressed }) => [styles.toolbarAction, grid && styles.toolbarSelected, pressed && styles.pressed,
               assistDisabled && styles.disabled]}>
             <CameraIcon name="grid" size={21} color={grid ? theme.accent : theme.secondary} />
           </Pressable>
@@ -167,7 +170,8 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
         <Text accessibilityRole="header" accessibilityLabel="여운" style={styles.brand}>yeoun<Text style={{ color: theme.shutter }}>.</Text></Text>
         <View style={[styles.toolbarGroup, styles.toolbarEnd]}>
           <IconButton icon="album" label="앨범 사진 가져오기" hint="사진 한 장에 필터를 적용하고 새 JPEG로 저장해요." disabled={importDisabled} onPress={importPhoto} />
-          <IconButton icon="settings" label="촬영 설정" disabled={settingsDisabled} onPress={() => setPanel('camera')} />
+          <IconButton icon="settings" label={memory.error ? '촬영 설정, 설정 기억 확인 필요' : '촬영 설정'}
+            badge={memory.error ? '!' : undefined} disabled={settingsDisabled} onPress={() => setPanel('camera')} />
         </View>
       </View>
       <ScrollView style={styles.body} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -271,14 +275,15 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
       {panel === 'camera' ? <>
         {permission.hasPermission && device ? <>
           <CameraAssistControls grid={grid} flashMode={flashMode} hasFlash={device.hasFlash} disabled={assistDisabled}
-            onGrid={() => setGrid(value => !value)} onFlash={mode => {
+            onGrid={memoryStore.toggleGrid} onFlash={mode => {
               if (!assistDisabled && device.hasFlash) setFlashSelection({ deviceId: device.id, mode });
             }} />
           <CameraMeteringControls state={metering} disabled={meteringDisabled}
             onFocusCenter={() => { void preview.current?.focus({ x: 0.5, y: 0.5 }); }}
             onExposure={value => { void preview.current?.expose(value); }}
             onReconnect={() => { void preview.current?.reconnectMetering(); }} />
-        </> : <Text style={styles.info}>카메라를 허용하면 촬영 설정을 사용할 수 있어요.</Text>}
+        </> : <Text style={styles.info}>카메라를 허용하면 격자·플래시·노출을 조절할 수 있어요.</Text>}
+        <CameraMemoryControls disabled={settingsDisabled || !foreground} />
         <Text style={styles.info}>사진은 기기 안에서만 처리해요.</Text>
         {__DEV__ ? <CameraAction label="개발 진단" disabled={busy || !foreground || returning} onPress={() => {
           if (!__DEV__ || !foreground || discardPending.current || ['picking', 'importing', 'capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
@@ -293,14 +298,14 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
         <FilterAdjustmentPanel settings={settings} disabled={settingsDisabled || !foreground} onSelect={selectFilter}
           onRecipe={next => {
             if (settingsDisabled || !foreground) return;
-            setSettings(copyCameraSettings(next)); setFilterRevision(value => value + 1);
+            applySettings(next);
           }}
           onIntensity={intensity => {
-            setSettings(copyCameraSettings({ ...settings, intensity })); setFilterRevision(value => value + 1);
+            applySettings({ ...settings, intensity });
           }} onTexture={(control, value) => {
-            setSettings(copyCameraSettings({ ...settings, [control]: value })); setFilterRevision(value => value + 1);
+            applySettings({ ...settings, [control]: value });
           }} onDateStamp={dateStamp => {
-            setSettings(copyCameraSettings({ ...settings, dateStamp })); setFilterRevision(value => value + 1);
+            applySettings({ ...settings, dateStamp });
           }} onReset={() => selectFilter(settings.filterId)} />
         {settings.filterId === 'retro-digital' || settings.filterId === 'retro-film' ? <>
           <Text style={styles.info}>{settings.filterId === 'retro-digital'

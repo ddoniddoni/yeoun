@@ -1,6 +1,20 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-11-09 내 색감 개인 레시피
+## 현재 상태 — 2026-11-09 마지막 촬영 설정 기억
+
+- 요청/준비: 개인 레시피 다음으로 마지막 촬영 설정 기억 진행을 승인했다. clean develop `0b501c0309ef3b96f808c43909575db1f56b4e96`(PR #37)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/remember-camera-settings` exit0. 기존 사용자 변경 없음. 검사 실행 보류·개발 후 전체 Git Flow 상시 승인 유지.
+- 기능: 촬영 필터·강도·모든 질감·날짜 표시 여부와 격자를 기억한다. 최초 기본 켜짐/오후 네 시 기본값/격자 끔, 끄면 현재 화면 유지·다음 실행부터 기본값, 다시 켜면 현재 설정 저장. 플래시/노출/기기 방향/실제 날짜/입자 seed/사진은 저장하지 않는다. 결과 편집·가져오기·사진 복구와 다음 촬영 기억값을 분리한다.
+- UI: 초기 읽기 완료 전 카메라 mount를 지연하고 실패 시 다시 읽기/기본 시작을 제공한다. 기본 시작은 기존 기록을 자동 덮어쓰지 않는다. 촬영 설정에 기억 스위치·저장 중·오류/명시 재시도와 설정 아이콘 `!`를 추가했다. 카메라 권한 없이도 접근하고 기존 크림·코랄/48pt 조작을 재사용한다.
+- 저장: CameraMemoryStore의 불변 settings/grid, schemaVersion1 whitelist 및 recipeCatalog 자산 fingerprint. 변경은 바로 작업값에 반영하고 microtask부터 순서대로 기록하며 진행 중 최신 대기 snapshot 하나만 남긴다. 켜기/끄기는 기존 write 뒤에 실행하고 전환 동안 변경/중복 요청을 막는다. 자동 실패는 현재 촬영을 유지하고 자동 저장을 중지한다. 전환 실패는 미확인 상태로 안내하며 성공 응답 전 스위치를 확정하지 않는다.
+- DB: yeoun.db schema3의 app_settings 단일 camera-memory row.0은 세 표 생성,1은 recipes/app_settings 추가,2는 app_settings만 추가,3 유지, 미래 버전 거부. 기존 즐겨찾기/레시피 행 보존·공통 queue·exclusive migration/UPSERT/read-back/commit, disabled-only payload로 이전 snapshot 제거. 별도 recovery.db/사진 파일/네이티브/권한/패키지 변경 없음.
+- 변경 파일: 새 domain/filters의 cameraMemory·cameraMemoryStore, storage/cameraMemoryRepository, screens/CameraMemory, unit/cameraMemory·cameraMemoryStore, integration/cameraMemoryRepository. 수정 localDatabase, EditRecoveryGate, M0CameraScreen, integration/recipesRepository, README·제품·기술·계획·검수·PROGRESS.
+- 테스트 소스: 전체 조절값 round-trip/제외 필드/손상·버전/hash, 초기 읽기 gate/중복 방지/재시도/기본 시작 보존, 빠른 조절·쓰기 병합·끄기 순서·쓰기 실패와 명시 재시도, in-memory 재생성, migration0/1/2/3/미지원 및 바인딩/read-back/commit 실패. mocks는 native DB 지속성·프로세스 종료 증거가 아니다.
+- 소스 검토: 기존 SQLite/RN Switch 설치 API와 S52에서 확인한 계약을 재사용했다. 호출부/사진 편집 분리/공통 DB queue·오류 경계를 읽었고 `git diff --check` exit0. 존재하지 않는 RecipesProvider.tsx/추정 favoritesRepository 테스트 경로 조회는 실제 RecipeControls.tsx/recipesRepository.test.ts로 보완했다. 렌더링과 실행 검사의 대체 통과 증거는 아니다.
+- **NOT_RUN:** `npm run lint`, `npm run typecheck`, `npm test -- --runInBand`, react-doctor, 자산 검사, JS/native build, 앱/실기기/화면 캡처, 실제 schema migration·종료/재시작·저장·접근성·성능. 현재 보류 지시를 따랐으며 G0~G5 미통과 유지. Metro/기기를 새로 실행하지 않았다.
+- 한계/다음 확인: 완료 응답 전 강제 종료/OS 중단에 마지막 조작 보존을 보장하지 않는다. 요청 시 이전 native 기능을 포함한 개발 앱 재빌드 후 docs/05_TEST_RELEASE의 새 설치/schema1·2→3, 스위치·종료·실패·사진 편집 분리를 검수한다. 빛 가이드는 다음 후보이며 이번에는 구현하지 않았다.
+- Git Flow: 관련17파일을 명시해 `git add` 및 `git diff --cached --check` exit0. 이 기록을 포함해 커밋·푸시·develop PR/병합·fetch/FF/push·로컬/원격 일치를 확인하고 develop에서 마친다. 실제 커밋/PR 및 최종 상태는 Git 이력과 완료 보고를 따른다.
+
+## 이전 기록 — 2026-11-09 내 색감 개인 레시피
 
 - 요청/준비: 사용자가 개인 레시피 저장·불러오기·이름 변경·삭제·앱 재실행 보존을 승인했다. clean develop `63b16a533c144c634f48ac0b1c879c662265d216`(PR #36)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/personal-recipes` exit0. 현재 검사 실행 보류 및 개발 후 Git Flow 상시 승인 지침을 읽었다.
 - UI: 촬영/저장 전 결과 편집의 기존 조절 패널에 '내 색감' 접기/펼치기·+저장·이름 입력·불러오기·관리(이름 변경/확인 후 삭제)를 추가했다. 앞뒤 공백 제외1~24 Unicode code point, 중복 이름 허용/UUID 구분, 최신 생성 순서/최대100개. 기존 크림·코랄/시스템 글꼴/48pt 터치와 공유 버튼 스타일을 따른다. KeyboardAvoidingView와 스크롤 키보드 입력 처리를 추가했다. frontend-design/React 지침을 적용했고 새 의존성은 없다.

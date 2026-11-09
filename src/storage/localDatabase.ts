@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 let database: Promise<SQLiteDatabase> | undefined;
 let queue: Promise<unknown> = Promise.resolve();
 
@@ -8,7 +8,7 @@ export async function migrateLocalDatabase(db: SQLiteDatabase): Promise<void> {
   await db.withExclusiveTransactionAsync(async transaction => {
     const row = await transaction.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
     const version = row?.user_version;
-    if (version !== 0 && version !== 1 && version !== SCHEMA_VERSION) throw new Error('Unsupported local database version');
+    if (version !== 0 && version !== 1 && version !== 2 && version !== SCHEMA_VERSION) throw new Error('Unsupported local database version');
     if (version === 0) await transaction.execAsync(`
       CREATE TABLE favorite_filters (
         filter_id TEXT PRIMARY KEY NOT NULL,
@@ -25,7 +25,14 @@ export async function migrateLocalDatabase(db: SQLiteDatabase): Promise<void> {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
-      PRAGMA user_version = 2;
+    `);
+    if (version < 3) await transaction.execAsync(`
+      CREATE TABLE app_settings (
+        key TEXT PRIMARY KEY NOT NULL,
+        value_json TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      PRAGMA user_version = 3;
     `);
   });
 }
@@ -43,7 +50,7 @@ async function openLocalDatabase(): Promise<SQLiteDatabase> {
   }
 }
 
-// Favorites and recipes share initialization and an operation queue. Transactions never
+// Favorites, recipes and settings share initialization and an operation queue. Transactions never
 // overlap across features, and an earlier failure cannot poison the queue.
 export function withLocalDatabase<T>(work: (db: SQLiteDatabase) => Promise<T>): Promise<T> {
   const task = queue.then(async () => {

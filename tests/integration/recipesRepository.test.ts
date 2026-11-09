@@ -19,18 +19,26 @@ function database(version = 1) {
 }
 // These mocks check migration decisions, parameter binding and queue ordering only.
 // Native SQLite durability, transaction rollback and app restarts require device checks.
-test('schema1 migration adds recipes without rewriting favorites; future versions fail without DDL', async () => {
+test('schema1 migration adds recipes and settings without rewriting favorites; future versions fail without DDL', async () => {
   const old = database(1); await migrateLocalDatabase(old.db);
   const sql = old.execAsync.mock.calls.map(([statement]) => statement).join('\n');
-  expect(sql).toContain('CREATE TABLE recipes'); expect(sql).toContain('PRAGMA user_version = 2');
+  expect(sql).toContain('CREATE TABLE recipes'); expect(sql).toContain('CREATE TABLE app_settings');
+  expect(sql).toContain('PRAGMA user_version = 3');
   expect(sql).not.toContain('favorite_filters'); expect(sql).not.toContain('DROP');
-  const current = database(2); await migrateLocalDatabase(current.db); expect(current.execAsync).not.toHaveBeenCalled();
-  const future = database(3); await expect(migrateLocalDatabase(future.db)).rejects.toThrow();
+  const current = database(3); await migrateLocalDatabase(current.db); expect(current.execAsync).not.toHaveBeenCalled();
+  const future = database(4); await expect(migrateLocalDatabase(future.db)).rejects.toThrow();
   expect(future.execAsync).not.toHaveBeenCalled();
 });
-test('fresh install creates both tables in one migration; a failed DDL rejects initialization', async () => {
+test('schema2 adds only settings and preserves favorite and recipe tables', async () => {
+  const old = database(2); await migrateLocalDatabase(old.db);
+  const sql = old.execAsync.mock.calls.map(([statement]) => statement).join('\n');
+  expect(sql).toContain('CREATE TABLE app_settings'); expect(sql).toContain('PRAGMA user_version = 3');
+  expect(sql).not.toMatch(/favorite_filters|recipes|DROP|DELETE/);
+});
+test('fresh install creates all three tables in one migration; a failed DDL rejects initialization', async () => {
   const fresh = database(0); await migrateLocalDatabase(fresh.db);
-  expect(fresh.execAsync.mock.calls.map(([sql]) => sql).join('\n')).toContain('CREATE TABLE favorite_filters');
+  const sql = fresh.execAsync.mock.calls.map(([statement]) => statement).join('\n');
+  for (const table of ['favorite_filters', 'recipes', 'app_settings']) expect(sql).toContain(`CREATE TABLE ${table}`);
   const broken = database(1); broken.execAsync.mockRejectedValueOnce(new Error('disk full'));
   await expect(migrateLocalDatabase(broken.db)).rejects.toThrow('disk full');
 });

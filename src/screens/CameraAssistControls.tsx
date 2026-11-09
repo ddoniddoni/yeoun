@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import type { PhotoFlashMode } from '../domain/capture/flash';
 import { CameraIcon } from './CameraIcon';
-import { cameraTheme as theme } from './cameraTheme';
+import { useCameraTheme, createThemedStyles } from './ThemeProvider';
 
 const FLASH_MODES: readonly { mode: PhotoFlashMode; label: string }[] = [
   { mode: 'off', label: '끔' }, { mode: 'auto', label: '자동' }, { mode: 'on', label: '켬' },
@@ -11,12 +11,14 @@ export function CameraAssistControls({ grid, flashMode, hasFlash, disabled, onGr
   grid: boolean; flashMode: PhotoFlashMode; hasFlash: boolean; disabled: boolean;
   onGrid(): void; onFlash(mode: PhotoFlashMode): void;
 }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   return <View style={styles.group}>
     <View style={styles.settingRow}>
       <CameraIcon name="grid" color={theme.secondary} size={20} />
       <Text style={styles.label}>격자 안내선</Text>
       <Switch accessibilityLabel="3×3 격자 안내선" accessibilityHint="저장 사진에는 표시되지 않아요."
-        disabled={disabled} value={grid} onValueChange={onGrid} thumbColor={theme.surface}
+        disabled={disabled} value={grid} onValueChange={onGrid} thumbColor={theme.onPhoto}
         ios_backgroundColor={theme.line} trackColor={{ false: theme.line, true: theme.accent }} />
     </View>
     <View style={styles.settingRow}>
@@ -41,6 +43,7 @@ export function CameraAssistControls({ grid, flashMode, hasFlash, disabled, onGr
 
 /** View-only guides: no image, shader or export path receives these lines. */
 export function CameraGrid() {
+  const styles = useStyles();
   return <View pointerEvents="none" accessible={false} accessibilityElementsHidden
     importantForAccessibility="no-hide-descendants" style={StyleSheet.absoluteFill}>
     <View style={[styles.vertical, { left: '33.333333%' }]} />
@@ -50,7 +53,7 @@ export function CameraGrid() {
   </View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   group: { gap: 12, width: '100%' },
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48 },
   label: { color: theme.text, fontSize: 14, flex: 1 },
@@ -61,4 +64,4 @@ const styles = StyleSheet.create({
   note: { color: theme.secondary, fontSize: 12, lineHeight: 18 }, disabled: { opacity: 0.4 }, pressed: { opacity: 0.65 },
   vertical: { position: 'absolute', top: 0, bottom: 0, width: StyleSheet.hairlineWidth, backgroundColor: theme.onPhoto, opacity: 0.4 },
   horizontal: { position: 'absolute', left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: theme.onPhoto, opacity: 0.4 },
-});
+}));

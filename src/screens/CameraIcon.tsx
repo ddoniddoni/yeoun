@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { cameraTheme as theme } from './cameraTheme';
+import { useCameraTheme } from './ThemeProvider';
 
 type Line = readonly [number, number, number, number];
 type Box = readonly [number, number, number, number, number];
@@ -60,9 +60,11 @@ const GLYPHS = {
 } satisfies Record<string, Glyph>;
 export type CameraIconName = keyof typeof GLYPHS;
 
-export const CameraIcon = memo(function CameraIcon({ name, size = 24, color = theme.text }: {
+export const CameraIcon = memo(function CameraIcon({ name, size = 24, color: suppliedColor }: {
   name: CameraIconName; size?: number; color?: string;
 }) {
+  const theme = useCameraTheme();
+  const color = suppliedColor ?? theme.text;
   const glyph: Glyph = GLYPHS[name];
   const scale = size / 24;
   const stroke = 1.65 * scale;

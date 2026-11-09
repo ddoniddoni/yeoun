@@ -1,11 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { CameraIcon } from './CameraIcon';
-import { cameraTheme as theme } from './cameraTheme';
+import { useCameraTheme, createThemedStyles } from './ThemeProvider';
 
 export function OriginalComparisonControls({ active, pinned, disabled, ready, onHold, onRelease, onToggle }: {
   active: boolean; pinned: boolean; disabled: boolean; ready: boolean;
   onHold(): void; onRelease(): void; onToggle(): void;
 }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   return <View style={styles.group}>
     <View style={styles.row}>
       <Pressable accessibilityRole="button" accessibilityLabel="누르는 동안 원본 비교"
@@ -28,7 +30,7 @@ export function OriginalComparisonControls({ active, pinned, disabled, ready, on
   </View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   group: { gap: 8 }, row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   button: { minHeight: 48, minWidth: 48, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', gap: 8,
     justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: theme.line, borderRadius: theme.controlRadius },
@@ -36,4 +38,4 @@ const styles = StyleSheet.create({
   hold: { flexGrow: 1 }, selected: { borderColor: theme.accent, backgroundColor: theme.accentSoft },
   label: { color: theme.text, fontSize: 13, textAlign: 'center' },
   note: { color: theme.secondary, fontSize: 12, lineHeight: 18 }, disabled: { opacity: 0.4 },
-});
+}));

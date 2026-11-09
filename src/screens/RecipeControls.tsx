@@ -8,7 +8,7 @@ import { recipeFingerprint } from '../storage/recipeCatalog';
 import { recipesRepository } from '../storage/recipesRepository';
 import { CameraAction, IconButton } from './CameraControls';
 import { CameraIcon } from './CameraIcon';
-import { cameraTheme as theme } from './cameraTheme';
+import { useCameraTheme, createThemedStyles } from './ThemeProvider';
 
 const RecipesContext = createContext<RecipesStore | null>(null);
 export function RecipesProvider({ children }: { children: ReactNode }) {
@@ -25,6 +25,8 @@ function settingsLabel(settings: CameraSettings): string {
 export function RecipeControls({ settings, disabled, imported, onSelect }: {
   settings: CameraSettings; disabled: boolean; imported: boolean; onSelect(settings: CameraSettings): void;
 }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const store = useContext(RecipesContext);
   if (!store) throw new Error('RecipesProvider is missing');
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
@@ -144,7 +146,7 @@ export function RecipeControls({ settings, disabled, imported, onSelect }: {
   </View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   section: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.line, paddingTop: 12, gap: 12 },
   heading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   disclosure: { minHeight: 48, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -162,4 +164,4 @@ const styles = StyleSheet.create({
   recipe: { flex: 1, minHeight: 64, paddingVertical: 12, gap: 4 },
   manage: { minHeight: 48, minWidth: 48, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center' },
   manageText: { color: theme.secondary, fontSize: 13 }, pressed: { opacity: 0.7 }, disabled: { opacity: 0.4 },
-});
+}));

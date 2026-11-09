@@ -2,12 +2,13 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconButton } from './CameraControls';
-import { cameraTheme as theme } from './cameraTheme';
+import { createThemedStyles } from './ThemeProvider';
 
 /** A control surface over the live preview; it never owns or restarts the camera. */
 export function CameraSheet({ title, children, onClose }: {
   title: string; children: ReactNode; onClose(): void;
 }) {
+  const styles = useStyles();
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   return <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
@@ -29,7 +30,7 @@ export function CameraSheet({ title, children, onClose }: {
   </Modal>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: theme.scrim },
   sheet: { width: '100%', flexShrink: 1, backgroundColor: theme.surface, borderTopWidth: 1, borderColor: theme.line,
     borderTopLeftRadius: theme.panelRadius, borderTopRightRadius: theme.panelRadius },
@@ -37,4 +38,4 @@ const styles = StyleSheet.create({
   heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 12 },
   title: { color: theme.text, fontSize: 22, fontWeight: '600', flexShrink: 1 },
   content: { gap: 20, paddingBottom: 12 },
-});
+}));

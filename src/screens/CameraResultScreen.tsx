@@ -6,7 +6,7 @@ import { CAMERA_FILTERS, type CameraSettings } from '../domain/filters/cameraSet
 import { CameraAction, IconButton } from './CameraControls';
 import { ResultPhotoComparison } from './ResultPhotoComparison';
 import { ResultFilterEditor } from './ResultFilterEditor';
-import { cameraTheme as theme, filterPresentation } from './cameraTheme';
+import { useCameraTheme, createThemedStyles } from './ThemeProvider';
 
 export function CameraResultScreen({ state, output, settings, foreground, returning, returnError, onSave, onShare, onReturn, onSettings, onPrepareOriginal, onEdit, onResolveSave }: {
   state: CaptureState; output: Output; settings: CameraSettings; foreground: boolean;
@@ -14,6 +14,8 @@ export function CameraResultScreen({ state, output, settings, foreground, return
   onEdit(settings: CameraSettings): Promise<boolean>;
   onResolveSave(saved: boolean): void;
 }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [editorOpen, setEditorOpen] = useState(false);
@@ -28,7 +30,7 @@ export function CameraResultScreen({ state, output, settings, foreground, return
   const uncertain = state.phase === 'save-uncertain';
   const locked = saving || returning || !foreground || !!state.preparingOriginal || !!state.editing || !!state.sharing || !!state.resolvingSave;
   const filter = CAMERA_FILTERS.find(item => item.id === settings.filterId);
-  const accent = filterPresentation[settings.filterId].color;
+  const accent = theme.filters[settings.filterId].color;
   const ratio = output.width / output.height;
   const imageWidth = Math.min(width - insets.left - insets.right - 32, 560,
     Math.max(200, height - insets.top - insets.bottom - 310) * ratio);
@@ -102,7 +104,7 @@ export function CameraResultScreen({ state, output, settings, foreground, return
   </Modal>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.background }, scroll: { flex: 1 }, content: { flexGrow: 1, paddingHorizontal: 16, paddingBottom: 20, gap: 16 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8, minHeight: 56 },
   title: { color: theme.text, fontSize: 16, fontWeight: '600', flexShrink: 1 },
@@ -114,4 +116,4 @@ const styles = StyleSheet.create({
   error: { color: theme.error, fontSize: 13, lineHeight: 20 },
   fileInfo: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 },
   mono: { color: theme.secondary, fontFamily: theme.mono, fontSize: 12, lineHeight: 16, fontVariant: ['tabular-nums'] },
-});
+}));

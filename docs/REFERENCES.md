@@ -427,3 +427,9 @@ VisionCamera Worklets 5.2.3의 `HybridWorkletQueueFactory.cpp`에서 thread mark
 - [Expo SDK55 SQLite](https://docs.expo.dev/versions/v55.0.0/sdk/sqlite/): 설치55.0.20과 공식 문서에서 openDatabaseAsync, parameter binding, user_version migration, withExclusiveTransactionAsync를 확인했다. 설치 SQLiteDatabase.ts의 별도 transaction connection·commit/rollback/finally close 구현을 읽었으며 실제 transaction/기기 실행은 하지 않았다.
 - [React Native0.83 TextInput](https://reactnative.dev/docs/0.83/textinput), [KeyboardAvoidingView](https://reactnative.dev/docs/0.83/keyboardavoidingview): 이름 입력·submit·문자 길이·키보드 offset/behavior를 확인했다. 설치 RN0.83.10 타입을 읽고 iOS padding/Android height와 scroll keyboardShouldPersistTaps를 사용한다. 한글 조합/작은 화면/키보드 동작은 NOT_RUN이다.
 - 전체 색감 설정의 whitelist,1~24 code point/100개 제한, look별 fingerprint, 앱 내부 DB queue, 불확실한 write 뒤 재조회는 프로젝트 정책이다. 이전 필터 자산을 임의로 최신 자산에 매핑하지 않는다.
+
+## S53. 화면 테마 — 2026-11-10
+
+- [React Native0.83 Appearance](https://reactnative.dev/docs/0.83/appearance), [useColorScheme](https://reactnative.dev/docs/0.83/usecolorscheme): 현재 기기 모드 구독·앱 단위 override 계약을 확인했다. 실제 설치0.83.10 Appearance.d.ts/Appearance.js/RCTAppearance.mm/AppearanceModule.kt를 우선해 auto 대신 지원되는 unspecified를 사용한다. iOS window override, Android AppCompatDelegate MODE_NIGHT_YES/NO/FOLLOW_SYSTEM 경로를 읽었다.
+- [Expo Color themes](https://docs.expo.dev/develop/user-interface/color-themes/): 플랫폼별 userInterfaceStyle과 Android config override의 expo-system-ui 요구를 확인했다. 이번에는 iOS config만 automatic으로 바꾸고 Android는 이미 설치된 RN Appearance 런타임 경로를 사용한다. 설치 @expo/prebuild-config의 withIosUserInterfaceStyle은 automatic을 Info.plist Automatic으로 매핑한다. native 자동 연동·재빌드는 미실행이다.
+- 영구 저장은 기존 SQLite55.0.20 계약/S52와 app_settings를 재사용한다. 사진/필터 설정과 별도 schemaVersion1 payload, UI 적용 후 저장 실패 안내는 프로젝트의 제품 결정이다.

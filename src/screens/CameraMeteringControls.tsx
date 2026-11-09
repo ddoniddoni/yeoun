@@ -3,11 +3,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { MeteringState } from '../domain/capture/meteringSession';
 import { CameraAction, IconButton } from './CameraControls';
 import { CameraIcon } from './CameraIcon';
-import { cameraTheme as theme } from './cameraTheme';
+import { useCameraTheme, createThemedStyles } from './ThemeProvider';
 
 export function CameraMeteringControls({ state, disabled, onFocusCenter, onExposure, onReconnect }: {
   state: MeteringState; disabled: boolean; onFocusCenter(): void; onExposure(value: number): void; onReconnect(): void;
 }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const locked = disabled || state.busy || !state.ready;
   const step = state.unit === 'step' ? 1 : 0.5;
   const value = state.exposure;
@@ -43,6 +45,7 @@ export function CameraMeteringControls({ state, disabled, onFocusCenter, onExpos
 }
 
 export function FocusTarget({ state }: { state: MeteringState }) {
+  const styles = useStyles();
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     setVisible(!!state.focusPoint);
@@ -54,7 +57,7 @@ export function FocusTarget({ state }: { state: MeteringState }) {
   return <View pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
     style={[styles.target, { left: `${state.focusPoint.x * 100}%`, top: `${state.focusPoint.y * 100}%` }]} />;
 }
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   group: { gap: 12 }, row: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12 },
   label: { color: theme.text, fontSize: 14, flex: 1 },
   exposure: { backgroundColor: theme.inset, padding: 12, borderRadius: theme.panelRadius },
@@ -63,4 +66,4 @@ const styles = StyleSheet.create({
   note: { color: theme.secondary, fontSize: 12, lineHeight: 18, flexShrink: 1 }, error: { color: theme.error, fontSize: 13 },
   target: { position: 'absolute', width: 40, height: 40, marginLeft: -20, marginTop: -20,
     borderWidth: 1, borderColor: theme.focus, borderRadius: 4 },
-});
+}));

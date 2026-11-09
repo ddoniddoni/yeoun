@@ -7,7 +7,7 @@ import { IconButton } from './CameraControls';
 import { FilterSwatch } from './FilterSwatch';
 import { FavoriteButton, FavoritesMessage, useFilterFavorites } from './FilterFavorites';
 import { isFavoriteFilterId, type FavoriteFilterId } from '../domain/filters/favorites';
-import { cameraTheme as theme, filterPresentation } from './cameraTheme';
+import { useCameraTheme, createThemedStyles } from './ThemeProvider';
 import { RecipeControls } from './RecipeControls';
 
 const FILTER_GROUPS = [
@@ -27,6 +27,8 @@ function FilterStrip({ selectedId, disabled, onSelect, filters = CAMERA_FILTERS,
   filters?: ReadonlyArray<typeof CAMERA_FILTERS[number]>;
   favoriteIds: readonly FavoriteFilterId[]; message?: ReactNode;
 }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const scroll = useRef<ScrollView>(null);
   const viewport = useRef(0);
   const revealSelected = useCallback(() => {
@@ -47,9 +49,9 @@ function FilterStrip({ selectedId, disabled, onSelect, filters = CAMERA_FILTERS,
         style={({ pressed }) => [styles.card, pressed && styles.pressed, disabled && styles.disabled]}>
         <View style={[styles.cardFrame, selected && styles.cardSelected]}>
           <FilterSwatch id={filter.id} />
-          {favorite ? <View style={styles.favoriteMark}><CameraIcon name="star" size={10} color={theme.accent} /></View> : null}
+          {favorite ? <View style={styles.favoriteMark}><CameraIcon name="star" size={10} color={theme.paperAccent} /></View> : null}
           {selected ? <View style={styles.check}>
-            <CameraIcon name="check" size={10} color={theme.onAccent} />
+            <CameraIcon name="check" size={10} color={theme.onPaperAccent} />
           </View> : null}
         </View>
         <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[styles.cardName, selected && styles.cardNameSelected]}>{filter.name}</Text>
@@ -62,11 +64,13 @@ function FilterStrip({ selectedId, disabled, onSelect, filters = CAMERA_FILTERS,
 export function FilterControls({ settings, disabled, onSelect, onOpen }: {
   settings: CameraSettings; disabled: boolean; onSelect(id: CameraFilterId): void; onOpen(): void;
 }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const favorites = useFilterFavorites();
   const favoriteFilters = useFavoriteList(favorites.ids);
   const selected = CAMERA_FILTERS.find(filter => filter.id === settings.filterId);
-  const presentation = filterPresentation[settings.filterId];
+  const presentation = theme.filters[settings.filterId];
   return <View style={styles.controls}>
     <View style={styles.selection}>
       <View style={styles.selectionName}>
@@ -112,6 +116,8 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onRecipe, 
   onTexture(control: 'grain' | 'bloom' | RetroAmount, value: number): void;
   onDateStamp(enabled: boolean): void; onReset(): void;
 }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const [effect, setEffect] = useState<EffectKey>('intensity');
   const [groupName, setGroupName] = useState('전체');
   const favorites = useFilterFavorites();
@@ -120,7 +126,7 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onRecipe, 
   const group = groups.find(item => item.name === groupName)!;
   const selected = CAMERA_FILTERS.find(filter => filter.id === settings.filterId);
   const original = settings.filterId === 'original';
-  const { color: accent, wash } = filterPresentation[settings.filterId];
+  const { color: accent, wash } = theme.filters[settings.filterId];
   const activeEffect = EFFECTS.find(item => item.key === effect)!;
   return <View style={styles.adjustment}>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.groups}
@@ -157,7 +163,7 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onRecipe, 
         <CameraIcon name="calendar" size={20} color={settings.dateStamp ? accent : theme.secondary} />
         <Text style={styles.dateLabel}>날짜 도장</Text>
         <Switch accessibilityLabel={imported ? '가져온 날짜 도장' : '촬영 날짜 도장'} disabled={disabled} value={settings.dateStamp}
-          onValueChange={onDateStamp} thumbColor={theme.surface}
+          onValueChange={onDateStamp} thumbColor={theme.onPhoto}
           ios_backgroundColor={theme.line} trackColor={{ false: theme.line, true: accent }} />
         <View style={styles.divider} />
         <IconButton icon="reset" label="현재 필터 기본값으로 초기화" disabled={disabled} onPress={onReset} />
@@ -172,6 +178,7 @@ export function FilterAdjustmentPanel({ settings, disabled, onSelect, onRecipe, 
 function EffectAmount({ label, value, disabled, accent, onChange }: {
   label: string; value: number; disabled: boolean; accent: string; onChange(value: number): void;
 }) {
+  const styles = useStyles();
   const percent = Math.round(value * 100);
   const change = (delta: number) => {
     if (!disabled) onChange(Math.max(0, Math.min(100, percent + delta)) / 100);
@@ -197,7 +204,7 @@ function EffectAmount({ label, value, disabled, accent, onChange }: {
   </View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   controls: { paddingBottom: 4 },
   selection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, height: 48 },
   selectionName: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 },
@@ -209,14 +216,14 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3 }, value: { fontFamily: theme.mono, fontSize: 12, fontVariant: ['tabular-nums'] }, unit: { fontSize: 12 },
   intensityPill: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, flexShrink: 0 },
   strip: { gap: 8, paddingVertical: 4 }, card: { width: 72, gap: 4 },
-  cardFrame: { height: 60, borderRadius: 12, borderWidth: 1, borderColor: theme.line, backgroundColor: theme.surface, padding: 4 },
-  cardSelected: { borderColor: theme.accent },
+  cardFrame: { height: 60, borderRadius: 12, borderWidth: 1, borderColor: theme.paperLine, backgroundColor: theme.paper, padding: 4 },
+  cardSelected: { borderColor: theme.paperAccent },
   cardName: { color: theme.secondary, textAlign: 'center', fontSize: 12, lineHeight: 16, fontWeight: '500' },
   cardNameSelected: { color: theme.accent, fontWeight: '600' },
   check: { width: 16, height: 16, borderRadius: 8, position: 'absolute', right: 2, bottom: 2,
-    backgroundColor: theme.accent, alignItems: 'center', justifyContent: 'center' },
+    backgroundColor: theme.paperAccent, alignItems: 'center', justifyContent: 'center' },
   favoriteMark: { position: 'absolute', top: 2, right: 2, width: 16, height: 16, borderRadius: 8,
-    backgroundColor: theme.surface, alignItems: 'center', justifyContent: 'center' },
+    backgroundColor: theme.paper, alignItems: 'center', justifyContent: 'center' },
   adjustment: { gap: 16 }, caption: { color: theme.secondary, fontSize: 12, lineHeight: 18 },
   captionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 }, captionText: { flex: 1 },
   groups: { gap: 8 }, group: { minHeight: 48, paddingHorizontal: 16, borderRadius: theme.controlRadius, justifyContent: 'center',
@@ -236,4 +243,4 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 },
   dateLabel: { color: theme.text, fontSize: 14, flex: 1 }, divider: { width: 1, height: 20, backgroundColor: theme.line },
   pressed: { opacity: 0.65 }, disabled: { opacity: 0.4 },
-});
+}));

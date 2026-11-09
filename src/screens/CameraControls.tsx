@@ -1,10 +1,12 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CameraIcon, type CameraIconName } from './CameraIcon';
-import { cameraTheme as theme } from './cameraTheme';
+import { useCameraTheme, createThemedStyles } from './ThemeProvider';
 
 export function CameraAction({ label, accessibilityLabel, onPress, disabled = false, primary = false, icon }: {
   label: string; accessibilityLabel?: string; onPress(): void; disabled?: boolean; primary?: boolean; icon?: CameraIconName;
 }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   return <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label} accessibilityState={{ disabled }}
     disabled={disabled} onPress={onPress}
     style={({ pressed }) => [styles.action, primary && styles.primary, pressed && styles.pressed, disabled && styles.disabled]}>
@@ -17,6 +19,8 @@ export function IconButton({ icon, label, hint, onPress, disabled = false, selec
   icon: CameraIconName; label: string; hint?: string; onPress(): void;
   disabled?: boolean; selected?: boolean; badge?: string;
 }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint={hint}
     accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress}
     style={({ pressed }) => [styles.iconButton, selected && styles.iconSelected,
@@ -29,18 +33,21 @@ export function IconButton({ icon, label, hint, onPress, disabled = false, selec
 export function ShutterButton({ status, onPress }: {
   status: 'ready' | 'preparing' | 'unavailable' | 'processing'; onPress(): void;
 }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const disabled = status !== 'ready';
   const busy = status === 'processing';
   // Preparing a selected look must block capture without changing the shutter's appearance.
   return <Pressable accessibilityRole="button" accessibilityLabel={busy ? '사진 처리 중' : status === 'preparing' ? '색감 준비 중' : '사진 촬영'}
     accessibilityState={{ disabled, busy: busy || status === 'preparing' }} disabled={disabled} onPress={onPress}
     style={({ pressed }) => [styles.shutterRing, pressed && styles.pressed, (status === 'unavailable' || busy) && styles.disabled]}>
-    <View style={styles.shutterCore}>{busy ? <ActivityIndicator color={theme.text} /> : null}</View>
+    <View style={styles.shutterCore}>{busy ? <ActivityIndicator color={theme.onShutter} /> : null}</View>
   </Pressable>;
 }
 
 // Frame boundaries only: these do not imply autofocus or a level sensor.
 export function FrameCorners() {
+  const styles = useStyles();
   return <View pointerEvents="none" accessible={false} accessibilityElementsHidden
     importantForAccessibility="no-hide-descendants" style={StyleSheet.absoluteFill}>
     <View style={[styles.corner, styles.topLeft]} /><View style={[styles.corner, styles.topRight]} />
@@ -48,7 +55,7 @@ export function FrameCorners() {
   </View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   action: { minHeight: 48, minWidth: 48, paddingHorizontal: 16, paddingVertical: 12,
     flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.line,
     backgroundColor: theme.surface, borderRadius: theme.controlRadius },
@@ -68,4 +75,4 @@ const styles = StyleSheet.create({
   topRight: { top: 10, right: 10, borderTopWidth: 1, borderRightWidth: 1 },
   bottomLeft: { bottom: 10, left: 10, borderBottomWidth: 1, borderLeftWidth: 1 },
   bottomRight: { bottom: 10, right: 10, borderBottomWidth: 1, borderRightWidth: 1 },
-});
+}));

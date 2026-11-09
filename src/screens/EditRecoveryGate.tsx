@@ -9,6 +9,7 @@ import { CameraAction } from './CameraControls';
 import { CameraIcon } from './CameraIcon';
 import { FilterFavoritesProvider } from './FilterFavorites';
 import { RecipesProvider } from './RecipeControls';
+import { CameraMemoryProvider } from './CameraMemory';
 import { M0CameraScreen } from './M0CameraScreen';
 import { cameraTheme as theme, filterPresentation } from './cameraTheme';
 
@@ -54,7 +55,7 @@ export function EditRecoveryGate() {
     { text: '취소', style: 'cancel' }, { text: '삭제', style: 'destructive', onPress: () => { void act('discard'); } },
   ]);
   if (state.phase === 'ready') return <FilterFavoritesProvider><RecipesProvider>
-    <M0CameraScreen restored={state.restored} />
+    <CameraMemoryProvider><M0CameraScreen restored={state.restored} /></CameraMemoryProvider>
   </RecipesProvider></FilterFavoritesProvider>;
   const record = state.phase === 'offer' ? state.record : undefined;
   const filter = record ? CAMERA_FILTERS.find(item => item.id === record.snapshot.settings.filterId) : undefined;

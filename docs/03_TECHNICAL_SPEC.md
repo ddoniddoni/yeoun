@@ -369,9 +369,21 @@ saving-gallery 도중 프로세스 종료 -> save-uncertain
 
 ## 11. SQLite 데이터
 
+### 2026-11-09 마지막 촬영 설정 기억 구현
+
+`yeoun.db`를 schema3으로 올리고 `app_settings`를 추가한다. schema0은 favorite_filters/recipes/app_settings를 생성하고,1은 recipes/app_settings만,2는 app_settings만 생성한다.3은 DDL 없이 유지하고 미지원 버전은 거부한다. exclusive transaction 안에서 DDL과 user_version을 함께 확정하며 기존 행을 수정하지 않는다. 기존 단일 연결/작업 queue를 세 기능이 공유한다.
+
+`camera-memory` 한 행의 value_json은 schemaVersion1이다. 켜짐은 `{schemaVersion:1, remember:true, settings, grid, fingerprint}`, 꺼짐은 `{schemaVersion:1, remember:false}`만 저장한다. settings는 `copyCameraSettings` whitelist와 전체 버전 검사를 사용하고, fingerprint는 기존 recipeCatalog의 해당 look/identity LUT·backend 계약과 같다. JSON8KiB 제한/boolean 격자/수치 범위를 검증한다. 사진/URI/실제 날짜/seed/노출/플래시/기기 방향은 포함하지 않는다. 읽기 시 미래/손상 기록은 자동 덮어쓰기 없이 거부한다. 공식 API는 기존 [S52](REFERENCES.md#s52-개인-레시피와-입력-ui--2026-11-09)의 Expo SQLite 계약을 재사용한다.
+
+`CameraMemoryStore`가 다음 촬영의 불변 settings/grid를 소유한다. 초기 read 완료 전에는 M0CameraScreen을 mount하지 않으며 load 중 조작/중복 load를 차단한다. 행이 없으면 켜짐+오후 네 시 기본값이며 startup write는 없다. 실패 후 기본 시작은 자동 쓰기를 중지한 상태로 진행하고 현재 값 기억/기억 끄기만 명시적으로 기록을 교체한다. 결과 편집 draft와 복구 snapshot은 이 store를 쓰지 않는다.
+
+변경은 즉시 작업 상태에 반영하고 다음 microtask에 쓰기를 시작한다. 진행 중에는 최신 대기 snapshot 하나만 유지한다. 바인딩된 UPSERT와 동일 transaction의 read-back 일치·commit 응답을 요구한다. 자동 쓰기 실패는 화면값을 유지하고 추가 자동 저장을 중지한다. 켜기/끄기는 기존 쓰기가 끝난 뒤 순서대로 기록하고, 그동안 설정 변경/중복 전환을 차단한다. 전환 실패는 기억 상태를 미확인으로 표시하며 사용자가 다시 선택할 때까지 덮어쓰지 않는다. 전환 성공 뒤에만 스위치를 확정한다. 끄기는 기존 settings를 지닌 payload를 disabled-only로 교체하며 현재 촬영은 유지한다.
+
+종료 시 flush 완료를 보장하는 native 작업은 없다. 저장 응답 전 강제 종료/OS 중단에서는 마지막 완료 기록을 사용하므로 마지막 조작 보존을 보장하지 않는다. 시작 시 로딩 화면, 실패 재시도/기본 시작, 설정 화면의 스위치/저장 안내/재시도, 설정 아이콘의 오류 배지를 제공한다. 새 패키지·권한·native 소스 변경은 없으며 검사·기기 동작은 NOT_RUN이다.
+
 ### 2026-11-09 개인 레시피 구현
 
-`src/storage/localDatabase.ts`가 `yeoun.db`의 단일 초기화/연결 promise/작업 queue를 소유한다. 즐겨찾기와 레시피 읽기·쓰기를 모두 직렬화한다. exclusive transaction에서 schema0은 즐겨찾기와 레시피를 생성하고, schema1은 기존 favorite_filters를 수정하지 않고 recipes만 추가해 user_version2로 올린다. schema2는 유지하며 알 수 없는 버전은 DDL 없이 거부한다. 초기화 실패는 연결을 닫고 다음 요청에서 다시 시도한다. 별도 no-backup `recovery.db`는 변경하지 않는다.
+`src/storage/localDatabase.ts`가 `yeoun.db`의 단일 초기화/연결 promise/작업 queue를 소유한다. 즐겨찾기와 레시피 읽기·쓰기를 모두 직렬화한다. 레시피 도입 때 schema1→2로 recipes를 추가했으며, 현재 migration은 위 schema3 계약을 따른다. 초기화 실패는 연결을 닫고 다음 요청에서 다시 시도한다. 별도 no-backup `recovery.db`는 변경하지 않는다.
 
 실제 recipes 열은 아래 SQL과 같다. payload schema1은 `{settings, fingerprint}`로, `copyCameraSettings`가 승인한 전체 색감 조절값과 버전만 저장한다. 실제 날짜/seed/사진/장치 설정은 제외한다. fingerprint는 해당 look·identity LUT SHA256, look/authoring/renderer/렌더 계약/Skia·공간 효과 backend 버전과 grainStyle 수치다. 관계없는 필터의 변경으로 기존 레시피를 막지 않는다. 현재 버전이 없는 경우 raw payload를 덮어쓰지 않고 적용 불가 항목으로 반환한다. 이름 변경은 name/updated_at만, 삭제는 명시된 UUID 한 행만 변경한다.
 
@@ -398,7 +410,7 @@ CREATE TABLE favorite_filters (
 );
 
 CREATE TABLE app_settings (
-  key TEXT PRIMARY KEY,
+  key TEXT PRIMARY KEY NOT NULL,
   value_json TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -425,7 +437,7 @@ CREATE TABLE export_jobs (
 );
 ```
 
-recipes/favorite_filters는 현재 yeoun.db schema2에 구현돼 있다. app_settings/draft_sessions/export_jobs는 향후 목표 스키마이며 현재 구현됐다는 뜻이 아니다. 현재 편집 복구는 별도 recovery.db를 쓴다. `variant`는 `filtered/unfiltered`, `status`는 정의된 enum으로 제한하고 DB와 앱 경계에서 검증한다. 외부 키와 정리 규칙을 추가할 경우 디스크 파일 삭제와 순서를 함께 정의한다.
+recipes/favorite_filters/app_settings는 현재 yeoun.db schema3에 구현돼 있다. draft_sessions/export_jobs는 향후 목표 스키마이며 현재 구현됐다는 뜻이 아니다. 현재 편집 복구는 별도 recovery.db를 쓴다. `variant`는 `filtered/unfiltered`, `status`는 정의된 enum으로 제한하고 DB와 앱 경계에서 검증한다. 외부 키와 정리 규칙을 추가할 경우 디스크 파일 삭제와 순서를 함께 정의한다.
 
 레시피 payload의 전체 필드와 버전 고정 계약은 위 현재 구현 절을 따른다. 지원 버전이 없어도 설정을 지워서는 안 되며 복구 가능한 오류로 표시한다.
 

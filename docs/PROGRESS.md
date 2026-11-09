@@ -1,6 +1,18 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-11-10 아이폰 개발 앱 재설치
+## 현재 상태 — 2026-11-10 필터 아이콘 다듬기
+
+- 요청/준비: 필터 아이콘을 AI 같은 느낌이 덜 나도록 구성해 달라는 요청. clean develop `e2908cfe0106e3168f6d9451fe126b8efd5a5ac2`(PR #39)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c refactor/filter-icon-artwork` exit0. 기존 크림·코랄 방향, 검사 보류와 개발 후 Git Flow 상시 승인을 따른다.
+- 디자인: 반복되는 추상 풍경/작은 아이콘 배지를18개의 사물 그림으로 바꿨다. 창가·튤립·손거울·복숭아·찻잔·수첩·필름통 등 이름과 연결되는 소재,64단위 원본/2단위 선/갈색 잉크와 절제된 색을 공유한다. unslop/frontend-design 지침 적용, STITCH_DESIGN에 판단과 출처를 기록했다.
+- UI: FilterSwatch는192×192 정적 PNG를44pt에 표시하며 접근성 트리에서 장식을 제외한다. 카드72×60pt/목록96pt/간격8pt 유지, 곡률12/테두리1, 선택 코랄 테두리·이름·16pt 체크, 즐겨찾기16pt 표시. 공유 컴포넌트를 사용하는 촬영·조절·결과 편집에 적용된다. 필터 순서/선택과 스크롤/즐겨찾기/사진·LUT·저장·카메라 생명주기 변경 없음.
+- 변경 파일: assets/filter-icons의 원본 artwork.mjs·README·PNG18개, scripts/generate-filter-icons.mjs, src/screens/FilterSwatch.tsx·FilterControls.tsx, docs/STITCH_DESIGN.md·PROGRESS.md. 새 패키지/lockfile/폰트/네이티브/권한 변경 없음.
+- 자산 제작: `node scripts/generate-filter-icons.mjs` exit0. 시스템 Quick Look으로PNG18개를 내보냈고 모든 파일192×192/총109,985bytes를 읽어 확인했다. ignored `work/filter-icon-artwork/rendered/contact-sheet.svg.png`를 열어 전체 그림의 정렬·선·식별성과 이름 배치를 확인했다. 초기 Quick Look viewport 시도에서 그림 크기가 맞지 않아300pt 문서 viewport/64단위 viewBox로 수정한 후 최종 내보냈다. 이 그림판은 실제 앱 화면 증거가 아니다.
+- 소스/기기 관측: 설치된 RN0.83.10 Image의 fadeDuration/resizeMode 타입,18개 정적 require와 필터 ID, 선택/접근성 props를 읽었다. `git diff --check` exit0. 기존 연결 iPhone15/iOS27.2의 `devicectl device capture screenshot` exit0였으나 검은 화면이었다. sandbox 내 lockState 조회는 CoreDevice 초기화 timeout(exit1), 권한을 갖춘 읽기 재실행은 exit0/passcodeRequired=true. 사용자에게 잠금 해제와 여운 열기를 요청했으며 새 카드의 실기기 화면 확인은 대기 중이다.
+- **NOT_RUN:** `npm run lint`, `npm run typecheck`, `npm test -- --runInBand`, react-doctor, 별도 JS/native build, Android, 작은 화면/큰 글자/스크린리더/성능/촬영·저장. 기존 실행 세션은 유지했고 앱 재빌드·재설치·재실행은 하지 않았다. 그림판 확인을 네이티브 UI/GPU 검증으로 간주하지 않으며 G0~G5 미통과 유지.
+- Git Flow: 작업 파일만 명시 stage해 커밋·푸시·develop PR/병합·동기화하고 clean develop에서 마친다. 그림판/기기 캡처/생성된 중간 SVG는 stage하지 않는다. 최종 통합 상태는 PR/Git 이력과 완료 보고를 따른다.
+- 다음 확인: 아이폰의 필터 카드 크기와 선택·즐겨찾기 표시, 조절/결과 편집에서 그림 표시를 확인한다. 다른 기능은 자동 시작하지 않는다.
+
+## 이전 기록 — 2026-11-10 아이폰 개발 앱 재설치
 
 - 요청: 아이폰의 ‘더 이상 사용할 수 없음’ 오류 뒤 사용자가 케이블 연결과 재설치를 명시 요청했다. 이전 설치용 앱의 embedded.mobileprovision은 한국 시각2026-11-04 03:40:53 만료였다. 이번 요청 범위의 prebuild/Pods/아이폰 빌드·설치·시작 확인을 실행하며 일반 lint/typecheck/Jest/전체 기기 검수 보류는 유지한다.
 - 준비: clean develop `629fe9e7b7b9cf9e5352cc031c070a1b744d06f4`에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c chore/ios-device-reinstall` exit0. iPhone15/iOS27.2 wired·paired·Developer Mode Enabled, Xcode27.2(27B52) 및 기존 유효 개발 인증서1개를 확인했다. 상세 기기/팀/인증서 식별자는 기록하지 않는다.

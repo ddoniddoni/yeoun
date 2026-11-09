@@ -41,19 +41,18 @@ function FilterStrip({ selectedId, disabled, onSelect, filters = CAMERA_FILTERS,
     {filters.map(filter => {
       const selected = selectedId === filter.id;
       const favorite = isFavoriteFilterId(filter.id) && favoriteIds.includes(filter.id);
-      const { color, wash } = filterPresentation[filter.id];
       return <Pressable key={filter.id} accessibilityRole="radio" accessibilityLabel={`${filter.name}${favorite ? ', 즐겨찾기' : ''}, ${filter.caption}`}
         accessibilityState={{ checked: selected, disabled }} disabled={disabled}
         onPress={() => { if (!selected) onSelect(filter.id); }}
         style={({ pressed }) => [styles.card, pressed && styles.pressed, disabled && styles.disabled]}>
-        <View style={[styles.cardFrame, selected && { borderColor: color, backgroundColor: wash }]}>
+        <View style={[styles.cardFrame, selected && styles.cardSelected]}>
           <FilterSwatch id={filter.id} />
-          {favorite ? <View style={styles.favoriteMark}><CameraIcon name="star" size={11} color={theme.accent} /></View> : null}
-          {selected ? <View style={[styles.check, { backgroundColor: color }]}>
-            <CameraIcon name="check" size={11} color={theme.onAccent} />
+          {favorite ? <View style={styles.favoriteMark}><CameraIcon name="star" size={10} color={theme.accent} /></View> : null}
+          {selected ? <View style={styles.check}>
+            <CameraIcon name="check" size={10} color={theme.onAccent} />
           </View> : null}
         </View>
-        <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[styles.cardName, selected && { color, fontWeight: '600' }]}>{filter.name}</Text>
+        <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[styles.cardName, selected && styles.cardNameSelected]}>{filter.name}</Text>
       </Pressable>;
     })}
     {message ? <View style={styles.listMessage}>{message}</View> : null}
@@ -210,10 +209,13 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3 }, value: { fontFamily: theme.mono, fontSize: 12, fontVariant: ['tabular-nums'] }, unit: { fontSize: 12 },
   intensityPill: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, flexShrink: 0 },
   strip: { gap: 8, paddingVertical: 4 }, card: { width: 72, gap: 4 },
-  cardFrame: { height: 60, borderRadius: 16, borderWidth: 2, borderColor: theme.line, backgroundColor: theme.surface, padding: 4 },
+  cardFrame: { height: 60, borderRadius: 12, borderWidth: 1, borderColor: theme.line, backgroundColor: theme.surface, padding: 4 },
+  cardSelected: { borderColor: theme.accent },
   cardName: { color: theme.secondary, textAlign: 'center', fontSize: 12, lineHeight: 16, fontWeight: '500' },
-  check: { width: 20, height: 20, borderRadius: 10, position: 'absolute', right: 0, bottom: -2, alignItems: 'center', justifyContent: 'center' },
-  favoriteMark: { position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: 10,
+  cardNameSelected: { color: theme.accent, fontWeight: '600' },
+  check: { width: 16, height: 16, borderRadius: 8, position: 'absolute', right: 2, bottom: 2,
+    backgroundColor: theme.accent, alignItems: 'center', justifyContent: 'center' },
+  favoriteMark: { position: 'absolute', top: 2, right: 2, width: 16, height: 16, borderRadius: 8,
     backgroundColor: theme.surface, alignItems: 'center', justifyContent: 'center' },
   adjustment: { gap: 16 }, caption: { color: theme.secondary, fontSize: 12, lineHeight: 18 },
   captionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 }, captionText: { flex: 1 },

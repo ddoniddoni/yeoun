@@ -61,8 +61,9 @@ function FilterStrip({ selectedId, disabled, onSelect, filters = CAMERA_FILTERS,
   </ScrollView>;
 }
 
-export function FilterControls({ settings, disabled, onSelect, onOpen }: {
-  settings: CameraSettings; disabled: boolean; onSelect(id: CameraFilterId): void; onOpen(): void;
+export function FilterControls({ settings, disabled, expanded, onToggleList, onSelect, onOpen }: {
+  settings: CameraSettings; disabled: boolean; expanded: boolean; onToggleList(): void;
+  onSelect(id: CameraFilterId): void; onOpen(): void;
 }) {
   const theme = useCameraTheme();
   const styles = useStyles();
@@ -73,19 +74,23 @@ export function FilterControls({ settings, disabled, onSelect, onOpen }: {
   const presentation = theme.filters[settings.filterId];
   return <View style={styles.controls}>
     <View style={styles.selection}>
-      <View style={styles.selectionName}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`${selected?.name ?? '현재 필터'}, 필터 목록 ${expanded ? '접기' : '펼치기'}`}
+        accessibilityHint="목록을 접으면 촬영 화면을 크게 볼 수 있어요."
+        accessibilityState={{ expanded, disabled }} disabled={disabled} onPress={onToggleList}
+        style={({ pressed }) => [styles.selectionName, pressed && styles.pressed, disabled && styles.disabled]}>
         <View style={[styles.dot, { backgroundColor: presentation.color }]} />
         <Text numberOfLines={1} style={styles.name}>{selected?.name}</Text>
         {settings.filterId !== 'original' ? <View style={[styles.intensityPill, { backgroundColor: presentation.wash }]}>
           <Text style={[styles.value, { color: presentation.color }]}>{Math.round(settings.intensity * 100)}<Text style={styles.unit}>%</Text></Text>
         </View> : null}
-      </View>
+        <CameraIcon name={expanded ? 'up' : 'down'} size={16} color={theme.secondary} />
+      </Pressable>
       <View style={styles.selectionActions}>
         <FavoriteButton id={settings.filterId} disabled={disabled} />
         <IconButton icon="sliders" label="필터 강도와 질감 조절" onPress={onOpen} disabled={disabled} />
       </View>
     </View>
-    <View style={styles.listRow}>
+    {expanded ? <View style={styles.listRow}>
       <View style={styles.listSwitch}>
         <IconButton icon="favorites" label={favoritesOnly ? '전체 필터 보기' : '즐겨찾기만 보기'}
           hint="목록만 바뀌고 현재 색감은 유지돼요." selected={favoritesOnly} disabled={disabled}
@@ -95,7 +100,7 @@ export function FilterControls({ settings, disabled, onSelect, onOpen }: {
         selectedId={settings.filterId} disabled={disabled} onSelect={onSelect}
         message={favoritesOnly && (favorites.ids.length === 0 || favorites.phase === 'error')
           ? <FavoritesMessage disabled={disabled} /> : undefined} />
-    </View>
+    </View> : null}
   </View>;
 }
 
@@ -207,7 +212,7 @@ function EffectAmount({ label, value, disabled, accent, onChange }: {
 const useStyles = createThemedStyles(theme => StyleSheet.create({
   controls: { paddingBottom: 4 },
   selection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, height: 48 },
-  selectionName: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 },
+  selectionName: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 48, minHeight: 48 },
   selectionActions: { flexDirection: 'row' },
   listRow: { flexDirection: 'row', height: 96 }, listSwitch: { justifyContent: 'center', paddingRight: 8 },
   stripViewport: { height: 96, flexGrow: 1, flexShrink: 1 },

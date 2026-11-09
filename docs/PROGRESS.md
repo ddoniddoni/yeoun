@@ -1,6 +1,18 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-11-10 다크 모드
+## 현재 상태 — 2026-11-10 크게 보는 촬영 화면
+
+- 요청/준비: 사용자가 아이폰처럼 더 큰 카메라 화면을 요청했고 ‘기본은 접고 크게 촬영’을 선택했다. clean develop `54cf863aa9c128536c98e51bb01324c43815bd5b`(PR #41)에서 fetch/FF와 `git switch -c fix/larger-camera-viewfinder` exit0. 검사 보류·개발 후 Git Flow 상시 승인 유지.
+- 원인/구현: 기존 viewfinderArea의 남은 높이에서 previewWidth를 min(width,height×3/4)로 계산하고96pt 필터 목록을 항상 표시해 프레임 폭까지 줄었다. 가로폭100%/기존 CameraPreview3:4 aspectRatio의 정상 흐름으로 바꾸고 좌우8pt 여백·22pt 둥근 clipping을 제거했다. 표시 크기만 바꾸며 sensor/preview resolution·crop·LUT·고해상도 저장 경로는 바꾸지 않았다.
+- 목록: 기본 접힘, 현재 필터명/강도·별·조절은 유지. 필터명48pt 버튼/화살표/접힘·펼침 accessibility 상태, 펼치면 content size 변경 뒤 목록 끝으로 이동, 접으면 상단 복귀. 목록을 다시 열면 기존 선택 카드 위치로 맞춘다. 즐겨찾기 모아보기 상태는 컴포넌트에 남고 필터/강도는 바꾸지 않는다.
+- 레이아웃: 본문은 필요할 때 스크롤하고 셔터·원본 비교·카메라 전환·상태 안내는 하단 고정이다. 작은 화면에서는 전체3:4 프레임이 한꺼번에 보이지 않을 수 있다. 권한/기기 없음은 정상 흐름으로 변경해 글자/버튼 높이만큼 늘어난다. 초점 정규화에 사용하는 width도 같은 실제 컨테이너 폭이며 camera key/active 조건·필터 request key를 유지했다.
+- 변경: src/screens/M0CameraScreen.tsx·FilterControls.tsx, 제품·디자인·검수·이 기록. 의존성/앱 설정/네이티브/이미지/필터/DB 변경 없음. 이 저위험 UI 변경을 그대로 복제하는 테스트는 추가하지 않았다.
+- 확인: installed RN0.83.10 ViewAccessibility.expanded/ScrollView.onContentSizeChange·scrollToEnd 타입, CameraPreview의width100%/aspectRatio3/4 및 변경 호출부/초점 분모를 읽었다. `git diff --check` exit0. 변경 전 `devicectl device capture screenshot` exit0/1179×2556였지만 이미지가 검어 앱 화면 크기 증거로 쓰지 않는다. 변경 후 사용자에게 확대와 목록 펼침/접힘 확인을 요청했다.
+- **NOT_RUN:** lint/typecheck/Jest/react-doctor/JS·native build·재설치, 실제 전후 화면 치수 비교, 작은 화면·큰 글자·스크린리더·Android·포커스/사진 저장 구도·성능. 기존 검사 보류 지시를 따랐다. 기기 캡처는 /private/tmp에만 두며 기존 Metro를 새로 시작하거나 앱을 강제 종료하지 않았다.
+- Git Flow: 변경6개 파일만 명시 stage해 커밋·푸시·develop PR/병합·동기화한 뒤 clean develop에서 마친다. 최종 통합 상태는 PR/Git 이력과 완료 보고를 따른다.
+- 다음 확인: 연결 아이폰의 기본 촬영 프레임과 목록 토글, 작은 화면과 큰 글자, 초점과 저장 구도. 다른 기능은 자동 시작하지 않는다.
+
+## 이전 기록 — 2026-11-10 다크 모드
 
 - 요청/준비: 사용자가 새 필터 아이콘 반영을 확인한 뒤 다크 모드를 요청했다. clean develop `e477867a8ecb5b81419c923c450830cf406b540f`(PR #40)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/dark-mode` exit0. 검사 실행 보류와 개발 후 전체 Git Flow 상시 승인 유지.
 - 기능: 촬영 설정 → 화면 테마에 기기 설정/밝게/어둡게 radio3개. 기본은 기기 설정, 선택 즉시 UI 적용, 기존 DB에 저장, 저장 중/읽기 실패/쓰기 실패·명시 재시도. 테마는 마지막 촬영 설정 기억 스위치·필터/LUT·레시피/사진과 독립이다. 읽기 완료 전 기기 테마에서 보관 테마로 바뀔 수 있으며 commit 전 종료에는 마지막 선택 보존을 보장하지 않는다.

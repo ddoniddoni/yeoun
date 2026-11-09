@@ -3,12 +3,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import { cameraSettings, cameraSettingsKey, copyCameraSettings, type CameraSettings } from '../domain/filters/cameraSettings';
 import { CameraAction } from './CameraControls';
 import { FilterAdjustmentPanel } from './FilterControls';
-import { cameraTheme as theme } from './cameraTheme';
+import { createThemedStyles } from './ThemeProvider';
 
 export function ResultFilterEditor({ settings, disabled, applying, error, imported = false, onApply, onClose }: {
   settings: CameraSettings; disabled: boolean; applying: boolean; error?: string; imported?: boolean;
   onApply(settings: CameraSettings): Promise<boolean>; onClose(): void;
 }) {
+  const styles = useStyles();
   // Unapplied choices stay here. Neither the camera settings nor the accepted output changes.
   const [draft, setDraft] = useState(() => copyCameraSettings(settings));
   const [attempted, setAttempted] = useState(false);
@@ -45,9 +46,9 @@ export function ResultFilterEditor({ settings, disabled, applying, error, import
   </View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   panel: { gap: 16, padding: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.line, borderRadius: 20 },
   title: { color: theme.text, fontSize: 17, fontWeight: '500' },
   note: { color: theme.secondary, fontSize: 13, lineHeight: 20 },
   error: { color: theme.error, fontSize: 14, lineHeight: 22 },
-});
+}));

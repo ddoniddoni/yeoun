@@ -4,12 +4,14 @@ import type { CaptureState, Output } from '../domain/capture/controller';
 import { initialComparison, updateComparison } from '../domain/filters/previewComparison';
 import { CameraAction, FrameCorners } from './CameraControls';
 import { CameraIcon } from './CameraIcon';
-import { cameraTheme as theme } from './cameraTheme';
+import { useCameraTheme, createThemedStyles } from './ThemeProvider';
 
 export function ResultPhotoComparison({ output, state, width, enabled, locked, filterName, onPrepare }: {
   output: Output; state: CaptureState; width: number; enabled: boolean; locked: boolean;
   filterName: string; onPrepare(): void;
 }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const [attempt, setAttempt] = useState(0);
   const [imageStatus, setImageStatus] = useState<{ key: string; loaded: boolean }>();
   const imageKey = `${state.original?.uri ?? ''}/${attempt}`;
@@ -69,7 +71,7 @@ export function ResultPhotoComparison({ output, state, width, enabled, locked, f
   </View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   group: { gap: 12 }, frame: { alignSelf: 'center', backgroundColor: theme.photoMatte, borderRadius: 18, overflow: 'hidden' },
   hidden: { opacity: 0 }, badge: { position: 'absolute', top: 16, left: 16, color: theme.onPhoto,
     backgroundColor: theme.photoOverlay, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, fontSize: 12 },
@@ -79,4 +81,4 @@ const styles = StyleSheet.create({
   pin: { width: 48, flexGrow: 0 },
   selected: { borderColor: theme.accent, backgroundColor: theme.accentSoft }, disabled: { opacity: 0.4 },
   label: { color: theme.text, fontSize: 13 }, note: { color: theme.secondary, fontSize: 12, lineHeight: 18 },
-});
+}));

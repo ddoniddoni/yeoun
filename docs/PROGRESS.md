@@ -1,6 +1,20 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-11-10 필터 아이콘 다듬기
+## 현재 상태 — 2026-11-10 다크 모드
+
+- 요청/준비: 사용자가 새 필터 아이콘 반영을 확인한 뒤 다크 모드를 요청했다. clean develop `e477867a8ecb5b81419c923c450830cf406b540f`(PR #40)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/dark-mode` exit0. 검사 실행 보류와 개발 후 전체 Git Flow 상시 승인 유지.
+- 기능: 촬영 설정 → 화면 테마에 기기 설정/밝게/어둡게 radio3개. 기본은 기기 설정, 선택 즉시 UI 적용, 기존 DB에 저장, 저장 중/읽기 실패/쓰기 실패·명시 재시도. 테마는 마지막 촬영 설정 기억 스위치·필터/LUT·레시피/사진과 독립이다. 읽기 완료 전 기기 테마에서 보관 테마로 바뀔 수 있으며 commit 전 종료에는 마지막 선택 보존을 보장하지 않는다.
+- 화면: 따뜻한 차콜/밝은 코랄/밝은 글자, 필터별 강조18쌍, 흰 인화지 카드와 전용 체크/별, 모드에 맞는 StatusBar·Switch·TextInput·CameraIcon. 메인·설정·조절·즐겨찾기·레시피·결과/재편집·복구·진단을 공통 context와 테마별 미리 만든 styles로 연결했다. 카메라 key/remount·렌더링 경로·사진 위 토큰은 변경하지 않았다.
+- 저장: domain/settings/appearance의 schemaVersion1 whitelist와 store, storage/appearanceRepository의 app_settings appearance 키. 공통 SQLite queue·exclusive transaction·UPSERT binding·read-back·commit 응답을 재사용한다. schema3 유지/새 migration 없음. 손상·미래 버전은 자동 덮어쓰지 않으며 사용자의 명시 선택으로만 저장한다.
+- 네이티브: RN0.83.10 useColorScheme와 Appearance.setColorScheme(light/dark/unspecified) 설치 타입·JS·iOS/Android 소스 및 공식 문서를 읽었다. iOS userInterfaceStyle=automatic으로 전역 light 고정을 대체했다. Android는 기존 RN AppCompat MODE_NIGHT_FOLLOW_SYSTEM 런타임 경로를 사용한다. expo-system-ui 설치나 config override 추가 없음. **현재 iOS 설치 앱의 시스템 자동 연동은 다음 재빌드 후 확인해야 한다.**
+- 변경 파일: App.tsx·app.json, 기존 screens16개와 cameraTheme, 신규 ThemeProvider·AppearanceControls, domain/settings/appearance·storage/appearanceRepository, unit/appearance·integration/appearanceRepository 테스트 소스, README·제품·기술·검수·디자인·REFERENCES·이 기록. npm package/lock·권한·이미지·생성 iOS/Android 변경 없음.
+- 소스 검토: 모든 theme import/inline 색·스타일·필터 팔레트 연결을 읽고 `git diff --check` exit0. TypeScript AST는 스타일 import/함수 본문을 편집하는 데만 사용했고 typecheck를 실행하지 않았다. 초기 자동 편집의 ThemeProvider 자기 import를 소스 검토에서 복원했고 문서 제목/스타일 문맥 불일치 패치는 실제 파일을 읽어 보완했다. 구현 검토는 실행 통과 증거가 아니다.
+- 기기 관측: 사용자가 `촬영 설정 → 화면 테마 → 어둡게`에서 ‘어두운 화면으로 바뀌었어요’라고 확인했다. 연결된 iPhone15/iOS27.2에서 `devicectl device capture screenshot` exit0였으나 처음에는 홈 화면이었다. 강제 종료 없이 `devicectl device process launch … dev.ddoni.yeouncamera` exit0/Launched 뒤 캡처는 검은 화면, lockState exit0/passcodeRequired=true였다. 따라서 사용자 수동 전환 확인과 달리 에이전트의 앱 화면 캡처 검수는 미완료다. 캡처는 /private/tmp에만 두고 커밋하지 않는다. 기존 Metro 세션은 유지했으며 읽기 시 새 출력은 없었다.
+- **NOT_RUN:** `npm run lint`, `npm run typecheck`, `npm test -- --runInBand`, react-doctor, JS/native build·prebuild·Pods·재설치, 자동 연동/재시작 보존/실제 DB 실패·복구/Android/전체 화면/큰 글자/스크린리더/성능/사진 촬영·저장. 테스트 소스는 기본/모드 우선순위, hydration·연타·쓰기 순서, 저장 실패/읽기 실패/미래 버전/재시도, SQL binding·read-back·commit 실패를 다룬다. G0~G5 미통과 유지.
+- Git Flow: 위 작업 파일만 명시 stage하여 커밋·푸시·develop PR/병합·동기화하고 clean develop에서 마친다. 실제 최종 통합 상태는 PR/Git 이력과 완료 보고를 따른다.
+- 다음 확인: 사용자 요청 때 automatic 설정으로 iOS 개발 앱을 재빌드하고 기기 설정 전환·수동→자동 복귀·앱 종료/재시작 보존과 나머지 검수 절차를 실행한다. 다른 기능은 자동 시작하지 않는다.
+
+## 이전 기록 — 2026-11-10 필터 아이콘 다듬기
 
 - 요청/준비: 필터 아이콘을 AI 같은 느낌이 덜 나도록 구성해 달라는 요청. clean develop `e2908cfe0106e3168f6d9451fe126b8efd5a5ac2`(PR #39)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c refactor/filter-icon-artwork` exit0. 기존 크림·코랄 방향, 검사 보류와 개발 후 Git Flow 상시 승인을 따른다.
 - 디자인: 반복되는 추상 풍경/작은 아이콘 배지를18개의 사물 그림으로 바꿨다. 창가·튤립·손거울·복숭아·찻잔·수첩·필름통 등 이름과 연결되는 소재,64단위 원본/2단위 선/갈색 잉크와 절제된 색을 공유한다. unslop/frontend-design 지침 적용, STITCH_DESIGN에 판단과 출처를 기록했다.

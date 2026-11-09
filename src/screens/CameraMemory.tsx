@@ -4,7 +4,7 @@ import { CameraMemoryStore } from '../domain/filters/cameraMemoryStore';
 import { cameraMemoryRepository } from '../storage/cameraMemoryRepository';
 import { recipeFingerprint } from '../storage/recipeCatalog';
 import { CameraAction } from './CameraControls';
-import { cameraTheme as theme } from './cameraTheme';
+import { useCameraTheme, createThemedStyles } from './ThemeProvider';
 
 const CameraMemoryContext = createContext<CameraMemoryStore | null>(null);
 export function useCameraMemory() {
@@ -18,6 +18,8 @@ export function CameraMemoryProvider({ children }: { children: ReactNode }) {
   return <CameraMemoryContext.Provider value={store}><CameraMemoryGate>{children}</CameraMemoryGate></CameraMemoryContext.Provider>;
 }
 function CameraMemoryGate({ children }: { children: ReactNode }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const store = useCameraMemory();
   const startup = useSyncExternalStore(store.subscribe, store.getStartup, store.getStartup);
   if (startup === 'ready') return children;
@@ -35,6 +37,8 @@ function CameraMemoryGate({ children }: { children: ReactNode }) {
   </ScrollView>;
 }
 export function CameraMemoryControls({ disabled }: { disabled: boolean }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const store = useCameraMemory();
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const locked = disabled || state.switching;
@@ -44,7 +48,7 @@ export function CameraMemoryControls({ disabled }: { disabled: boolean }) {
       <Text style={styles.label}>마지막 설정 기억</Text>
       {state.remember === null ? <Text style={styles.note}>확인 필요</Text> : <Switch
         accessibilityLabel="마지막 촬영 설정 기억" accessibilityHint="필터, 강도, 질감과 격자를 다음 실행에서 불러와요."
-        disabled={locked} value={state.remember} onValueChange={choose} thumbColor={theme.surface}
+        disabled={locked} value={state.remember} onValueChange={choose} thumbColor={theme.onPhoto}
         ios_backgroundColor={theme.line} trackColor={{ false: theme.line, true: theme.accent }} />}
     </View>
     <Text style={styles.note}>{state.remember === null ? '기억 여부를 확인하지 못했어요. 아래에서 다시 선택해 주세요.'
@@ -58,7 +62,7 @@ export function CameraMemoryControls({ disabled }: { disabled: boolean }) {
     </> : null}
   </View>;
 }
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   startup: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 28, gap: 16, backgroundColor: theme.background },
   brand: { color: theme.text, fontSize: 25, fontWeight: '700', letterSpacing: -1, marginBottom: 16 },
   dot: { color: theme.shutter },
@@ -70,4 +74,4 @@ const styles = StyleSheet.create({
   label: { color: theme.text, fontSize: 14, flex: 1 },
   note: { color: theme.secondary, fontSize: 12, lineHeight: 18 },
   error: { color: theme.error, fontSize: 13, lineHeight: 20 },
-});
+}));

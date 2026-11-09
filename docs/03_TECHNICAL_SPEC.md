@@ -1,5 +1,13 @@
 # 03. 기술 설계와 구현 계약
 
+## 2026-11-10 화면 테마
+
+- `domain/settings/appearance.ts`는 system/light/dark만 허용하는 schemaVersion1 payload와 AppearanceStore를 제공한다. 시작 읽기 중 선택 차단, 중복 읽기/쓰기 차단, 즉시 화면 적용·비동기 저장, 실패 후 명시 재시도, 손상/미래 버전 자동 덮어쓰기 방지를 분리한다. mock 재생성은 실제 종료 후 보존 검증이 아니다.
+- `appearanceRepository`는 기존 yeoun.db schema3의 app_settings에 appearance 키만 쓴다. 기존 공통 queue·bound UPSERT·exclusive transaction·read-back·commit 응답을 사용한다. 테이블 migration, 촬영 기억/레시피/즐겨찾기 키 변경은 없다.
+- ThemeProvider는 store 인스턴스와 테마 context를 분리하고 화면에는 preference 변경만 전파한다. useColorScheme 구독과 Appearance.setColorScheme(light/dark/unspecified)으로 시스템 모드·수동 선택·native 대화상자에 연결한다. 설치 RN0.83.10 타입/JS/iOS/Android 구현을 확인했다. Android는 기존 RN의 MODE_NIGHT_FOLLOW_SYSTEM을 사용하며 expo-system-ui 기반 config override에 의존하지 않는다.
+- 팔레트는 모듈 상수이고 스타일도 밝게/어둡게 두 번만 생성해 구독 hook에서 고른다. 카메라나 복구/레시피 provider에 theme key를 주거나 remount하지 않는다. 사진/renderer/스냅샷에 테마값을 전달하지 않는다. 상태 표시줄·Switch·TextInput 및 필터별 강조색도 테마를 따른다.
+- app.json의 전역 light 고정을 제거하고 ios.userInterfaceStyle=automatic으로 설정했다. 현재 설치된 iOS 앱의 기존 Info.plist 반영은 네이티브 재빌드가 필요하다. 별도 패키지·권한·폰트/자산 추가 없음. 자동 실행 검사·빌드·Android·시스템 자동전환은 NOT_RUN. [공식/설치 근거 S53](REFERENCES.md#s53-화면-테마--2026-11-10).
+
 ## 2026-10-31 마지막 적용 사진의 지속 보관
 
 기존 SQLite55.0.20·Crypto55.0.19와 로컬 YeounPhotoImport 모듈을 확장한다. 새 npm 패키지/권한은 없다. 아래 과거의 ‘세션 전용/복구 미구현’ 설명 중 **적용 결과가 완성된 사진**은 이 계약으로 대체한다. 미완성 첫 촬영/가져오기/렌더 작업 재개는 아직 구현하지 않는다.

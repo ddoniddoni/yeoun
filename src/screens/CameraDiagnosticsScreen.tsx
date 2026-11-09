@@ -5,12 +5,13 @@ import type { CameraSettings } from '../domain/filters/cameraSettings';
 import { runGpuProbe } from '../rendering/adapters/gpuProbe';
 import { SPATIAL_BACKEND_VERSION } from '../rendering/shaders/spatial';
 import { LUT_SKIA_BACKEND_VERSION } from '../rendering/shaders/lut';
-import { cameraTheme as theme } from './cameraTheme';
+import { createThemedStyles } from './ThemeProvider';
 
 export function CameraDiagnosticsScreen({ frameInfo, settings, grainSeed, filterPhase, cameraError, canRun, onClose }: {
   frameInfo: string; settings: CameraSettings; grainSeed: number; filterPhase: string; cameraError?: string;
   canRun: boolean; onClose(): void;
 }) {
+  const styles = useStyles();
   const [probe, setProbe] = useState('NOT_RUN · 아직 실행하지 않았어요.');
   // Both the entry point and this screen are gated; mounting never starts a probe.
   if (!__DEV__) return null;
@@ -51,11 +52,11 @@ export function CameraDiagnosticsScreen({ frameInfo, settings, grainSeed, filter
     </SafeAreaView>
   </Modal>;
 }
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.background }, content: { padding: 20, gap: 20 },
   title: { color: theme.text, fontSize: 24, fontWeight: '600' },
   heading: { color: theme.text, fontSize: 18, fontWeight: '600' },
   text: { color: theme.text, fontSize: 16, lineHeight: 24 },
   info: { color: theme.secondary, fontSize: 14, lineHeight: 22 },
   section: { gap: 10 }, error: { color: theme.error, fontSize: 14 },
-});
+}));

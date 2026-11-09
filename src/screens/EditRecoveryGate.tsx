@@ -11,7 +11,7 @@ import { FilterFavoritesProvider } from './FilterFavorites';
 import { RecipesProvider } from './RecipeControls';
 import { CameraMemoryProvider } from './CameraMemory';
 import { M0CameraScreen } from './M0CameraScreen';
-import { cameraTheme as theme, filterPresentation } from './cameraTheme';
+import { useCameraTheme, createThemedStyles } from './ThemeProvider';
 
 // A repeated startup effect must never clear a working copy restored by the first one.
 let cleaned = false;
@@ -26,6 +26,8 @@ function initialize() {
 type GateState = { phase: 'loading' | 'failed' } | { phase: 'offer'; record: RecoveryRecord }
   | { phase: 'ready'; restored?: RestoredCapture };
 export function EditRecoveryGate() {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const [state, setState] = useState<GateState>({ phase: 'loading' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
@@ -59,7 +61,7 @@ export function EditRecoveryGate() {
   </RecipesProvider></FilterFavoritesProvider>;
   const record = state.phase === 'offer' ? state.record : undefined;
   const filter = record ? CAMERA_FILTERS.find(item => item.id === record.snapshot.settings.filterId) : undefined;
-  const palette = record ? filterPresentation[record.snapshot.settings.filterId] : undefined;
+  const palette = record ? theme.filters[record.snapshot.settings.filterId] : undefined;
   const loading = state.phase === 'loading';
   return <ScrollView contentContainerStyle={styles.page}>
     <Text style={styles.brand}>여운<Text style={styles.brandDot}> ·</Text></Text>
@@ -80,7 +82,7 @@ export function EditRecoveryGate() {
     </View> : null}
   </ScrollView>;
 }
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   page: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 28, gap: 16, backgroundColor: theme.background },
   brand: { color: theme.text, fontSize: 25, fontWeight: '700', letterSpacing: -1, marginBottom: 16 },
   brandDot: { color: theme.shutter },
@@ -90,4 +92,4 @@ const styles = StyleSheet.create({
   note: { color: theme.secondary, fontSize: 12, lineHeight: 18, textAlign: 'center' },
   actions: { alignSelf: 'stretch', gap: 12, marginTop: 16, maxWidth: 480, width: '100%' },
   error: { color: theme.error, fontSize: 13, lineHeight: 20, textAlign: 'center' },
-});
+}));

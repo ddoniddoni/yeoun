@@ -4,7 +4,7 @@ import { CAMERA_FILTERS, type CameraFilterId } from '../domain/filters/cameraSet
 import { FavoritesStore, isFavoriteFilterId } from '../domain/filters/favorites';
 import { favoritesRepository } from '../storage/favoritesRepository';
 import { CameraIcon } from './CameraIcon';
-import { cameraTheme as theme } from './cameraTheme';
+import { useCameraTheme, createThemedStyles } from './ThemeProvider';
 
 const FavoritesContext = createContext<FavoritesStore | null>(null);
 export function FilterFavoritesProvider({ children }: { children: ReactNode }) {
@@ -22,6 +22,8 @@ export function useFilterFavorites() {
 }
 
 export function FavoriteButton({ id, disabled }: { id: CameraFilterId; disabled: boolean }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const favorites = useFilterFavorites();
   if (!isFavoriteFilterId(id)) return <View style={styles.button} />;
   const selected = favorites.ids.includes(id);
@@ -46,6 +48,8 @@ export function FavoriteButton({ id, disabled }: { id: CameraFilterId; disabled:
 
 /** Shown in the reserved list area, never changing the viewfinder's height. */
 export function FavoritesMessage({ disabled }: { disabled: boolean }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const favorites = useFilterFavorites();
   if (favorites.phase === 'ready' || favorites.phase === 'saving') {
     return <Text maxFontSizeMultiplier={1.4} style={styles.message}>마음에 드는 필터를 고르고{ '\n' }이름 옆 별을 눌러 보세요.</Text>;
@@ -59,11 +63,11 @@ export function FavoritesMessage({ disabled }: { disabled: boolean }) {
   </Pressable>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   button: { width: 48, height: 48, borderRadius: theme.controlRadius, alignItems: 'center', justifyContent: 'center' },
   selected: { backgroundColor: theme.accentSoft },
   selectedDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: theme.accent, position: 'absolute', bottom: 5 },
   message: { color: theme.secondary, fontSize: 12, lineHeight: 18, flexShrink: 1, maxWidth: 230 },
   retry: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, maxWidth: 230 },
   pressed: { opacity: 0.65 }, disabled: { opacity: 0.4 },
-});
+}));

@@ -26,9 +26,10 @@ import { CameraResultScreen } from './CameraResultScreen';
 import { CameraAssistControls, CameraGrid } from './CameraAssistControls';
 import { CameraMeteringControls, FocusTarget } from './CameraMeteringControls';
 import { CameraMemoryControls, useCameraMemory } from './CameraMemory';
+import { AppearanceControls } from './AppearanceControls';
 import { OriginalComparisonControls } from './OriginalComparisonControls';
 import { usePreviewComparison } from './usePreviewComparison';
-import { cameraTheme as theme } from './cameraTheme';
+import { useCameraTheme, createThemedStyles } from './ThemeProvider';
 const PHOTO_SIZE = { width: 4032, height: 3024 };
 const LABELS: Record<CaptureState['phase'], string> = {
   idle: '오늘의 빛을, 오래 남을 색으로.', capturing: '순간을 담고 있어요', rendering: '사진에 색감을 입히고 있어요',
@@ -38,6 +39,8 @@ const LABELS: Record<CaptureState['phase'], string> = {
   'saving-gallery': '갤러리에 저장 중', saved: '갤러리 저장 완료', failed: '작업 실패', cancelled: '앱 중단으로 작업을 취소했어요',
 };
 export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
+  const theme = useCameraTheme();
+  const styles = useStyles();
   const permission = useCameraPermission();
   const { width, fontScale } = useWindowDimensions();
   const [viewfinderSize, setViewfinderSize] = useState({ width, height: 180 });
@@ -284,6 +287,7 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
             onReconnect={() => { void preview.current?.reconnectMetering(); }} />
         </> : <Text style={styles.info}>카메라를 허용하면 격자·플래시·노출을 조절할 수 있어요.</Text>}
         <CameraMemoryControls disabled={settingsDisabled || !foreground} />
+        <AppearanceControls disabled={settingsDisabled || !foreground} />
         <Text style={styles.info}>사진은 기기 안에서만 처리해요.</Text>
         {__DEV__ ? <CameraAction label="개발 진단" disabled={busy || !foreground || returning} onPress={() => {
           if (!__DEV__ || !foreground || discardPending.current || ['picking', 'importing', 'capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
@@ -339,7 +343,7 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
       canRun={foreground && (!permission.hasPermission || !device || cameraStopped)} onClose={closeDiagnostics} /> : null}
   </>;
 }
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles(theme => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.background }, body: { flex: 1 }, content: { flexGrow: 1 },
   header: { paddingHorizontal: 8, minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   toolbarGroup: { width: 96, flexDirection: 'row', alignItems: 'center' }, toolbarEnd: { justifyContent: 'flex-end' },
@@ -370,4 +374,4 @@ const styles = StyleSheet.create({
   selected: { borderColor: theme.accent, backgroundColor: theme.accentSoft },
   captureStatus: { color: theme.secondary, fontSize: 12, textAlign: 'center', paddingHorizontal: 16, lineHeight: 16, paddingBottom: 0 },
   pressed: { opacity: 0.7 }, disabled: { opacity: 0.4 },
-});
+}));

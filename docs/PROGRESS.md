@@ -1,6 +1,18 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-11-09 마지막 촬영 설정 기억
+## 현재 상태 — 2026-11-10 아이폰 개발 앱 재설치
+
+- 요청: 아이폰의 ‘더 이상 사용할 수 없음’ 오류 뒤 사용자가 케이블 연결과 재설치를 명시 요청했다. 이전 설치용 앱의 embedded.mobileprovision은 한국 시각2026-11-04 03:40:53 만료였다. 이번 요청 범위의 prebuild/Pods/아이폰 빌드·설치·시작 확인을 실행하며 일반 lint/typecheck/Jest/전체 기기 검수 보류는 유지한다.
+- 준비: clean develop `629fe9e7b7b9cf9e5352cc031c070a1b744d06f4`에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c chore/ios-device-reinstall` exit0. iPhone15/iOS27.2 wired·paired·Developer Mode Enabled, Xcode27.2(27B52) 및 기존 유효 개발 인증서1개를 확인했다. 상세 기기/팀/인증서 식별자는 기록하지 않는다.
+- 구성: 기존 생성 iOS 설정을 ignored work 폴더에 보관했다. `EXPO_NO_TELEMETRY=1 EXPO_NO_DEPENDENCY_VALIDATION=1 npx --no-install expo prebuild --platform ios --no-install` exit0, package.json 변경 없음. `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer pod install --no-repo-update` exit0,111 dependencies/110 pods. 기존 npm에 있던 ExpoImagePicker/ExpoSQLite/ExpoSharing/YeounPhotoImport가 이번 iOS 빌드에 추가됐다. clean 재생성·npm 의존성 변경 없음.
+- 빌드: 명령별 DEVELOPER_DIR 지정, `xcodebuild -workspace M0.xcworkspace -scheme M0 -configuration Debug -destination id=… -derivedDataPath ../work/ios-device-build -allowProvisioningUpdates DEVELOPMENT_TEAM=… CODE_SIGN_IDENTITY='Apple Development' CODE_SIGN_STYLE=Automatic ARCHS=arm64 ONLY_ACTIVE_ARCH=YES` exit0/BUILD SUCCEEDED. 새 프로파일은 한국 시각2026-11-17 00:26:34까지 유효하며 기존 인증서를 포함함을 확인했다. 앱 bundle ID/프로파일·연결 기기/팀/debug entitlements 일치, `codesign --verify --deep --strict …/M0.app` exit0. 인증서 생성/삭제는 하지 않았다.
+- 설치: `xcrun devicectl device install app --device … …/M0.app` exit0. 같은 bundle ID로 덮어설치했으며 uninstall 명령을 실행하지 않았다. 생성물·빌드/시작 로그·설정 백업은 ignored work 또는 /private/tmp에만 남긴다. 앱 파일의 서명/기기 등록 확인은 실제 앱 데이터 보존 검수와 구분한다.
+- 실행: `EXPO_NO_TELEMETRY=1 EXPO_NO_DEPENDENCY_VALIDATION=1 npm start -- --lan --port 8081`으로 Metro를 시작했고 `/status`는 running이다. 최초 `devicectl device process launch --terminate-existing --console --payload-url …`는 exit1/CoreDevice10002/FBSOpenApplicationErrorDomain3(Security)로 거부됐다. 서명·기기·entitlements 일치를 확인한 뒤 사용자가 개발자 신뢰/앱 확인을 완료했다. 재실행은 Launched application을 반환했지만 화면 캡처에서 Expo 서버 연결 실패와 로컬 네트워크 허용 팝업을 확인했다. 사용자가 허용한 뒤 같은 개발 서버 URL로 재실행해 앱 프로세스/JS 실행을 확인했다.
+- 관측: Metro iOS `index.ts`773ms/1486modules, lazy `expo-sqlite/build/index.js`184ms/469modules, native evaluateJavaScript 로그와 후면 실제 frame1178×1572/yuv-420-8-bit-full/up/mirrorfalse를 확인했다. `devicectl device capture screenshot` exit0 및 로컬 이미지 열람으로 카메라 화면·피사체 미리보기 표시를 확인했다. 캡처 순간의 선택 색감은 맑은 얼굴75%/적용 중이었으며 필터 적용 완료나 저장 품질 검증으로 간주하지 않는다. 이후14건의 frame-was-late 경고, 기존 UIKit background callback/DevTools fallback/NO_COLOR 경고를 관측했다. FPS·장시간 안정성 통과를 주장하지 않는다.
+- 문서/범위: 이 기록과 M0_RUNBOOK의 개인 계정7일 만료·동일 앱 재설치·신뢰/로컬 네트워크 확인·Xcode 경로 절차만 수정했다. 앱 코드·npm package/lock 변경 없음. iOS native 빌드·서명·덮어설치·기본 시작/카메라 미리보기 관측은 실행했고, 사진 촬영·저장·공유·설정/레시피 재시작 보존·Android·성능·접근성·lint/typecheck/Jest/별도 JS export 검사는 **NOT_RUN**이다. G0~G5 미통과 유지. 사용자가 계속 확인하도록 Metro와 앱을 실행 상태로 둔다.
+- Git Flow: 문서2개만 대상으로 `git diff --check` exit0. 실행 로그/화면/인증서/프로파일/생성된 iOS는 stage하지 않는다. 기록을 커밋·푸시·develop PR/병합·동기화하고 clean develop에서 마친다. 최종 커밋/PR과 통합 상태는 Git 이력 및 완료 보고를 따른다.
+
+## 이전 기록 — 2026-11-09 마지막 촬영 설정 기억
 
 - 요청/준비: 개인 레시피 다음으로 마지막 촬영 설정 기억 진행을 승인했다. clean develop `0b501c0309ef3b96f808c43909575db1f56b4e96`(PR #37)에서 `git fetch origin develop`, `git merge --ff-only origin/develop`, `git switch -c feature/remember-camera-settings` exit0. 기존 사용자 변경 없음. 검사 실행 보류·개발 후 전체 Git Flow 상시 승인 유지.
 - 기능: 촬영 필터·강도·모든 질감·날짜 표시 여부와 격자를 기억한다. 최초 기본 켜짐/오후 네 시 기본값/격자 끔, 끄면 현재 화면 유지·다음 실행부터 기본값, 다시 켜면 현재 설정 저장. 플래시/노출/기기 방향/실제 날짜/입자 seed/사진은 저장하지 않는다. 결과 편집·가져오기·사진 복구와 다음 촬영 기억값을 분리한다.

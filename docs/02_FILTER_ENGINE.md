@@ -1,5 +1,15 @@
 # 02. 필터와 렌더링 계약
 
+## 2026-11-11 대표 3종 개정과 기존 색감 보존 (현재 계약)
+
+맑은 얼굴0.3/크림 라떼0.3/맑은 여행0.4 draft를 연결했다. seed hash `c8ea7f44914526b054178910ff80954d4707e9b7e0a3f00f8df7f3d2c08c6969`. 기본 강도75/85/85%, 모든 질감 기본값과 renderer/authoring/spatial 버전은 유지한다. 피부 계열 채도·명암, 카페의 밝고 어두운 면, 여행의 중간톤/파랑/초록을 조정했다. 전역 EV/tint는0이다. 상세 값은 seed, 관찰은 FILTER_COLOR_REVIEW를 따른다.
+
+직전 카탈로그의 맑은 얼굴0.2/크림 라떼0.2/맑은 여행0.3과 identity를 별도 literal registry로 보존한다. 정확한 ID/version만 허용하고 preview/export는 같은 loader에서 해당 immutable manifest로 분기한다. 새 선택/초기화는 새 기본값, 저장된 레시피/마지막 설정/편집 snapshot은 기존 version/수치/자산 fingerprint를 유지한다. 알 수 없는 과거/미래 버전은 계속 거부한다.
+
+편집 복구의 호환 기준은 직전 `c0f1…e8a6` fingerprint를 유지한다. 그 카탈로그의 모든 룩이 변경 없는 현재 자산 또는 retained 자산으로 정확히 남아 있기 때문이다. snapshot의 lookVersion은 별도로 검증한다. 향후 기존 자산 제거/renderer 변경 시 이 호환 기준도 갱신해야 한다.
+
+원본+17종 썸네일은 한 장의 앱 소유 예시를 실제 LUT/SkSL/기본 강도로 사전 렌더한다. 실제 촬영/저장 파이프라인과 효과 순서는 유지한다. 데스크톱 PNG 관찰은 native GPU/촬영/JPEG 검증과 다르다.
+
 ## 2026-10-30 여행 3종과 선택 전환 (현재 계약)
 
 여름방학·로즈 데이·맑은 여행을 look `0.3.0-draft`로 개정했다. 기본 강도는 각각85/90/85%, 진한 따뜻함·로즈/민트 파스텔·선명한 파랑으로 구분한다. 세 룩의 EV/tint는0이며 나머지14종과 renderer `lut-camera-0.6.0` / spatial `grain-bloom-retro-0.5.0` / authoring0.1은 유지한다. 현재 seed hash는 `c0f1e92e3a92bcfa8945db7e8a720ad2d3a247fdc7d4af1451db17c06484e8a6`. [사진 비교](FILTER_COLOR_REVIEW.md)와 현재 seed가 아래 이전 계약보다 우선한다.

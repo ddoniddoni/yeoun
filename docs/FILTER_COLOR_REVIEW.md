@@ -1,5 +1,21 @@
 # 필터 사진 검수 — 2026-10-30
 
+## 2026-11-11 인물·카페·여행 세부 개정
+
+UI와 필터 모두 아쉽다는 피드백으로 맑은 얼굴0.3, 크림 라떼0.3, 맑은 여행0.4를 작성했다. 새 seed `c8ea7f44914526b054178910ff80954d4707e9b7e0a3f00f8df7f3d2c08c6969`. 다른14종 LUT/default는 유지하며 이전 버전도 커스텀 색감과 보관 사진용으로 앱에 포함한다.
+
+| 필터 | 수치 방향 | 기본 강도 출력에서의 관찰 |
+|---|---|---|
+| 맑은 얼굴75% | orange hue -5°, multiplier.88; 중간톤 .4→.46/.65→.715 | 중성 인물에서 노랑 기가 줄고 약한 로즈 방향. 어두운 피부의 광택/그림자와 얼굴 윤곽은 남음. 얼굴 인식/미백이 아님 |
+| 크림 라떼85% | .18→.15, .85→.875; blue/green multiplier.70/.78 | 커피와 머리카락의 어두운 면이 깊어지고 잔/창문은 밝게 분리. 초록/파랑의 회색화 완화 |
+| 맑은 여행85% | .4→.425/.6→.66; blue1.22/green1.06 | 풍경/창틀의 파랑과 식물 초록이 분리되고 원경 명암이 남음. 피부 계열 채도는 절제 |
+
+기존 로컬 fixture4장(portrait-neutral, portrait-deep, cafe, landscape)과 새 생성 reference1장에 원본+3종을 전후 각각 렌더했다. `artifacts/local/camera-look-polish/before` / `after`에 개별 PNG20장/비교판5장씩이다. after의5비교판, before의 인물/카페2비교판과 기존 비교 기록을 직접 관찰했다. 출력한 모든 전후 판을 시각 승인했다고 확대하지 않는다. 원본+17종 reference 썸네일 비교판도 관찰했다.
+
+명령: `node scripts/render-filter-review.mjs --fixtures artifacts/local/camera-look-polish/sources.json --out artifacts/local/camera-look-polish/before --font '/System/Library/Fonts/Supplemental/Arial.ttf' --filters portrait-clear,food-cafe,retro-travel --max-edge 600`(수정 후 out=after), 모두 exit0. 앱 LUT+SkSL/CanvasKit0.40 소프트웨어, seed317/예시날짜261030이다. 기존 사진은 보정된 JPEG일 수 있으며 정밀 색 기준이 아니다. 실제 GPU/촬영/sRGB JPEG/발열/최종 사용자 색감 승인은 **NOT_RUN/HUMAN_REVIEW_PENDING**이다.
+
+bundled reference·18 PNG·manifest·재생성 방법은 `assets/filter-previews`에 있다. 외부 fixture는 앱에 포함하지 않았고 사람/사용자 사진을 이미지 생성 도구에 보내지 않았다. 생성 예시는 새 텍스트 프롬프트만 사용했다.
+
 ## 후속 개정 — 유사하게 느껴진 여행 3종
 
 사용자가 여름방학·맑은 여행(답변명 “맑은여름”)·로즈 데이를 비슷하게 느꼈다고 알려 세 룩을 `0.3.0-draft`로 개정했다. 아래 10종/0.2 기록은 앞선 검수 이력이며 현재 세 룩은 이 절과 seed를 따른다. 전역 tint와 EV는 계속0으로 두고 명암·색상별 반응·질감으로 차이를 벌렸다.

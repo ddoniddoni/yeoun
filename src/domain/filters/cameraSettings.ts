@@ -1,6 +1,7 @@
 import filterSeed from '../../../spec/filters.seed.json';
 import type { RenderSettings } from './types';
 import { NO_RETRO, RETRO_AMOUNTS, type RetroControls } from './retroControls';
+import { isRetainedLook } from './retainedLooks';
 
 export const CAMERA_RENDER_VERSION = 'lut-camera-0.6.0';
 export const CAMERA_FILTERS = [
@@ -42,7 +43,7 @@ export function copyCameraSettings(input: CameraSettings): CameraSettings {
   const expectedVersion = input.filterId === 'original' ? '0.1.0-draft'
     : filterSeed.filters.find(filter => filter.id === input.filterId)?.lookVersion;
   if (!CAMERA_FILTERS.some(filter => filter.id === input.filterId) ||
-      input.lookVersion !== expectedVersion || input.engineVersion !== 'lut-authoring-0.1.0' ||
+      (input.lookVersion !== expectedVersion && !isRetainedLook(input.filterId, input.lookVersion)) || input.engineVersion !== 'lut-authoring-0.1.0' ||
       input.rendererVersion !== CAMERA_RENDER_VERSION) throw new Error('지원하지 않는 필터 버전이에요.');
   if (!Number.isFinite(input.intensity) || input.intensity < 0 || input.intensity > 1) {
     throw new Error('필터 강도는 0~100%여야 해요.');

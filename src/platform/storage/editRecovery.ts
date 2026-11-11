@@ -2,7 +2,7 @@ import { requireOptionalNativeModule } from 'expo';
 import { randomUUID } from 'expo-crypto';
 import { RecoveryStore } from '../../domain/capture/recoveryStore';
 import { draftFile, removeFile } from '../files/drafts';
-import manifest from '../../../assets/lut-drafts/lut-authoring-0.1.0/c0f1e92e3a92bcfa8945db7e8a720ad2d3a247fdc7d4af1451db17c06484e8a6/filter-manifest.json';
+import recoveryBaseline from '../../../assets/lut-drafts/lut-authoring-0.1.0/c0f1e92e3a92bcfa8945db7e8a720ad2d3a247fdc7d4af1451db17c06484e8a6/filter-manifest.json';
 import { SPATIAL_BACKEND_VERSION } from '../../rendering/shaders/spatial';
 import { LUT_SKIA_BACKEND_VERSION } from '../../rendering/shaders/lut';
 
@@ -38,6 +38,8 @@ function db() {
   })().catch(error => { database = undefined; throw error; });
   return database;
 }
+// Keep the recovery fingerprint stable while every baseline look remains bundled exactly.
+// Snapshot lookVersion routes to the current or retained LUT; dropping one requires a new baseline.
 export const editRecovery = new RecoveryStore({
   read: async () => (await (await db()).getFirstAsync<{ payload: string }>('SELECT payload FROM draft_checkpoint WHERE id = 1'))?.payload ?? null,
   write: async value => { await (await db()).runAsync('INSERT INTO draft_checkpoint (id, payload) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET payload = excluded.payload', value); },
@@ -48,4 +50,4 @@ export const editRecovery = new RecoveryStore({
   prune: keep => native().pruneRecoveryFilesAsync(keep),
   workingUri: (id, name) => draftFile(id, name).uri,
   id: () => randomUUID().toLowerCase(), now: () => Date.now(),
-}, `${manifest.sourceSeedSha256}/${SPATIAL_BACKEND_VERSION}/${LUT_SKIA_BACKEND_VERSION}`);
+}, `${recoveryBaseline.sourceSeedSha256}/${SPATIAL_BACKEND_VERSION}/${LUT_SKIA_BACKEND_VERSION}`);

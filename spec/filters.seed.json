@@ -1103,7 +1103,7 @@
       "collection": "retro",
       "name": "맑은 여행",
       "caption": "선명한 파랑, 맑고 깨끗한 여행색",
-      "lookVersion": "0.3.0-draft",
+      "lookVersion": "0.4.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
@@ -1113,23 +1113,23 @@
         "toneCurve": [
           [
             0,
-            0.008
+            0.006
           ],
           [
             0.18,
-            0.19
+            0.165
           ],
           [
             0.4,
-            0.46
+            0.425
           ],
           [
             0.6,
-            0.7
+            0.66
           ],
           [
             0.82,
-            0.89
+            0.875
           ],
           [
             1,
@@ -1150,20 +1150,20 @@
           {
             "centerDeg": 210,
             "halfWidthDeg": 40,
-            "shiftDeg": 10,
-            "saturationMultiplier": 1.15
+            "shiftDeg": 8,
+            "saturationMultiplier": 1.22
           },
           {
             "centerDeg": 115,
-            "halfWidthDeg": 42,
-            "shiftDeg": 3,
-            "saturationMultiplier": 0.98
+            "halfWidthDeg": 38,
+            "shiftDeg": 2,
+            "saturationMultiplier": 1.06
           },
           {
             "centerDeg": 28,
             "halfWidthDeg": 25,
-            "shiftDeg": 0,
-            "saturationMultiplier": 0.95
+            "shiftDeg": -2,
+            "saturationMultiplier": 0.92
           }
         ]
       },
@@ -1181,7 +1181,8 @@
       },
       "notes": [
         "사용자 피드백으로 여름방학의 진한 빈티지/로즈의 파스텔과 분리. 하늘은 선명한 파랑, 초록은 원래 색에 가깝게 두고 맑은 중간톤을 살린다.",
-        "입자0·번짐.015로 깨끗한 윤곽. 전역 tint/EV0과 중성 흰색 유지. 기본85%."
+        "입자0·번짐.015로 깨끗한 윤곽. 전역 tint/EV0과 중성 흰색 유지. 기본85%.",
+        "2026-11-11: 중간톤의 과한 밝기 상승을 줄여 원경/그림자 깊이를 회복하고 파랑과 초록을 분리. 피부 계열은 채도를 절제한다. 기본 강도와 질감 유지."
       ]
     },
     {
@@ -1189,7 +1190,7 @@
       "collection": "portrait",
       "name": "맑은 얼굴",
       "caption": "맑은 피부 톤, 또렷한 눈빛",
-      "lookVersion": "0.2.0-draft",
+      "lookVersion": "0.3.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
@@ -1203,19 +1204,19 @@
           ],
           [
             0.18,
-            0.19
+            0.185
           ],
           [
             0.4,
-            0.445
+            0.46
           ],
           [
             0.65,
-            0.695
+            0.715
           ],
           [
             0.85,
-            0.88
+            0.895
           ],
           [
             1,
@@ -1234,28 +1235,28 @@
         ],
         "hueBands": [
           {
-            "centerDeg": 28,
-            "halfWidthDeg": 28,
-            "shiftDeg": -1,
-            "saturationMultiplier": 0.97
+            "centerDeg": 30,
+            "halfWidthDeg": 30,
+            "shiftDeg": -5,
+            "saturationMultiplier": 0.88
           },
           {
             "centerDeg": 0,
-            "halfWidthDeg": 22,
+            "halfWidthDeg": 20,
             "shiftDeg": 0,
-            "saturationMultiplier": 0.94
+            "saturationMultiplier": 0.96
           },
           {
             "centerDeg": 115,
             "halfWidthDeg": 40,
-            "shiftDeg": -3,
-            "saturationMultiplier": 0.91
+            "shiftDeg": -2,
+            "saturationMultiplier": 0.88
           },
           {
             "centerDeg": 220,
             "halfWidthDeg": 40,
-            "shiftDeg": -2,
-            "saturationMultiplier": 0.96
+            "shiftDeg": 0,
+            "saturationMultiplier": 0.94
           }
         ]
       },
@@ -1274,7 +1275,8 @@
       },
       "notes": [
         "SODA 공식 인물/일상 예시의 정돈된 밝기와 편안한 색을 참고한 독자 LUT.",
-        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
+        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기.",
+        "2026-11-11: 중간톤은 맑게, 피부 계열의 노랑/주황 채도는 절제하고 약한 붉은 방향 이동. 중성축/하이라이트/피부 질감을 유지하는 LUT이며 얼굴 인식·미백 기능이 아니다."
       ]
     },
     {
@@ -1468,37 +1470,37 @@
       "collection": "food",
       "name": "크림 라떼",
       "caption": "크림빛 디저트, 포근한 카페",
-      "lookVersion": "0.2.0-draft",
+      "lookVersion": "0.3.0-draft",
       "status": "design-draft",
       "lut": null,
       "authoring": {
         "colorSpace": "srgb-encoded",
         "exposureEv": 0,
-        "saturation": 0.9,
+        "saturation": 0.94,
         "toneCurve": [
           [
             0,
-            0.028
+            0.016
           ],
           [
             0.18,
-            0.18
+            0.15
           ],
           [
             0.4,
-            0.42
+            0.405
           ],
           [
             0.65,
-            0.66
+            0.68
           ],
           [
             0.85,
-            0.84
+            0.875
           ],
           [
             1,
-            0.975
+            0.99
           ]
         ],
         "shadowTintRgb": [
@@ -1516,25 +1518,25 @@
             "centerDeg": 36,
             "halfWidthDeg": 30,
             "shiftDeg": -3,
-            "saturationMultiplier": 1.18
+            "saturationMultiplier": 1.12
           },
           {
             "centerDeg": 350,
             "halfWidthDeg": 26,
-            "shiftDeg": -1,
-            "saturationMultiplier": 1.02
+            "shiftDeg": 0,
+            "saturationMultiplier": 1.04
           },
           {
             "centerDeg": 112,
             "halfWidthDeg": 45,
-            "shiftDeg": -9,
-            "saturationMultiplier": 0.66
+            "shiftDeg": -7,
+            "saturationMultiplier": 0.78
           },
           {
             "centerDeg": 218,
             "halfWidthDeg": 42,
             "shiftDeg": -3,
-            "saturationMultiplier": 0.55
+            "saturationMultiplier": 0.7
           }
         ]
       },
@@ -1553,7 +1555,8 @@
       },
       "notes": [
         "빵/커피의 갈색과 황금색은 남기고 파랑/초록은 더 절제한다. 밝고 선명한 오늘의 식탁과 구분되는 차분한 명암. 흐림 없이 음식 질감을 유지한다.",
-        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기."
+        "2026-10-30 사진 비교 개정: 전역 노출 상승 대신 중간톤 곡선으로 밝기를 조절하고 중성축/최상단 계조를 유지. 데스크톱 사진 검수이며 기기 촬영·저장 및 최종 사용자 색감 승인 대기.",
+        "2026-11-11: 커피의 낮은 중간톤은 깊게, 흰 잔과 디저트의 밝은 면은 깨끗하게 분리. 파랑/초록의 과도한 탈색을 덜어 회색 막 느낌을 줄인다. 흐림·추가 노이즈 없음."
       ]
     }
   ]

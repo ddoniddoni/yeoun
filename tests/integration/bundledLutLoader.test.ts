@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/c0f1e92e3a92bcfa8945db7e8a720ad2d3a247fdc7d4af1451db17c06484e8a6/filter-manifest.json';
+import manifest from '../../assets/lut-drafts/lut-authoring-0.1.0/c8ea7f44914526b054178910ff80954d4707e9b7e0a3f00f8df7f3d2c08c6969/filter-manifest.json';
 import { createBundledDraftLutLoader, loadDraftLutPipeline } from '../../src/rendering/adapters/bundledLutLoader';
 import { createLutAtlas } from '../../src/rendering/reference/lutAtlas';
+import retainedManifest from '../../assets/lut-drafts/lut-authoring-0.1.0/c0f1e92e3a92bcfa8945db7e8a720ad2d3a247fdc7d4af1451db17c06484e8a6/filter-manifest.json';
 
 // Metro's actual .lut packaging and native decode are separate device checks.
 jest.mock('../../src/rendering/assets/bundledLuts', () => {
-  const source = require('../../assets/lut-drafts/lut-authoring-0.1.0/c0f1e92e3a92bcfa8945db7e8a720ad2d3a247fdc7d4af1451db17c06484e8a6/filter-manifest.json');
+  const source = require('../../assets/lut-drafts/lut-authoring-0.1.0/c8ea7f44914526b054178910ff80954d4707e9b7e0a3f00f8df7f3d2c08c6969/filter-manifest.json');
   return {
     bundledLutManifest: source,
     bundledLutExpectation: { sourceSeedSha256: source.sourceSeedSha256,
@@ -16,6 +17,16 @@ jest.mock('../../src/rendering/assets/bundledLuts', () => {
   };
 });
 jest.mock('../../src/platform/files/lutAssets', () => ({ readBundledLutBytes: jest.fn(), digestLutBytes: jest.fn() }));
+jest.mock('../../src/rendering/assets/retainedLuts', () => {
+  const source = require('../../assets/lut-drafts/lut-authoring-0.1.0/c0f1e92e3a92bcfa8945db7e8a720ad2d3a247fdc7d4af1451db17c06484e8a6/filter-manifest.json');
+  const assets = source.assets.filter((asset: { filterId: string }) => ['identity', 'portrait-clear', 'food-cafe', 'retro-travel'].includes(asset.filterId));
+  return {
+    retainedLutManifest: { ...source, assets },
+    retainedLutExpectation: { sourceSeedSha256: source.sourceSeedSha256,
+      lookVersions: new Map(assets.map((asset: { filterId: string; lookVersion: string }) => [asset.filterId, asset.lookVersion])) },
+    retainedLutModules: Object.fromEntries(assets.map((asset: { path: string }, index: number) => [asset.path, index + 101])),
+  };
+});
 jest.mock('../../src/rendering/adapters/decodeLut', () => ({ decodeLutWithSkia: jest.fn() }));
 jest.mock('../../src/rendering/adapters/lutSkia', () => ({ createSkiaLutPipeline: jest.fn() }));
 const files = jest.requireMock<{ readBundledLutBytes: jest.Mock; digestLutBytes: jest.Mock }>('../../src/platform/files/lutAssets');
@@ -68,3 +79,24 @@ test('shader allocation failure does not discard a valid decoded LUT', async () 
   expect(files.readBundledLutBytes).toHaveBeenCalledTimes(1);
   expect(decode).toHaveBeenCalledTimes(1);
 });
+
+test.each(['portrait-clear', 'food-cafe', 'retro-travel'])(
+  'keeps old and new %s bytes distinct and clears both caches', async filterId => {
+    const current = manifest.assets.find(asset => asset.filterId === filterId)!;
+    const previous = retainedManifest.assets.find(asset => asset.filterId === filterId)!;
+    const currentBytes = await readFile(join(__dirname, '../../assets/lut-drafts', manifest.engineVersion, manifest.sourceSeedSha256, current.path));
+    const oldBytes = await readFile(join(__dirname, '../../assets/lut-drafts', retainedManifest.engineVersion, retainedManifest.sourceSeedSha256, previous.path));
+    files.readBundledLutBytes.mockImplementation(async (moduleId: number) => moduleId >= 101 ? oldBytes : currentBytes);
+    const loader = createBundledDraftLutLoader();
+    const now = { filterId, lookVersion: current.lookVersion, engineVersion: manifest.engineVersion };
+    const old = { ...now, lookVersion: previous.lookVersion };
+    expect((await loader.load(old)).asset.sha256).toBe(previous.sha256);
+    expect((await loader.load(now)).asset.sha256).toBe(current.sha256);
+    expect(current.sha256).not.toBe(previous.sha256);
+    await loader.load(old); await loader.load(now);
+    expect(files.readBundledLutBytes).toHaveBeenCalledTimes(2);
+    loader.clearCache();
+    await loader.load(old); await loader.load(now);
+    expect(files.readBundledLutBytes).toHaveBeenCalledTimes(4);
+  },
+);

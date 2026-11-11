@@ -1,6 +1,19 @@
 # 개발 진행 기록
 
-## 현재 상태 — 2026-11-10 스토어용 여운 앱 아이콘
+## 현재 상태 — 2026-11-11 촬영 UI와 대표 필터 다듬기
+
+- 요청/준비: 사용자가 디자인과 필터 모두 비슷하게 아쉽다고 답했다. clean develop `eac9da5aeb0724fbfbda712928ea33ca4256f47b`에서 최신 develop 준비 후 `feature/camera-look-polish`로 진행. 기존 크림·코랄/다크 테마와 큰 카메라를 유지했다. frontend-design/unslop/imagegen 지침을 사용했다.
+- UI: 필터 목록 확장/본문 자동 스크롤을 하단 Modal 선택창으로 교체했다. 기존 CameraPreview/key/세션/3:4 layout을 유지하고 카메라 위를 어둡게 덮지 않는다. 선택창/상세 조절의 탐색을 공유하고 밑줄 탭·96pt 사진 카드·13pt 이름·중성 강도 표시로 정리했다. 이전 일러스트는 현재 필터 표식으로 보존한다. 선택/즐겨찾기/오류/접근성 라벨과 현재 필터 자동 스크롤을 유지한다.
+- 예시 자산: 새 텍스트 입력으로 image_gen reference1254×1254를 생성했다. 앱 실제 LUT/SkSL/기본 강도를 적용한18 PNG(각240×320, 총2,965,000bytes)를 번들링하고 예시임을 표시한다. 현재 카메라 픽셀을 전달/저장하지 않는다. 기존 private fixture는 배포하지 않았다. 프롬프트/출처/재생성/manifest는 assets/filter-previews에 있다.
+- 색감: 맑은 얼굴0.3/크림 라떼0.3/맑은 여행0.4 draft. 노란 피부 계열·회색화된 배경·과하게 열린 중간톤을 각각 조정했다. 전역 EV/tint0, 기본 강도/모든 질감과 shader/engine은 유지한다. 새 seed `c8ea7f44914526b054178910ff80954d4707e9b7e0a3f00f8df7f3d2c08c6969`에18 PNG/.lut/manifest를 생성했다. manifest 읽기 비교에서 SHA가 달라진 룩은 이3종뿐이다.
+- 기존 색감 보존: 직전3룩+identity를 별도 registry로 연결해 정확한 ID/version으로 로더를 분기한다. 기존 recipe fingerprint/촬영 기억/편집 snapshot은 새 룩으로 자동 변환하지 않는다. 편집 복구 기준은 모든 직전 룩이 그대로 재현 가능한 기존 카탈로그를 유지한다. 이전 색감일 때 안내하고 같은 이름의 카드를 누르면 새 기본 필터를 선택할 수 있다. 이전 payload와 새/옛 자산 분리·cache clear 테스트 소스도 작성했다.
+- 변경 파일: src/screens/{M0CameraScreen,CameraSheet,FilterControls,FilterSwatch,FilterThumbnail}, cameraSettings/retainedLooks, bundledLutLoader/현재·retained registry, recipeCatalog/editRecovery, spec/filters.seed.json, 새 LUT/preview 자산, scripts/export-filter-previews.mjs, 관련 기존 테스트5개, 제품/엔진/색감/카탈로그/검수/이 기록. 새 패키지/권한/native 설정 변경 없음.
+- 실제 제작: `npm run generate:luts` exit0. `node scripts/render-filter-review.mjs`를 sources.json+filters3종+max-edge600으로 before/after 각각 실행(exit0), 원본+3종×5사진=20 PNG/5비교판씩 생성했다. after5개와 before 인물/카페2개 비교판을 직접 읽었다. reference만 max-edge320/전체17종으로 렌더(exit0)하고 전체 비교판을 읽었다. `node scripts/export-filter-previews.mjs --rendered artifacts/local/camera-look-polish/thumbnails` exit0. 생성기/렌더의 기존 MODULE_TYPELESS_PACKAGE_JSON 경고는 유지한다.
+- 시각/읽기 확인: 밝게 닫힘/밝게 선택창/다크 선택창을 SVG 정적 구성안으로 작성하고 Quick Look로 내보냈다(exit0). 첫 가로판이 정사각형 thumbnail에서 잘려 square canvas로 다시 내보내 전체를 읽었다. 결과는 ignored work/camera-look-polish에 있으며 실제 앱 캡처가 아니다. PNG header 크기/파일 수/용량과 새 manifest SHA를 읽었다. `git diff --check` exit0.
+- **NOT_RUN:** 기존 검사 보류 지시에 따라 lint/typecheck/Jest/react-doctor/seed 검증 CLI/JS·native build/prebuild/재설치를 실행하지 않았다. 추가한 테스트 소스도 미실행이다. UI 실제 조작/접근성/이전 레시피·기억·사진의 기기 복원, 필터 강도0/50/100, 촬영·저장 JPEG·색 관리·장시간 GPU 안정성·최종 사용자 색감 승인은 남아 있다. 데스크톱 PNG/정적 구성안은 네이티브 통과 증거가 아니다.
+- Git Flow: 관련 파일만 stage해 커밋·푸시·develop PR 생성/병합·동기화 후 develop에서 종료한다. main/릴리스/스토어 제출은 범위 밖이다. 다음은 실제 선택창의 구도 유지와 새 대표3종 및 기존 개인 색감의 기기 확인이다.
+
+## 이전 기록 — 2026-11-10 스토어용 여운 앱 아이콘
 
 - 요청/준비: 사용자가 스토어 등록을 위한 앱 아이콘 제작을 요청했다. clean develop `1f10c9ca839c4496a7193c0ec0cd03d26e6a9005`에서 fetch/FF 후 feature/yeoun-app-icon 생성. 기존 크림·코랄 방향과 imagegen/unslop 지침을 사용했다.
 - 디자인: 크림 배경의 코랄 조리개와 복숭아색 잔상. 글자 없이 큰 중심 여백/굵은 곡선으로 작은 크기에서 읽히게 구성했다. 내장 image_gen 기본 아이콘1회·투명 전경 편집1회·추가 정리 시안1회를 생성했고 앞의 두 결과를 선택했다. 명시적 이미지 제작 요청 범위이며 CLI/API 키 경로로 전환하지 않았다.

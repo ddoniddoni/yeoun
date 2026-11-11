@@ -17,7 +17,7 @@ import { pickLibraryPhoto, prepareLibraryPhoto, releasePickedPhoto } from '../pl
 import { CameraPauseGate } from '../platform/camera/pauseGate';
 import { exportOriginalComparison, exportPhoto } from '../rendering/adapters/exportPhoto';
 import type { FilterStatus } from '../rendering/adapters/cameraLut';
-import { FilterControls, FilterAdjustmentPanel } from './FilterControls';
+import { FilterControls, FilterPickerPanel, FilterAdjustmentPanel } from './FilterControls';
 import { CameraSheet } from './CameraSheet';
 import { CameraDiagnosticsScreen } from './CameraDiagnosticsScreen';
 import { CameraAction, FrameCorners, IconButton, ShutterButton } from './CameraControls';
@@ -45,10 +45,7 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
   const { width, fontScale } = useWindowDimensions();
   // Width owns the 3:4 frame. Controls and messages must never shrink the camera.
   const [previewWidth, setPreviewWidth] = useState(width);
-  const cameraScroll = useRef<ScrollView>(null);
-  const scrollAfterResize = useRef<'top' | 'end' | undefined>(undefined);
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
-  const [panel, setPanel] = useState<'camera' | 'filter'>();
+  const [panel, setPanel] = useState<'camera' | 'filter' | 'picker'>();
   const [position, setPosition] = useState<'front' | 'back'>('back');
   const device = useCameraDevice(position, { physicalDevices: ['wide-angle'] });
   const memoryStore = useCameraMemory();
@@ -184,13 +181,7 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
             badge={memory.error ? '!' : undefined} disabled={settingsDisabled} onPress={() => setPanel('camera')} />
         </View>
       </View>
-      <ScrollView ref={cameraScroll} style={styles.body} showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => {
-          const target = scrollAfterResize.current;
-          scrollAfterResize.current = undefined;
-          if (target === 'end') cameraScroll.current?.scrollToEnd({ animated: false });
-          else if (target === 'top') cameraScroll.current?.scrollTo({ y: 0, animated: false });
-        }}>
+      <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
         <View style={styles.viewfinderArea} onLayout={event => {
           setPreviewWidth(Math.max(1, event.nativeEvent.layout.width));
         }}>
@@ -238,12 +229,8 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
           </View>
         </View>
         <View style={styles.deck}>
-          <FilterControls settings={settings} disabled={settingsDisabled} expanded={filtersExpanded}
-            onToggleList={() => {
-              if (settingsDisabled) return;
-              scrollAfterResize.current = filtersExpanded ? 'top' : 'end';
-              setFiltersExpanded(value => !value);
-            }} onSelect={selectFilter} onOpen={() => setPanel('filter')} />
+          <FilterControls settings={settings} disabled={settingsDisabled}
+            onBrowse={() => { if (!settingsDisabled) setPanel('picker'); }} onOpen={() => setPanel('filter')} />
           {cameraError ? <View style={styles.notice}>
             <Text accessibilityRole="alert" style={styles.error}>{cameraError}</Text>
             <CameraAction label="카메라 다시 연결" onPress={() => { setReady(false); setCameraError(undefined); setFilterRevision(value => value + 1); }} />
@@ -294,7 +281,8 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
           : state.phase !== 'idle' ? LABELS[state.phase] : ' '}
       </Text>
     </View>
-    {panel && !overlayOpen ? <CameraSheet title={panel === 'camera' ? '촬영 설정' : '나의 색감'} onClose={() => {
+    {panel && !overlayOpen ? <CameraSheet title={panel === 'camera' ? '촬영 설정' : panel === 'picker' ? '필터' : '나의 색감'}
+      previewVisible={panel === 'picker'} onClose={() => {
       comparison.release(); setPanel(undefined);
     }}>
       {panel === 'camera' ? <>
@@ -315,7 +303,7 @@ export function M0CameraScreen({ restored }: { restored?: RestoredCapture }) {
           if (!__DEV__ || !foreground || discardPending.current || ['picking', 'importing', 'capturing', 'rendering', 'saving-gallery'].includes(controller.state.phase)) return;
           setPanel(undefined); setReady(false); setDiagnosticsOpen(true);
         }} /> : null}
-      </> : <>
+      </> : panel === 'picker' ? <FilterPickerPanel compact settings={settings} disabled={settingsDisabled || !foreground} onSelect={selectFilter} /> : <>
         {currentFilterStatus?.phase === 'error' ? <View style={styles.notice}>
           <Text accessibilityRole="alert" style={styles.error}>{currentFilterStatus.message}</Text>
           <CameraAction label="색감 다시 불러오기" disabled={settingsDisabled} onPress={() => setFilterRevision(value => value + 1)} />

@@ -1,9 +1,30 @@
 import { cameraSettings, copyCameraSettings } from '../../src/domain/filters/cameraSettings';
 import { readRecipe, recipeName, recipeSettingsForContext, serializeRecipe } from '../../src/domain/recipes/recipe';
 import { recipeFingerprint } from '../../src/storage/recipeCatalog';
+import previousManifest from '../../assets/lut-drafts/lut-authoring-0.1.0/c0f1e92e3a92bcfa8945db7e8a720ad2d3a247fdc7d4af1451db17c06484e8a6/filter-manifest.json';
+import { grainStyle } from '../../src/domain/filters/grainStyle';
+import { LUT_SKIA_BACKEND_VERSION } from '../../src/rendering/shaders/lut';
+import { SPATIAL_BACKEND_VERSION } from '../../src/rendering/shaders/spatial';
 
 const id = '00000000-0000-4000-8000-000000000001';
 const fingerprint = () => 'look-and-backend-fingerprint';
+
+test.each(['portrait-clear', 'food-cafe', 'retro-travel'] as const)(
+  'opens a previously saved %s recipe without upgrading its look or controls', filterId => {
+    const look = previousManifest.assets.find(asset => asset.filterId === filterId)!;
+    const identity = previousManifest.assets.find(asset => asset.filterId === 'identity')!;
+    const settings = { ...cameraSettings(filterId), lookVersion: look.lookVersion, intensity: 0.42, bloom: 0.21 };
+    const grain = grainStyle(filterId);
+    // Reconstruct the pre-update stored fingerprint, not the new serializer's result.
+    const savedFingerprint = [settings.rendererVersion, previousManifest.renderContractVersion, previousManifest.engineVersion,
+      look.lookVersion, look.sha256, identity.sha256, LUT_SKIA_BACKEND_VERSION, SPATIAL_BACKEND_VERSION,
+      grain.resolution, grain.amplitude].join('/');
+    const recipe = readRecipe(id, '보관한 색감', 1, JSON.stringify({ settings, fingerprint: savedFingerprint }), recipeFingerprint);
+    expect(recipe).toMatchObject({ available: true, settings });
+    expect(recipeFingerprint(cameraSettings(filterId))).not.toBe(savedFingerprint);
+    expect(cameraSettings(filterId).lookVersion).not.toBe(look.lookVersion);
+  },
+);
 
 test('names trim outer whitespace and count Unicode code points without splitting surrogate pairs', () => {
   expect(recipeName('  오후 산책  ')).toBe('오후 산책');

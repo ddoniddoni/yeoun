@@ -1,0 +1,168 @@
+{
+  "sourceSeedSha256": "c8ea7f44914526b054178910ff80954d4707e9b7e0a3f00f8df7f3d2c08c6969",
+  "spatialBackend": "grain-bloom-retro-0.5.0",
+  "backend": "CanvasKit 0.40.0 software; NOT native/GPU/capture/JPEG verification",
+  "strength": "default",
+  "maxEdge": 320,
+  "grainSeed": 317,
+  "stampDate": 261030,
+  "shaders": [
+    "69c153b559e367d09a3472137c17ad2720adea95d3312d222cb29c2bb04365eb",
+    "db3714777ba449606f870cbfb27761b9e35dcf29af4a0939387ae229813aa6ea",
+    "aedf6b7d66659059e9b101bc6e16d7087c983abe6824771918635ded2da09d75",
+    "1b3c240c2691db1c936a4fc88dfefc5d245591db03262913778c34d8626e612b"
+  ],
+  "fixtures": [
+    {
+      "id": "reference",
+      "file": "assets/filter-previews/reference.png"
+    }
+  ],
+  "records": [
+    {
+      "fixture": "reference",
+      "id": "original",
+      "file": "original.png",
+      "intensity": 0,
+      "renderedFile": "reference--original.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "light-afternoon",
+      "file": "light-afternoon.png",
+      "lookVersion": "0.2.0-draft",
+      "intensity": 0.8,
+      "renderedFile": "reference--light-afternoon.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "light-milk",
+      "file": "light-milk.png",
+      "lookVersion": "0.3.0-draft",
+      "intensity": 0.8,
+      "renderedFile": "reference--light-milk.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "light-spring",
+      "file": "light-spring.png",
+      "lookVersion": "0.3.0-draft",
+      "intensity": 0.8,
+      "renderedFile": "reference--light-spring.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "time-summer",
+      "file": "time-summer.png",
+      "lookVersion": "0.3.0-draft",
+      "intensity": 0.85,
+      "renderedFile": "reference--time-summer.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "time-diary",
+      "file": "time-diary.png",
+      "lookVersion": "0.2.0-draft",
+      "intensity": 0.85,
+      "renderedFile": "reference--time-diary.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "time-night",
+      "file": "time-night.png",
+      "lookVersion": "0.2.0-draft",
+      "intensity": 0.8,
+      "renderedFile": "reference--time-night.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "scene-dawn",
+      "file": "scene-dawn.png",
+      "lookVersion": "0.1.0-draft",
+      "intensity": 0.8,
+      "renderedFile": "reference--scene-dawn.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "scene-rain",
+      "file": "scene-rain.png",
+      "lookVersion": "0.2.0-draft",
+      "intensity": 0.85,
+      "renderedFile": "reference--scene-rain.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "scene-ending",
+      "file": "scene-ending.png",
+      "lookVersion": "0.2.0-draft",
+      "intensity": 0.75,
+      "renderedFile": "reference--scene-ending.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "retro-film",
+      "file": "retro-film.png",
+      "lookVersion": "0.6.0-draft",
+      "intensity": 1,
+      "renderedFile": "reference--retro-film.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "retro-digital",
+      "file": "retro-digital.png",
+      "lookVersion": "0.3.0-draft",
+      "intensity": 0.9,
+      "renderedFile": "reference--retro-digital.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "retro-rose",
+      "file": "retro-rose.png",
+      "lookVersion": "0.3.0-draft",
+      "intensity": 0.9,
+      "renderedFile": "reference--retro-rose.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "retro-travel",
+      "file": "retro-travel.png",
+      "lookVersion": "0.4.0-draft",
+      "intensity": 0.85,
+      "renderedFile": "reference--retro-travel.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "portrait-clear",
+      "file": "portrait-clear.png",
+      "lookVersion": "0.3.0-draft",
+      "intensity": 0.75,
+      "renderedFile": "reference--portrait-clear.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "portrait-peach",
+      "file": "portrait-peach.png",
+      "lookVersion": "0.2.0-draft",
+      "intensity": 0.8,
+      "renderedFile": "reference--portrait-peach.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "food-table",
+      "file": "food-table.png",
+      "lookVersion": "0.2.0-draft",
+      "intensity": 0.8,
+      "renderedFile": "reference--food-table.png"
+    },
+    {
+      "fixture": "reference",
+      "id": "food-cafe",
+      "file": "food-cafe.png",
+      "lookVersion": "0.3.0-draft",
+      "intensity": 0.85,
+      "renderedFile": "reference--food-cafe.png"
+    }
+  ],
+  "referenceSha256": "bc6cf5458defbb98b4155245520bcdc0d63e057271469980fd4821c90552a2c1",
+  "purpose": "Bundled static examples at default settings; not a live camera thumbnail."
+}

@@ -5,21 +5,21 @@ import { IconButton } from './CameraControls';
 import { createThemedStyles } from './ThemeProvider';
 
 /** A control surface over the live preview; it never owns or restarts the camera. */
-export function CameraSheet({ title, children, onClose }: {
-  title: string; children: ReactNode; onClose(): void;
+export function CameraSheet({ title, children, onClose, previewVisible = false }: {
+  title: string; children: ReactNode; onClose(): void; previewVisible?: boolean;
 }) {
   const styles = useStyles();
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   return <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
-    <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={[styles.overlay, previewVisible && styles.clearOverlay]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <Pressable accessible={false} importantForAccessibility="no" style={StyleSheet.absoluteFill} onPress={onClose} />
       <View accessibilityViewIsModal style={[styles.sheet, {
         maxHeight: height - insets.top - 32, paddingBottom: Math.max(insets.bottom, 16),
         paddingLeft: Math.max(insets.left, 20), paddingRight: Math.max(insets.right, 20),
       }]}>
         <View style={styles.handle} />
-        <View style={styles.heading}>
+        <View style={[styles.heading, previewVisible && styles.compactHeading]}>
           <Text accessibilityRole="header" style={styles.title}>{title}</Text>
           <IconButton icon="close" label={`${title} 닫기`} onPress={onClose} />
         </View>
@@ -32,10 +32,12 @@ export function CameraSheet({ title, children, onClose }: {
 
 const useStyles = createThemedStyles(theme => StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: theme.scrim },
+  clearOverlay: { backgroundColor: 'transparent' },
   sheet: { width: '100%', flexShrink: 1, backgroundColor: theme.surface, borderTopWidth: 1, borderColor: theme.line,
     borderTopLeftRadius: theme.panelRadius, borderTopRightRadius: theme.panelRadius },
   handle: { alignSelf: 'center', width: 36, height: 4, backgroundColor: theme.line, marginTop: 12, borderRadius: 2 },
   heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 12 },
+  compactHeading: { paddingVertical: 4 },
   title: { color: theme.text, fontSize: 22, fontWeight: '600', flexShrink: 1 },
   content: { gap: 20, paddingBottom: 12 },
 }));

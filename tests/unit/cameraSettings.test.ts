@@ -29,11 +29,11 @@ test.each([
   ['light-afternoon', '0.2.0-draft', '0.1.0-draft'],
   ['time-summer', '0.3.0-draft', '0.2.0-draft'],
   ['retro-rose', '0.3.0-draft', '0.2.0-draft'],
-  ['retro-travel', '0.3.0-draft', '0.2.0-draft'],
-  ['portrait-clear', '0.2.0-draft', '0.1.0-draft'],
+  ['retro-travel', '0.4.0-draft', '0.2.0-draft'],
+  ['portrait-clear', '0.3.0-draft', '0.1.0-draft'],
   ['portrait-peach', '0.2.0-draft', '0.1.0-draft'],
   ['food-table', '0.2.0-draft', '0.1.0-draft'],
-  ['food-cafe', '0.2.0-draft', '0.1.0-draft'],
+  ['food-cafe', '0.3.0-draft', '0.1.0-draft'],
 ] as const)('pins the photo-reviewed revision for %s', (id, version, previousVersion) => {
   const settings = cameraSettings(id);
   expect(settings.lookVersion).toBe(version);

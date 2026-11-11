@@ -25,13 +25,12 @@ const ARTWORK: Record<CameraFilterId, ImageSourcePropType> = {
   'scene-ending': require('../../assets/filter-icons/scene-ending.png'),
 };
 
-export const FilterSwatch = memo(function FilterSwatch({ id }: { id: CameraFilterId }) {
+export const FilterSwatch = memo(function FilterSwatch({ id, size = 44 }: { id: CameraFilterId; size?: number }) {
   return <View pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
     style={styles.art}>
-    <Image source={ARTWORK[id]} resizeMode="contain" fadeDuration={0} style={styles.image} accessible={false} />
+    <Image source={ARTWORK[id]} resizeMode="contain" fadeDuration={0} style={{ width: size, height: size }} accessible={false} />
   </View>;
 });
 const styles = StyleSheet.create({
   art: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' },
-  image: { width: 44, height: 44 },
 });
